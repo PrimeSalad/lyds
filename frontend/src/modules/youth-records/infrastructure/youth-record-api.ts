@@ -21,6 +21,10 @@ export type YouthRecord = {
   email?: string; 
   contact_number?: string;
   custom_values?: Record<string, unknown>;
+  barangay_name?: string | null;
+  category_name?: string | null;
+  barangay?: { name: string } | null;
+  category?: { name: string } | null;
 };
 
 export type YouthRecordDetail = YouthRecord & {
@@ -57,6 +61,8 @@ export interface ListParams {
   status?: string;
   category_id?: string;
   barangay_id?: string;
+  sortField?: 'created_at' | 'display_name' | 'birth_date' | 'status' | 'barangay_name';
+  sortDir?: 'asc' | 'desc';
 }
 
 export type CreateInput = {
@@ -93,6 +99,8 @@ export const youthRecordApi = {
     if (params.status) query.append('status', params.status);
     if (params.category_id) query.append('categoryId', params.category_id);
     if (params.barangay_id) query.append('barangayId', params.barangay_id);
+    if (params.sortField) query.append('sortField', params.sortField);
+    if (params.sortDir) query.append('sortDir', params.sortDir);
 
     const res = await apiClient.request<{ data: YouthRecord[]; meta: any }>(`/youth-records?${query.toString()}`);
     return res;

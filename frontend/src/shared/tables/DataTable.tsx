@@ -34,6 +34,12 @@ interface DataTableProps<T> {
   filters?: React.ReactNode;
   emptyMessage?: string;
   pageSize?: number;
+  pagination?: {
+    page: number;
+    totalPages: number;
+    totalItems: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export const DataTable = <T,>({
@@ -46,6 +52,7 @@ export const DataTable = <T,>({
   filters,
   emptyMessage = 'No data found.',
   pageSize = 25,
+  pagination,
 }: DataTableProps<T>) => {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -74,8 +81,15 @@ export const DataTable = <T,>({
     return result;
   }, [data, search, searchKey, sortKey, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = pagination?.page ?? page;
+  const paginated = pagination
+    ? filtered
+    : filtered.slice((page - 1) * pageSize, page * pageSize);
+  const changePage = (nextPage: number) => {
+    if (pagination) pagination.onPageChange(nextPage);
+    else setPage(nextPage);
+  };
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -263,20 +277,20 @@ export const DataTable = <T,>({
           <Button
             size="sm"
             variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
+            disabled={currentPage === 1}
+            onClick={() => changePage(currentPage - 1)}
           >
             <LuChevronLeft />
             Previous
           </Button>
           <Text fontSize="sm" color="text.secondary">
-            Page {page} of {totalPages}
+            Page {currentPage} of {totalPages}
           </Text>
           <Button
             size="sm"
             variant="outline"
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
+            disabled={currentPage === totalPages}
+            onClick={() => changePage(currentPage + 1)}
           >
             Next
             <LuChevronRight />

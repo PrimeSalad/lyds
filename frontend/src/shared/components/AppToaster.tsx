@@ -9,10 +9,11 @@ export const AppToaster = () => (
         <Toast.Root
           width={{ base: 'calc(100vw - 32px)', sm: '380px' }}
           borderWidth="1px"
-          borderColor="border"
+          borderColor={toast.type === 'error' ? 'danger' : toast.type === 'success' ? 'success' : toast.type === 'warning' ? 'warning' : 'info'}
           borderRadius="md"
           boxShadow="panel"
-          bg="surface"
+          bg={toast.type === 'error' ? 'danger.light' : toast.type === 'success' ? 'success.light' : toast.type === 'warning' ? 'warning.light' : 'info.light'}
+          color="text.primary"
         >
           <HStack align="flex-start" gap={3} width="full">
             <Toast.Indicator mt="2px" />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, Flex, VStack, Grid, GridItem, Spinner, Text } from '@chakra-ui/react';
 import { useForm, Controller, type FieldErrors } from 'react-hook-form';
@@ -183,6 +183,7 @@ const YouthRecordFormPage = () => {
   const [workStatusOptions, setWorkStatusOptions] = useState<{ value: string; label: string }[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [recordVersion, setRecordVersion] = useState<number | null>(null);
+  const submissionAlertRef = useRef<HTMLDivElement | null>(null);
   
   const { control, handleSubmit, watch, reset, setValue, formState: { isDirty } } = useForm<YouthRecordFormValues>({
     defaultValues: {
@@ -210,6 +211,14 @@ const YouthRecordFormPage = () => {
     () => categoryFields.filter((customField) => !isCoreCategoryField(customField)),
     [categoryFields],
   );
+
+  useEffect(() => {
+    if (!submissionError || pendingSubmitData) return;
+    window.requestAnimationFrame(() => {
+      submissionAlertRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      submissionAlertRef.current?.focus({ preventScroll: true });
+    });
+  }, [submissionError, pendingSubmitData]);
 
   useEffect(() => {
     const loadCategoryFields = async () => {
@@ -435,6 +444,7 @@ const YouthRecordFormPage = () => {
       const message = error instanceof Error ? error.message : 'Failed to save record';
       setSubmissionError(message);
       showToast.error({ title: isDraft ? 'Draft was not saved' : 'Record was not submitted', description: message });
+      if (!isDraft) throw error;
     } finally {
       setLoading(false);
     }
@@ -509,7 +519,7 @@ const YouthRecordFormPage = () => {
           </Alert.Root>
         )}
         {submissionError && (
-          <Alert.Root status="error" mb={6} borderRadius="md" role="alert">
+          <Alert.Root ref={submissionAlertRef} status="error" mb={6} borderRadius="md" role="alert" tabIndex={-1} scrollMarginTop="96px" bg="danger.light" borderWidth="1px" borderColor="danger">
             <Alert.Indicator />
             <Alert.Content>
               <Alert.Title>Check the record details</Alert.Title>

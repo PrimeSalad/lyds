@@ -40,6 +40,6 @@ export const listYouthRecordsQuerySchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
-  sortField: z.string().optional(),
+  sortField: z.enum(['created_at', 'display_name', 'birth_date', 'status', 'barangay_name']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
 });

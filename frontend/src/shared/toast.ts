@@ -1,7 +1,7 @@
 import { createToaster } from '@chakra-ui/react';
 
 export const toaster = createToaster({
-  placement: 'top-end',
+  placement: 'top',
   overlap: true,
   gap: 12,
   duration: 4500,

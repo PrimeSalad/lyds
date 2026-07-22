@@ -1,7 +1,6 @@
 import { youthRecordRepository } from '../../infrastructure/repositories/youth-record-repository';
 import { computeAge, computeAgeGroup } from '../../domain/rules/age-computation';
 import { validateAssemblyRules } from '../../domain/rules/assembly-rules';
-import { auditService } from '../../../audit-logs/infrastructure/audit-service';
 import { referenceDataRepository } from '../../../reference-data/infrastructure/repositories/reference-data-repository';
 import { API_ERRORS } from '../../../../config/api-error';
 
@@ -48,16 +47,6 @@ export const createYouthRecord = async (input: any, authContext: any) => {
   };
 
   const record = await youthRecordRepository.createRecord(recordData);
-
-  await auditService.log({
-    action: 'CREATE',
-    entity_type: 'YOUTH_RECORD',
-    entity_id: record.id,
-    actor_profile_id: authContext.profileId,
-    actor_role: authContext.role,
-    barangay_id: barangayId,
-    after_data: { ...record },
-  });
 
   return { record, warnings: duplicates.length > 0 ? ['Potential duplicates found'] : [] };
 };

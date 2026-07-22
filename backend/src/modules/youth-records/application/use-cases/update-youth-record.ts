@@ -2,7 +2,6 @@ import { youthRecordRepository } from '../../infrastructure/repositories/youth-r
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
 import { computeAge, computeAgeGroup } from '../../domain/rules/age-computation';
 import { validateAssemblyRules } from '../../domain/rules/assembly-rules';
-import { auditService } from '../../../audit-logs/infrastructure/audit-service';
 import { referenceDataRepository } from '../../../reference-data/infrastructure/repositories/reference-data-repository';
 import { API_ERRORS } from '../../../../config/api-error';
 import { canTransition } from '../../domain/rules/status-transitions';
@@ -53,17 +52,6 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
   }
 
   const record = await youthRecordRepository.updateRecord(id, updateData, version);
-
-  await auditService.log({
-    actor_profile_id: authContext.profileId,
-    actor_role: authContext.role,
-    action: 'UPDATE',
-    entity_type: 'YOUTH_RECORD',
-    entity_id: record.id,
-    barangay_id: record.barangay_id,
-    before_data: { ...existingRecord },
-    after_data: { ...record },
-  });
 
   return record;
 };

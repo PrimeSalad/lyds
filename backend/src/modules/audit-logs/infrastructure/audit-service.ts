@@ -3,24 +3,26 @@ import type { AuditLog, CreateAuditLogInput } from '../domain/entities/audit-log
 
 const TABLE = 'audit_logs';
 
+export const toAuditLogRow = (input: CreateAuditLogInput) => ({
+  actor_profile_id: input.actor_profile_id ?? null,
+  actor_role: input.actor_role ?? null,
+  action: input.action,
+  entity_type: input.entity_type,
+  entity_id: input.entity_id ?? null,
+  barangay_id: input.barangay_id ?? null,
+  before_data: input.before_data ?? null,
+  after_data: input.after_data ?? null,
+  metadata: input.metadata ?? {},
+  ip_address: input.ip_address ?? null,
+  user_agent: input.user_agent ?? null,
+  request_id: input.request_id ?? null,
+});
+
 export const auditService = {
   async log(input: CreateAuditLogInput): Promise<AuditLog> {
     const { data, error } = await supabaseAdmin
       .from(TABLE)
-      .insert({
-        actor_profile_id: input.actor_profile_id ?? null,
-        actor_role: input.actor_role ?? null,
-        action: input.action,
-        entity_type: input.entity_type,
-        entity_id: input.entity_id ?? null,
-        barangay_id: input.barangay_id ?? null,
-        before_data: input.before_data ?? null,
-        after_data: input.after_data ?? null,
-        metadata: input.metadata ?? null,
-        ip_address: input.ip_address ?? null,
-        user_agent: input.user_agent ?? null,
-        request_id: input.request_id ?? null,
-      })
+      .insert(toAuditLogRow(input))
       .select()
       .single();
     if (error) throw error;

@@ -35,7 +35,8 @@ export const youthRecordRepository = {
 
     let query = supabaseAdmin
       .from('youth_profiles')
-      .select('*, barangay:barangays(name), category:categories(name)', { count: 'exact' });
+      .select('*, barangay:barangays!barangay_id(name), category:categories!category_id(name)', { count: 'exact' })
+      .is('deleted_at', null);
 
     if (filters.barangayId) {
       query = query.eq('barangay_id', filters.barangayId);
@@ -49,7 +50,11 @@ export const youthRecordRepository = {
     if (filters.search) {
       query = query.ilike('display_name', `%${filters.search}%`);
     }
-    if (filters.sort) {
+    if (filters.sort?.field === 'barangay_name') {
+      query = query
+        .order('name', { ascending: filters.sort.direction === 'asc', referencedTable: 'barangays' })
+        .order('display_name', { ascending: true });
+    } else if (filters.sort) {
       query = query.order(filters.sort.field, { ascending: filters.sort.direction === 'asc' });
     } else {
       query = query.order('created_at', { ascending: false });
@@ -58,9 +63,23 @@ export const youthRecordRepository = {
     const { data, count, error } = await query.range(from, to);
     if (error) throw new Error(error.message);
 
+    const relationName = (relation: any) => Array.isArray(relation)
+      ? relation[0]?.name ?? null
+      : relation?.name ?? null;
+
+    const totalItems = count ?? 0;
     return {
-      data: data as any[],
-      totalItems: count || 0,
+      data: (data ?? []).map((record: any) => ({
+        ...record,
+        barangay_name: relationName(record.barangay),
+        category_name: relationName(record.category),
+      })),
+      meta: {
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
+      },
     };
   },
 

@@ -1,7 +1,6 @@
 import { youthRecordRepository } from '../../infrastructure/repositories/youth-record-repository';
 import { canTransition } from '../../domain/rules/status-transitions';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
-import { auditService } from '../../../audit-logs/infrastructure/audit-service';
 
 export const archiveYouthRecord = async (id: string, authContext: any) => {
   const record = await youthRecordRepository.getRecordById(id);
@@ -13,17 +12,6 @@ export const archiveYouthRecord = async (id: string, authContext: any) => {
 
   const updatedRecord = await youthRecordRepository.transitionStatus(id, 'ARCHIVED', authContext.profileId, {
     updated_by: authContext.profileId
-  });
-
-  await auditService.log({
-    actor_profile_id: authContext.profileId,
-    actor_role: authContext.role,
-    action: 'STATUS_CHANGE',
-    entity_type: 'YOUTH_RECORD',
-    entity_id: record.id,
-    barangay_id: record.barangay_id,
-    before_data: { status: record.status },
-    after_data: { status: 'ARCHIVED' },
   });
 
   return updatedRecord;

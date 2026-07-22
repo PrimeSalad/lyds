@@ -26,6 +26,7 @@ export const createYouthRecordSchema = z.object({
 
 export const updateYouthRecordSchema = createYouthRecordSchema.partial().extend({
   version: z.number().int(),
+  submit_on_update: z.boolean().optional().default(false),
 });
 
 export const returnYouthRecordSchema = z.object({

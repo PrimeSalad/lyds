@@ -5,6 +5,7 @@ import { validateAssemblyRules } from '../../domain/rules/assembly-rules';
 import { auditService } from '../../../audit-logs/infrastructure/audit-service';
 import { referenceDataRepository } from '../../../reference-data/infrastructure/repositories/reference-data-repository';
 import { API_ERRORS } from '../../../../config/api-error';
+import { canTransition } from '../../domain/rules/status-transitions';
 
 export const updateYouthRecord = async (id: string, input: any, authContext: any) => {
   const existingRecord = await youthRecordRepository.getRecordById(id);
@@ -18,7 +19,8 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
     throw API_ERRORS.forbidden('Can only edit records in DRAFT or RETURNED status.');
   }
 
-  const { version, ...updateData } = input;
+  const { version, submit_on_create, submit_on_update, ...updateData } = input;
+  void submit_on_create;
 
   if (updateData.attended_kk_assembly !== undefined || updateData.kk_assembly_count !== undefined) {
     const attended = updateData.attended_kk_assembly !== undefined ? updateData.attended_kk_assembly : existingRecord.attended_kk_assembly;
@@ -39,6 +41,16 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
   }
 
   updateData.updated_by = authContext.profileId;
+
+  if (submit_on_update) {
+    if (!canTransition(existingRecord.status, 'SUBMITTED', authContext.role)) {
+      throw YouthRecordErrors.INVALID_STATUS_TRANSITION(existingRecord.status, 'SUBMITTED');
+    }
+
+    updateData.status = 'SUBMITTED';
+    updateData.submitted_by = authContext.profileId;
+    updateData.submitted_at = new Date().toISOString();
+  }
 
   const record = await youthRecordRepository.updateRecord(id, updateData, version);
 

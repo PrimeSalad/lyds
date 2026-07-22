@@ -2,6 +2,17 @@ import { supabaseAdmin } from '../../../../config/supabase';
 import type { YouthRecord, RecordStatus } from '../../domain/entities/youth-record';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
 
+const withStatusCompatibility = (recordData: any) => (
+  recordData.status
+    ? { ...recordData, youth_profile_status: recordData.status }
+    : recordData
+);
+
+const isMissingStatusCompatibilityColumn = (error: any) =>
+  typeof error?.message === 'string' &&
+  error.message.includes('youth_profile_status') &&
+  error.message.includes('column');
+
 export interface ListRecordsFilters {
   barangayId?: string;
   categoryId?: string;
@@ -68,24 +79,34 @@ export const youthRecordRepository = {
   },
 
   async createRecord(recordData: any) {
-    const { data, error } = await supabaseAdmin
+    const insertRecord = async (dataToInsert: any) => supabaseAdmin
       .from('youth_profiles')
-      .insert(recordData)
+      .insert(dataToInsert)
       .select()
       .single();
+
+    let { data, error } = await insertRecord(withStatusCompatibility(recordData));
+    if (error && isMissingStatusCompatibilityColumn(error)) {
+      ({ data, error } = await insertRecord(recordData));
+    }
 
     if (error) throw new Error(error.message);
     return data as YouthRecord;
   },
 
   async updateRecord(id: string, recordData: any, expectedVersion: number) {
-    const { data, error } = await supabaseAdmin
+    const updateRecord = async (dataToUpdate: any) => supabaseAdmin
       .from('youth_profiles')
-      .update({ ...recordData, version: expectedVersion + 1 })
+      .update({ ...dataToUpdate, version: expectedVersion + 1 })
       .eq('id', id)
       .eq('version', expectedVersion)
       .select()
       .single();
+
+    let { data, error } = await updateRecord(withStatusCompatibility(recordData));
+    if (error && isMissingStatusCompatibilityColumn(error)) {
+      ({ data, error } = await updateRecord(recordData));
+    }
 
     if (error) {
       if (error.code === 'PGRST116') {

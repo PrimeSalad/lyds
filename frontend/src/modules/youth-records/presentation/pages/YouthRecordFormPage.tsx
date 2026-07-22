@@ -406,8 +406,11 @@ const YouthRecordFormPage = () => {
       const payload = toPayload(data);
       if (isEditing) {
         if (recordVersion === null) throw new Error('Record version is missing. Refresh and try again.');
-        await youthRecordApi.update(recordId!, { ...payload, version: recordVersion });
-        if (!isDraft) await youthRecordApi.submit(recordId!);
+        await youthRecordApi.update(recordId!, {
+          ...payload,
+          version: recordVersion,
+          submit_on_update: !isDraft,
+        });
         showToast.success('Record updated successfully');
       } else {
         await youthRecordApi.create({ ...payload, submit_on_create: !isDraft });

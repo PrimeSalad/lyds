@@ -82,7 +82,7 @@ export type CreateInput = {
   submit_on_create?: boolean;
 };
 
-export type UpdateInput = Partial<CreateInput> & { version: number };
+export type UpdateInput = Partial<CreateInput> & { version: number; submit_on_update?: boolean };
 
 export const youthRecordApi = {
   async list(params: ListParams = {}): Promise<{ data: YouthRecord[]; meta: { page: number; pageSize: number; totalItems: number; totalPages: number } }> {

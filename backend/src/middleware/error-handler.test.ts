@@ -59,18 +59,29 @@ describe('globalErrorHandler', () => {
         expect.objectContaining({ code: 'INTERNAL_ERROR' })
       );
     });
+
+    it('uses status 500 for raw provider errors without an HTTP status', () => {
+      const err = { message: 'Database request failed', name: 'PostgrestError' } as ApiErrorResponse & Error;
+      const req = makeReq('/api/v1/reports/dashboard');
+      const res = makeRes();
+
+      globalErrorHandler(err, req as Request, res as unknown as Response, makeNext());
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }));
+    });
   });
 
-  describe('Page routes (non-/api/*)', () => {
-    it('redirects to the home route', () => {
+  describe('Non-API routes', () => {
+    it('responds with a JSON error instead of redirecting', () => {
       const err = makeErr({ status: 404 });
       const req = makeReq('/some-page');
       const res = makeRes();
 
       globalErrorHandler(err, req as Request, res as unknown as Response, makeNext());
 
-      expect(res.redirect).toHaveBeenCalledWith('/');
-      expect(res.json).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ error: { message: 'Something went wrong' } });
+      expect(res.redirect).not.toHaveBeenCalled();
     });
 
     it('sets the error status code on the redirect', () => {

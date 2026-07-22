@@ -8,7 +8,10 @@ export const globalErrorHandler = (
   res: Response,
   _next: NextFunction,
 ) => {
-  const { status, message } = err;
+  const status = Number.isInteger(err.status) && err.status >= 400 && err.status <= 599
+    ? err.status
+    : 500;
+  const message = err.message || 'Internal server error';
 
   console.error(`[${req.method}] ${req.path} — ${message}`);
 

@@ -7,6 +7,7 @@ export const reportRouter = Router();
 
 reportRouter.use(requireAuth);
 
+reportRouter.get('/dashboard', reportController.dashboard);
 reportRouter.get('/summary', reportController.summary);
 reportRouter.get('/demographics', reportController.demographics);
 reportRouter.get('/by-barangay', requireAdmin, reportController.byBarangay);

@@ -9,7 +9,11 @@
     "start": "node --env-file=.env dist/server.js",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:verify": "tsx --env-file=.env scripts/verify-supabase.ts",
+    "db:sync": "tsx --env-file=.env scripts/sync-supabase.ts",
+    "db:sync:dry": "tsx --env-file=.env scripts/sync-supabase.ts --dry-run",
+    "db:baseline": "tsx --env-file=.env scripts/sync-supabase.ts --baseline-existing"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",
@@ -22,12 +26,17 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cookie-parser": "1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "5.0.6",
     "@types/node": "^25.7.0",
+    "eslint": "^10.3.0",
+    "globals": "^17.7.0",
+    "supabase": "^2.109.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
+    "typescript-eslint": "^8.65.0",
     "vitest": "^4.1.6"
   }
 }

@@ -18,6 +18,56 @@ export type DemographicBreakdown = {
   percentage: number;
 };
 
+export type DashboardAnalytics = {
+  summary: SummaryData;
+  statusDistribution: Array<{
+    status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'RETURNED' | 'ARCHIVED';
+    label: string;
+    count: number;
+    percentage: number;
+  }>;
+  monthlyTrend: Array<{
+    month: string;
+    label: string;
+    created: number;
+    submitted: number;
+    approved: number;
+  }>;
+  barangayCoverage: Array<{
+    barangayId: string;
+    barangayName: string;
+    totalRecords: number;
+    pendingReview: number;
+    approved: number;
+    lastActivityAt: string | null;
+  }>;
+  coverage: {
+    barangaysWithRecords: number;
+    totalBarangays: number;
+    percentage: number;
+  };
+  dataQuality: {
+    completeRecords: number;
+    completionRate: number;
+    missingContact: number;
+    incompleteCore: number;
+    duplicateCandidates: number;
+    staleDrafts: number;
+  };
+  demographics: {
+    ageGroups: DemographicBreakdown[];
+    youthClassifications: DemographicBreakdown[];
+  };
+  recentRecords: Array<{
+    id: string;
+    displayName: string;
+    barangayName: string;
+    status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'RETURNED' | 'ARCHIVED';
+    updatedAt: string;
+  }>;
+  generatedAt: string;
+};
+
 type BarangaySummary = {
   barangayId: string;
   barangayName: string;
@@ -27,6 +77,7 @@ type BarangaySummary = {
 };
 
 export const reportApi = {
+  getDashboard: () => apiClient.request<{ data: DashboardAnalytics }>('/reports/dashboard'),
   getSummary: (params?: { barangayId?: string; categoryId?: string; status?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.barangayId) searchParams.set('barangayId', params.barangayId);

@@ -2,6 +2,8 @@ import { supabaseAdmin } from '../../../../config/supabase';
 import type { Barangay, CreateBarangayInput, UpdateBarangayInput } from '../../domain/entities/barangay';
 
 const TABLE = 'barangays';
+const BOAC_MUNICIPALITY = 'Boac';
+const MARINDUQUE_PROVINCE = 'Marinduque';
 
 export const barangayRepository = {
   async findAll(includeDeleted = false): Promise<Barangay[]> {
@@ -9,6 +11,7 @@ export const barangayRepository = {
     if (!includeDeleted) {
       query = query.is('deleted_at', null);
     }
+    query = query.eq('municipality', BOAC_MUNICIPALITY).eq('province', MARINDUQUE_PROVINCE);
     const { data, error } = await query.order('name');
     if (error) throw error;
     return data ?? [];

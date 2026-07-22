@@ -8,6 +8,7 @@ type ExportRecordsInput = {
   status?: string | null;
   actorId: string;
   actorRole: string;
+  format: 'csv' | 'xlsx';
 };
 
 export const exportRecords = async ({
@@ -16,9 +17,12 @@ export const exportRecords = async ({
   status,
   actorId,
   actorRole,
+  format,
 }: ExportRecordsInput): Promise<Buffer> => {
   const data = await reportRepository.getExportData({ barangayId, categoryId, status });
-  const buffer = await exportService.generateExport(data, 'Youth Profiles Export');
+  const buffer = format === 'csv'
+    ? exportService.generateCsv(data)
+    : await exportService.generateXlsx(data);
   
   await auditService.log({
     actor_profile_id: actorId,
@@ -26,7 +30,7 @@ export const exportRecords = async ({
     action: 'EXPORT_RECORDS',
     entity_type: 'REPORT',
     barangay_id: barangayId ?? undefined,
-    metadata: { record_count: data.length, category_id: categoryId, status }
+    metadata: { record_count: data.length, category_id: categoryId, status, format }
   });
   
   return buffer;

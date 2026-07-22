@@ -2,10 +2,18 @@
   "name": "sk-youth-system",
   "private": true,
   "scripts": {
+    "install:all": "npm ci --prefix frontend && npm ci --prefix backend",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
+    "type-check": "npm --prefix frontend run type-check && npm --prefix backend run type-check",
+    "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "npm --prefix frontend test",
     "test:backend": "npm --prefix backend test",
-    "build": "npm --prefix frontend run build && npm --prefix backend run build"
+    "build": "npm --prefix frontend run build && npm --prefix backend run build",
+    "db:verify": "npm --prefix backend run db:verify",
+    "db:sync": "npm --prefix backend run db:sync",
+    "db:sync:dry": "npm --prefix backend run db:sync:dry",
+    "db:baseline": "npm --prefix backend run db:baseline"
   }
 }

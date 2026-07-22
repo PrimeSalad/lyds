@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added live admin dashboard analytics for workflow status, six-month activity, barangay coverage, data quality, and recent record activity.
+- Added guarded Supabase CLI migration verification, baseline/sync commands, and an automated production migration workflow.
 - Added self-service Account Settings for all authenticated users, including profile details and password updates.
 - Added app-wide toast notifications and accessible confirmation dialogs for record workflow changes, account/barangay status changes, archiving, discarding forms, and signing out.
 - Added announcement management: admins can publish/archive scoped announcements, SK officials can view active announcements, and the dashboard shows recent announcements.
@@ -29,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed report queries and exports to use canonical youth profile status and sex fields, exclude deleted records, and paginate beyond Supabase's default 1,000-row response limit.
+- Fixed CSV exports so the CSV action returns actual CSV content instead of an XLSX binary with the wrong extension.
+- Removed the destructive reset SQL from the deployable migration chain and added an idempotent runtime-schema alignment migration.
+- Removed unreferenced test barangays from the active Boac dataset and restricted barangay reporting to Boac, Marinduque.
+- Removed redundant KK core category fields and archived an unreferenced test category from the live catalog.
+- Updated the stale non-API error-handler test to match the server's JSON error contract.
+- Hardened the global API error handler so raw provider errors without an HTTP status return a stable 500 response.
 - Fixed app notifications not appearing by mounting the Chakra toaster and improved API errors to surface nested backend messages.
 - Fixed bulk imports to load real published category IDs, use an accurate four-step workflow, catch asynchronous file-read failures, and download the spreadsheet template correctly.
 - Added the missing `happy-dom` and Playwright test dependencies required by the existing frontend verification setup.

@@ -167,22 +167,26 @@ export const DataTable = <T,>({
       )}
 
       <Card.Root borderColor="border" borderRadius="md" overflow="hidden" boxShadow="panel" display={{ base: 'none', md: 'flex' }}>
-      <Box overflowX="auto" width="full" css={{ '&::-webkit-scrollbar': { height: '6px' }, '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '3px' } }}>
-        <Table.Root size="sm" variant="line" css={{ tableLayout: 'fixed', minWidth: 'max-content' }}>
+      <Box overflowX="auto" width="full" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-track': { bg: 'surface.muted' }, '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '4px' } }}>
+        <Table.Root size="sm" variant="outline" css={{ tableLayout: 'fixed', minWidth: 'max-content', borderCollapse: 'collapse' }} borderWidth="1px" borderColor="border.strong">
           <Table.Header>
-            <Table.Row bg="surface.muted">
+            <Table.Row bg="surface.muted" borderBottomWidth="2px" borderColor="border.strong">
               {columns.map((col) => (
                 <Table.ColumnHeader
                   key={col.key}
                   width={col.width}
                   whiteSpace="nowrap"
                   fontSize="xs"
-                  fontWeight="600"
-                  color="text.secondary"
+                  fontWeight="700"
+                  color="text.primary"
                   textTransform="uppercase"
-                  letterSpacing="0.05em"
-                  py={2}
-                  px={2}
+                  letterSpacing="0.03em"
+                  textAlign="center"
+                  py={3}
+                  px={3}
+                  borderRightWidth="1px"
+                  borderColor="border.strong"
+                  _last={{ borderRightWidth: '0' }}
                   cursor={col.sortable ? 'pointer' : undefined}
                   userSelect={col.sortable ? 'none' : undefined}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -192,7 +196,7 @@ export const DataTable = <T,>({
                       : undefined
                   }
                 >
-                  <HStack gap={1} py={0}>
+                  <HStack gap={1} py={0} justify="center">
                     <Text fontSize="xs">{col.header}</Text>
                     {sortKey === col.key && (
                       sortDir === 'asc' ? <LuArrowUp size={12} aria-hidden="true" /> : <LuArrowDown size={12} aria-hidden="true" />
@@ -200,31 +204,33 @@ export const DataTable = <T,>({
                   </HStack>
                 </Table.ColumnHeader>
               ))}
-              {actions && actions.length > 0 && <Table.ColumnHeader width="80px" fontSize="xs" fontWeight="600" py={2} px={2}>Actions</Table.ColumnHeader>}
+              {actions && actions.length > 0 && <Table.ColumnHeader width="90px" fontSize="xs" fontWeight="700" textAlign="center" py={3} px={3} borderLeftWidth="1px" borderColor="border.strong">Actions</Table.ColumnHeader>}
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {paginated.length === 0 ? (
               <Table.Row>
-                <Table.Cell colSpan={columns.length + (actions ? 1 : 0)} textAlign="center" py={8}>
+                <Table.Cell colSpan={columns.length + (actions ? 1 : 0)} textAlign="center" py={12}>
                   <Text color="text.muted">{emptyMessage}</Text>
                 </Table.Cell>
               </Table.Row>
             ) : (
               paginated.map((row, idx) => (
-                <Table.Row key={getRowKey(row, idx)} _hover={{ bg: 'surface.muted' }} borderBottomWidth="1px" borderColor="border">
+                <Table.Row key={getRowKey(row, idx)} _hover={{ bg: 'surface.muted' }} borderBottomWidth="1px" borderColor="border.strong">
                   {columns.map((col) => (
-                    <Table.Cell key={col.key} whiteSpace="nowrap" fontSize="xs" py={2} px={2} maxW={col.width} overflow="hidden" textOverflow="ellipsis">
-                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
+                    <Table.Cell key={col.key} fontSize="sm" textAlign="center" py={3} px={3} borderRightWidth="1px" borderColor="border.strong" _last={{ borderRightWidth: '0' }} verticalAlign="middle">
+                      <Box whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxW="100%">
+                        {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
+                      </Box>
                     </Table.Cell>
                   ))}
                   {actions && actions.length > 0 && (
-                    <Table.Cell py={2} px={2}>
-                      <HStack gap={1}>
+                    <Table.Cell py={3} px={3} borderLeftWidth="1px" borderColor="border.strong" textAlign="center">
+                      <HStack gap={1} justify="center">
                         {availableActions(row).map((action) => (
                             <Button
                               key={action.label}
-                              size="2xs"
+                              size="xs"
                               variant={action.variant === 'danger' ? 'outline' : 'ghost'}
                               colorPalette={action.variant === 'danger' ? 'red' : undefined}
                               onClick={() => handleAction(action, row)}

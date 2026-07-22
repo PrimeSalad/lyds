@@ -119,7 +119,7 @@ const YouthRecordListPage = () => {
       {
         key: 'row_number',
         header: 'No.',
-        width: '40px',
+        width: '50px',
         render: (row) => row.row_number ?? '—',
       },
     ];
@@ -129,25 +129,25 @@ const YouthRecordListPage = () => {
         {
           key: 'region',
           header: 'Region',
-          width: '80px',
+          width: '100px',
           render: () => 'MIMAROPA',
         },
         {
           key: 'province_name',
           header: 'Province',
-          width: '80px',
+          width: '100px',
           render: (row) => row.province_name ?? row.barangay?.province ?? '—',
         },
         {
           key: 'municipality_name',
           header: 'City/Municipality',
-          width: '80px',
+          width: '110px',
           render: (row) => row.municipality_name ?? row.barangay?.municipality ?? '—',
         },
         {
           key: 'barangay_name',
           header: 'Barangay',
-          width: '90px',
+          width: '110px',
           render: (row) => row.barangay_name ?? row.barangay?.name ?? '—',
         },
       );
@@ -157,84 +157,84 @@ const YouthRecordListPage = () => {
       {
         key: 'display_name',
         header: 'Name',
-        width: '140px',
+        width: '160px',
         render: (row) => (
-          <Button variant="ghost" p={0} h="auto" minH="auto" colorPalette="green" fontWeight="600" fontSize="xs" onClick={() => navigate(`/youth-records/${row.id}`)}>
+          <Button variant="ghost" p={0} h="auto" minH="auto" colorPalette="green" fontWeight="600" fontSize="sm" onClick={() => navigate(`/youth-records/${row.id}`)}>
             {row.display_name}
           </Button>
         ),
       },
-      { key: 'age_at_submission', header: 'Age', width: '35px' },
+      { key: 'age_at_submission', header: 'Age', width: '50px' },
       {
         key: 'birth_date',
         header: 'Birthday',
-        width: '80px',
+        width: '100px',
         render: (row) => formatBirthDate(row.birth_date),
       },
       {
         key: 'sex_label',
         header: 'Sex',
-        width: '60px',
+        width: '80px',
         render: (row) => row.sex_label ?? '—',
       },
       {
         key: 'civil_status_label',
         header: 'Civil Status',
-        width: '70px',
+        width: '90px',
         render: (row) => row.civil_status_label ?? '—',
       },
       {
         key: 'youth_classification_label',
         header: 'Classification',
-        width: '80px',
+        width: '100px',
         render: (row) => row.youth_classification_label ?? '—',
       },
       {
         key: 'youth_age_group_label',
         header: 'Age Group',
-        width: '70px',
+        width: '90px',
         render: (row) => row.youth_age_group_label ?? '—',
       },
       {
         key: 'email',
         header: 'Email',
-        width: '130px',
+        width: '160px',
         render: (row) => row.email ?? '—',
       },
       {
         key: 'contact_number',
         header: 'Contact',
-        width: '90px',
+        width: '110px',
         render: (row) => row.contact_number ?? '—',
       },
       {
         key: 'educational_attainment_label',
         header: 'Education',
-        width: '80px',
+        width: '100px',
         render: (row) => row.educational_attainment_label ?? '—',
       },
       {
         key: 'work_status_label',
         header: 'Work Status',
-        width: '70px',
+        width: '90px',
         render: (row) => row.work_status_label ?? '—',
       },
       {
         key: 'is_registered_voter',
         header: 'Voter?',
-        width: '45px',
+        width: '60px',
         render: (row) => boolLabel(row.is_registered_voter ?? null),
       },
       {
         key: 'voted_last_election',
         header: 'Election',
-        width: '55px',
+        width: '70px',
         render: (row) => boolLabel(row.voted_last_election ?? null),
       },
       {
         key: 'attended_kk_assembly',
         header: 'KK Assembly',
-        width: '70px',
+        width: '80px',
         render: (row) => row.attended_kk_assembly ? `${row.kk_assembly_count ?? 0}x` : 'No',
       },
     );

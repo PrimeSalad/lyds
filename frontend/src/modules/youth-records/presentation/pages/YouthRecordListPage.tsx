@@ -127,6 +127,12 @@ const YouthRecordListPage = () => {
     if (isAdmin) {
       result.push(
         {
+          key: 'region',
+          header: 'Region',
+          width: '100px',
+          render: () => 'MIMAROPA',
+        },
+        {
           key: 'province_name',
           header: 'Province',
           width: '100px',

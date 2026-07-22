@@ -4,6 +4,7 @@ export type YouthRecordStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' 
 
 export type YouthRecord = {
   id: string;
+  row_number?: number;
   display_name: string;
   birth_date: string;
   age_at_submission: number;
@@ -26,8 +27,10 @@ export type YouthRecord = {
   kk_assembly_count?: number;
   custom_values?: Record<string, unknown>;
   barangay_name?: string | null;
+  municipality_name?: string | null;
+  province_name?: string | null;
   category_name?: string | null;
-  barangay?: { name: string } | null;
+  barangay?: { name: string; municipality: string; province: string } | null;
   category?: { name: string } | null;
 };
 

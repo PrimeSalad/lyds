@@ -37,7 +37,7 @@ export const youthRecordRepository = {
     let query = supabaseAdmin
       .from('youth_profiles')
       .select(
-        '*, barangay:barangays!barangay_id(name), category:categories!category_id(name), '
+        '*, barangay:barangays!barangay_id(name, municipality, province), category:categories!category_id(name), '
         + 'sex:reference_options!sex_assigned_at_birth_id(label), '
         + 'civil:reference_options!civil_status_id(label), '
         + 'classification:reference_options!youth_classification_id(label), '
@@ -93,11 +93,18 @@ export const youthRecordRepository = {
       ? relation[0]?.label ?? null
       : relation?.label ?? null;
 
+    const barangayField = (relation: any, field: string) => Array.isArray(relation)
+      ? relation[0]?.[field] ?? null
+      : relation?.[field] ?? null;
+
     const totalItems = count ?? 0;
     return {
-      data: (data ?? []).map((record: any) => ({
+      data: (data ?? []).map((record: any, index: number) => ({
         ...record,
+        row_number: from + index + 1,
         barangay_name: relationName(record.barangay),
+        municipality_name: barangayField(record.barangay, 'municipality'),
+        province_name: barangayField(record.barangay, 'province'),
         category_name: relationName(record.category),
         sex_label: optionLabel(record.sex),
         civil_status_label: optionLabel(record.civil),

@@ -115,15 +115,36 @@ const YouthRecordListPage = () => {
   }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin]);
 
   const columns = useMemo(() => {
-    const result: Column<YouthRecord>[] = [];
+    const result: Column<YouthRecord>[] = [
+      {
+        key: 'row_number',
+        header: 'No.',
+        width: '50px',
+        render: (row) => row.row_number ?? '—',
+      },
+    ];
 
     if (isAdmin) {
-      result.push({
-        key: 'barangay_name',
-        header: 'Barangay',
-        width: '120px',
-        render: (row) => row.barangay_name ?? row.barangay?.name ?? '—',
-      });
+      result.push(
+        {
+          key: 'province_name',
+          header: 'Province',
+          width: '100px',
+          render: (row) => row.province_name ?? row.barangay?.province ?? '—',
+        },
+        {
+          key: 'municipality_name',
+          header: 'City/Municipality',
+          width: '120px',
+          render: (row) => row.municipality_name ?? row.barangay?.municipality ?? '—',
+        },
+        {
+          key: 'barangay_name',
+          header: 'Barangay',
+          width: '120px',
+          render: (row) => row.barangay_name ?? row.barangay?.name ?? '—',
+        },
+      );
     }
 
     result.push(

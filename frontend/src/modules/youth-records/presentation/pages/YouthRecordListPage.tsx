@@ -119,7 +119,7 @@ const YouthRecordListPage = () => {
       {
         key: 'row_number',
         header: 'No.',
-        width: '50px',
+        width: '60px',
         render: (row) => row.row_number ?? '—',
       },
     ];
@@ -129,25 +129,25 @@ const YouthRecordListPage = () => {
         {
           key: 'region',
           header: 'Region',
-          width: '100px',
+          width: '130px',
           render: () => 'MIMAROPA',
         },
         {
           key: 'province_name',
           header: 'Province',
-          width: '100px',
+          width: '130px',
           render: (row) => row.province_name ?? row.barangay?.province ?? '—',
         },
         {
           key: 'municipality_name',
           header: 'City/Municipality',
-          width: '110px',
+          width: '140px',
           render: (row) => row.municipality_name ?? row.barangay?.municipality ?? '—',
         },
         {
           key: 'barangay_name',
           header: 'Barangay',
-          width: '110px',
+          width: '140px',
           render: (row) => row.barangay_name ?? row.barangay?.name ?? '—',
         },
       );
@@ -157,84 +157,84 @@ const YouthRecordListPage = () => {
       {
         key: 'display_name',
         header: 'Name',
-        width: '160px',
+        width: '200px',
         render: (row) => (
           <Button variant="ghost" p={0} h="auto" minH="auto" colorPalette="green" fontWeight="600" fontSize="sm" onClick={() => navigate(`/youth-records/${row.id}`)}>
             {row.display_name}
           </Button>
         ),
       },
-      { key: 'age_at_submission', header: 'Age', width: '50px' },
+      { key: 'age_at_submission', header: 'Age', width: '60px' },
       {
         key: 'birth_date',
         header: 'Birthday',
-        width: '100px',
+        width: '120px',
         render: (row) => formatBirthDate(row.birth_date),
       },
       {
         key: 'sex_label',
         header: 'Sex',
-        width: '80px',
+        width: '100px',
         render: (row) => row.sex_label ?? '—',
       },
       {
         key: 'civil_status_label',
         header: 'Civil Status',
-        width: '90px',
+        width: '110px',
         render: (row) => row.civil_status_label ?? '—',
       },
       {
         key: 'youth_classification_label',
         header: 'Classification',
-        width: '100px',
+        width: '130px',
         render: (row) => row.youth_classification_label ?? '—',
       },
       {
         key: 'youth_age_group_label',
         header: 'Age Group',
-        width: '90px',
+        width: '110px',
         render: (row) => row.youth_age_group_label ?? '—',
       },
       {
         key: 'email',
         header: 'Email',
-        width: '160px',
+        width: '200px',
         render: (row) => row.email ?? '—',
       },
       {
         key: 'contact_number',
         header: 'Contact',
-        width: '110px',
+        width: '130px',
         render: (row) => row.contact_number ?? '—',
       },
       {
         key: 'educational_attainment_label',
         header: 'Education',
-        width: '100px',
+        width: '130px',
         render: (row) => row.educational_attainment_label ?? '—',
       },
       {
         key: 'work_status_label',
         header: 'Work Status',
-        width: '90px',
+        width: '110px',
         render: (row) => row.work_status_label ?? '—',
       },
       {
         key: 'is_registered_voter',
         header: 'Voter?',
-        width: '60px',
+        width: '70px',
         render: (row) => boolLabel(row.is_registered_voter ?? null),
       },
       {
         key: 'voted_last_election',
         header: 'Election',
-        width: '70px',
+        width: '80px',
         render: (row) => boolLabel(row.voted_last_election ?? null),
       },
       {
         key: 'attended_kk_assembly',
         header: 'KK Assembly',
-        width: '80px',
+        width: '100px',
         render: (row) => row.attended_kk_assembly ? `${row.kk_assembly_count ?? 0}x` : 'No',
       },
     );

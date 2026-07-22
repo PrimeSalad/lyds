@@ -157,7 +157,7 @@ const YouthRecordListPage = () => {
       {
         key: 'display_name',
         header: 'Name',
-        width: '200px',
+        width: '260px',
         render: (row) => (
           <Button variant="ghost" p={0} h="auto" minH="auto" colorPalette="green" fontWeight="600" fontSize="sm" onClick={() => navigate(`/youth-records/${row.id}`)}>
             {row.display_name}
@@ -186,7 +186,7 @@ const YouthRecordListPage = () => {
       {
         key: 'youth_classification_label',
         header: 'Classification',
-        width: '130px',
+        width: '170px',
         render: (row) => row.youth_classification_label ?? '—',
       },
       {
@@ -210,7 +210,7 @@ const YouthRecordListPage = () => {
       {
         key: 'educational_attainment_label',
         header: 'Education',
-        width: '130px',
+        width: '160px',
         render: (row) => row.educational_attainment_label ?? '—',
       },
       {

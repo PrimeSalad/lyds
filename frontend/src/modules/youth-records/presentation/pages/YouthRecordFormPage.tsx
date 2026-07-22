@@ -410,8 +410,7 @@ const YouthRecordFormPage = () => {
         if (!isDraft) await youthRecordApi.submit(recordId!);
         showToast.success('Record updated successfully');
       } else {
-        const res = await youthRecordApi.create(payload);
-        if (!isDraft) await youthRecordApi.submit(res.data.id);
+        await youthRecordApi.create({ ...payload, submit_on_create: !isDraft });
         showToast.success('Record created successfully');
       }
       navigate('/youth-records');

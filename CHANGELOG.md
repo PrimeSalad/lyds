@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed admin report exports so selected barangay/category/status filters reach the backend instead of always exporting all records.
 - Fixed youth record creation so dropdown placeholders are real empty options, the form submits category/reference UUIDs expected by the backend, and computed youth age group stores the correct reference option ID.
 - Fixed youth record edit submission by sending the required record version and hiding duplicated core profile fields from the category fields section.
+- Fixed add youth record Save & Submit so new records are created as submitted instead of being left as drafts when the follow-up submit request fails.
 - Fixed barangay creation defaults and seeded the official Boac, Marinduque barangay list.
 
 ### Security

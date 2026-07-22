@@ -79,6 +79,7 @@ export type CreateInput = {
   attended_kk_assembly: boolean;
   kk_assembly_count: number;
   custom_values?: Record<string, unknown>;
+  submit_on_create?: boolean;
 };
 
 export type UpdateInput = Partial<CreateInput> & { version: number };

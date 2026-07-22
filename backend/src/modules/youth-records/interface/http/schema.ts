@@ -21,6 +21,7 @@ export const createYouthRecordSchema = z.object({
   attended_kk_assembly: z.boolean().default(false),
   kk_assembly_count: z.number().int().min(0).default(0),
   custom_values: z.record(z.string(), z.unknown()).optional().default({}),
+  submit_on_create: z.boolean().optional().default(false),
 });
 
 export const updateYouthRecordSchema = createYouthRecordSchema.partial().extend({

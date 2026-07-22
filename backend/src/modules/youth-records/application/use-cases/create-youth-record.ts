@@ -6,40 +6,45 @@ import { referenceDataRepository } from '../../../reference-data/infrastructure/
 import { API_ERRORS } from '../../../../config/api-error';
 
 export const createYouthRecord = async (input: any, authContext: any) => {
+  const { submit_on_create, ...profileInput } = input;
+
   // Validate assembly rules
-  const assemblyError = validateAssemblyRules(input.attended_kk_assembly, input.kk_assembly_count);
+  const assemblyError = validateAssemblyRules(profileInput.attended_kk_assembly, profileInput.kk_assembly_count);
   if (assemblyError) {
     throw API_ERRORS.validation(assemblyError);
   }
 
   // Force barangay_id for SK_OFFICIAL
-  const barangayId = authContext.role === 'SK_OFFICIAL' ? authContext.barangayId : input.barangay_id;
+  const barangayId = authContext.role === 'SK_OFFICIAL' ? authContext.barangayId : profileInput.barangay_id;
   if (!barangayId) {
     throw API_ERRORS.validation('Barangay ID is required.');
   }
 
-  const age = computeAge(input.birth_date);
+  const age = computeAge(profileInput.birth_date);
   const ageGroupCode = computeAgeGroup(age);
   const ageGroup = ageGroupCode
     ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)
     : null;
 
-  let displayName = input.display_name;
-  if (!displayName && input.first_name && input.last_name) {
-    displayName = `${input.first_name} ${input.last_name}`;
+  let displayName = profileInput.display_name;
+  if (!displayName && profileInput.first_name && profileInput.last_name) {
+    displayName = `${profileInput.first_name} ${profileInput.last_name}`;
   }
 
-  const duplicates = await youthRecordRepository.checkDuplicates(barangayId, displayName, input.birth_date);
+  const duplicates = await youthRecordRepository.checkDuplicates(barangayId, displayName, profileInput.birth_date);
+  const submittedAt = submit_on_create ? new Date().toISOString() : null;
 
   const recordData = {
-    ...input,
+    ...profileInput,
     barangay_id: barangayId,
     display_name: displayName,
     age_at_submission: age,
     youth_age_group_id: ageGroup?.id ?? null,
-    status: 'DRAFT',
+    status: submit_on_create ? 'SUBMITTED' : 'DRAFT',
     created_by: authContext.profileId,
     updated_by: authContext.profileId,
+    submitted_by: submit_on_create ? authContext.profileId : null,
+    submitted_at: submittedAt,
   };
 
   const record = await youthRecordRepository.createRecord(recordData);

@@ -81,6 +81,7 @@ const CategoryListPage = () => {
             </Card.Header>
             <Card.Body>
               <VStack align="start" gap={1}>
+                <Text fontSize="sm">Year: {cat.filing_year}</Text>
                 <Text fontSize="sm">Permission: {cat.permission_mode}</Text>
                 <Text fontSize="sm">Records: {cat.record_count || 0}</Text>
                 <Text fontSize="sm">Fields: {cat.field_count || 0}</Text>

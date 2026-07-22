@@ -6,6 +6,7 @@ export interface Category {
   name: string;
   description: string;
   record_type: string;
+  filing_year: number;
   permission_mode: 'SK_FILLABLE' | 'SK_VIEW_ONLY' | 'ADMIN_ONLY';
   allow_sk_export: boolean;
   is_active: boolean;
@@ -21,6 +22,7 @@ export interface CreateCategoryInput {
   name: string;
   description: string | null;
   record_type: string;
+  filing_year: number;
   permission_mode: string;
   allow_sk_export: boolean;
 }

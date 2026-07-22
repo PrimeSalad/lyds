@@ -18,6 +18,7 @@ export interface ListRecordsFilters {
   categoryId?: string;
   status?: RecordStatus;
   search?: string;
+  filingYear?: number;
   page?: number;
   pageSize?: number;
   sort?: {
@@ -35,7 +36,16 @@ export const youthRecordRepository = {
 
     let query = supabaseAdmin
       .from('youth_profiles')
-      .select('*, barangay:barangays!barangay_id(name), category:categories!category_id(name)', { count: 'exact' })
+      .select(
+        '*, barangay:barangays!barangay_id(name), category:categories!category_id(name), '
+        + 'sex:reference_options!sex_assigned_at_birth_id(label), '
+        + 'civil:reference_options!civil_status_id(label), '
+        + 'classification:reference_options!youth_classification_id(label), '
+        + 'age_group:reference_options!youth_age_group_id(label), '
+        + 'education:reference_options!educational_attainment_id(label), '
+        + 'work:reference_options!work_status_id(label)',
+        { count: 'exact' }
+      )
       .is('deleted_at', null);
 
     if (filters.barangayId) {
@@ -49,6 +59,18 @@ export const youthRecordRepository = {
     }
     if (filters.search) {
       query = query.ilike('display_name', `%${filters.search}%`);
+    }
+    if (filters.filingYear) {
+      const { data: yearCategories } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('filing_year', filters.filingYear)
+        .is('deleted_at', null);
+      const categoryIds = (yearCategories ?? []).map((c: { id: string }) => c.id);
+      if (categoryIds.length === 0) {
+        return { data: [], meta: { page, pageSize, totalItems: 0, totalPages: 1 } };
+      }
+      query = query.in('category_id', categoryIds);
     }
     if (filters.sort?.field === 'barangay_name') {
       query = query
@@ -67,12 +89,22 @@ export const youthRecordRepository = {
       ? relation[0]?.name ?? null
       : relation?.name ?? null;
 
+    const optionLabel = (relation: any) => Array.isArray(relation)
+      ? relation[0]?.label ?? null
+      : relation?.label ?? null;
+
     const totalItems = count ?? 0;
     return {
       data: (data ?? []).map((record: any) => ({
         ...record,
         barangay_name: relationName(record.barangay),
         category_name: relationName(record.category),
+        sex_label: optionLabel(record.sex),
+        civil_status_label: optionLabel(record.civil),
+        youth_classification_label: optionLabel(record.classification),
+        youth_age_group_label: optionLabel(record.age_group),
+        educational_attainment_label: optionLabel(record.education),
+        work_status_label: optionLabel(record.work),
       })),
       meta: {
         page,

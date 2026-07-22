@@ -16,6 +16,7 @@ const CategoryFormPage = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [recordType, setRecordType] = useState('YOUTH_PROFILE');
+  const [filingYear, setFilingYear] = useState(new Date().getFullYear());
   const [permissionMode, setPermissionMode] = useState('SK_FILLABLE');
   const [allowSkExport, setAllowSkExport] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,7 @@ const CategoryFormPage = () => {
           setName(c.name);
           setDescription(c.description || '');
           setRecordType(c.record_type);
+          setFilingYear(c.filing_year);
           setPermissionMode(c.permission_mode);
           setAllowSkExport(c.allow_sk_export);
         })
@@ -52,6 +54,7 @@ const CategoryFormPage = () => {
         name: name.trim(),
         description: description.trim() || null,
         record_type: recordType.trim() || 'YOUTH_PROFILE',
+        filing_year: filingYear,
         permission_mode: permissionMode,
         allow_sk_export: allowSkExport,
       };
@@ -114,6 +117,15 @@ const CategoryFormPage = () => {
             onChange={setRecordType}
             required
             placeholder="YOUTH_PROFILE"
+          />
+          <TextField
+            label="Filing Year"
+            name="filingYear"
+            type="number"
+            value={String(filingYear)}
+            onChange={(val) => setFilingYear(Number(val))}
+            required
+            placeholder="e.g. 2026"
           />
           <SelectField
             label="Permission Mode"

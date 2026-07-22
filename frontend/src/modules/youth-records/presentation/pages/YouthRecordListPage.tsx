@@ -1,23 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, HStack, Input, NativeSelect, Text } from '@chakra-ui/react';
+import { Box, Button, Dialog, HStack, IconButton, Input, NativeSelect, Portal, Text } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
-import { LuPlus } from 'react-icons/lu';
+import { LuCopy, LuPlus, LuX } from 'react-icons/lu';
 import { type RootState } from '../../../../redux/store';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { PageHeader } from '../../../../shared/components/PageHeader';
-import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
 import {
   youthRecordApi,
   type YouthRecord,
-  type YouthRecordStatus,
 } from '../../infrastructure/youth-record-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 
 type SortValue = 'barangay-asc' | 'barangay-desc' | 'newest' | 'oldest' | 'name-asc' | 'name-desc';
+
+const formatBirthDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${month}/${day}/${year}`;
+};
+
+const boolLabel = (val: boolean | null | undefined) => (val === true ? 'Yes' : val === false ? 'No' : '—');
 
 const YouthRecordListPage = () => {
   const navigate = useNavigate();
@@ -31,9 +39,20 @@ const YouthRecordListPage = () => {
   const [status, setStatus] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [barangayId, setBarangayId] = useState('');
+  const [filingYear, setFilingYear] = useState('');
   const [sort, setSort] = useState<SortValue>(isAdmin ? 'barangay-asc' : 'newest');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [copyTargetYear, setCopyTargetYear] = useState('');
+  const [copying, setCopying] = useState(false);
+
+  const uniqueYears = useMemo(() => {
+    const years = categories
+      .map((c) => c.filing_year)
+      .filter((y): y is number => y != null);
+    return [...new Set(years)].sort((a, b) => b - a);
+  }, [categories]);
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -76,6 +95,7 @@ const YouthRecordListPage = () => {
           status,
           category_id: categoryId,
           barangay_id: isAdmin ? barangayId : undefined,
+          filing_year: filingYear ? Number(filingYear) : undefined,
           sortField,
           sortDir,
         });
@@ -92,42 +112,105 @@ const YouthRecordListPage = () => {
       }
     }, search ? 300 : 0);
     return () => window.clearTimeout(delay);
-  }, [search, status, categoryId, barangayId, sort, page, isAdmin]);
+  }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin]);
 
   const columns = useMemo(() => {
-    const result: Column<YouthRecord>[] = [
+    const result: Column<YouthRecord>[] = [];
+
+    if (isAdmin) {
+      result.push({
+        key: 'barangay_name',
+        header: 'Barangay',
+        width: '120px',
+        render: (row) => row.barangay_name ?? row.barangay?.name ?? '—',
+      });
+    }
+
+    result.push(
       {
         key: 'display_name',
-        header: 'Youth',
+        header: 'Name',
         render: (row) => (
           <Button variant="ghost" p={0} h="auto" minH="auto" colorPalette="green" fontWeight="650" onClick={() => navigate(`/youth-records/${row.id}`)}>
             {row.display_name}
           </Button>
         ),
       },
-      { key: 'age_at_submission', header: 'Age', width: '72px' },
-    ];
-
-    if (isAdmin) {
-      result.push({
-        key: 'barangay_name',
-        header: 'Barangay',
-        render: (row) => row.barangay_name ?? row.barangay?.name ?? 'Not assigned',
-      });
-    }
-
-    result.push(
+      { key: 'age_at_submission', header: 'Age', width: '60px' },
       {
-        key: 'status',
-        header: 'Status',
-        render: (row) => <StatusBadge status={row.status as YouthRecordStatus} />,
+        key: 'birth_date',
+        header: 'Birthday',
+        width: '100px',
+        render: (row) => formatBirthDate(row.birth_date),
       },
       {
-        key: 'created_at',
-        header: 'Created',
-        render: (row) => new Intl.DateTimeFormat('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(row.created_at)),
+        key: 'sex_label',
+        header: 'Sex Assigned at Birth',
+        width: '130px',
+        render: (row) => row.sex_label ?? '—',
+      },
+      {
+        key: 'civil_status_label',
+        header: 'Civil Status',
+        width: '110px',
+        render: (row) => row.civil_status_label ?? '—',
+      },
+      {
+        key: 'youth_classification_label',
+        header: 'Youth Classification',
+        width: '140px',
+        render: (row) => row.youth_classification_label ?? '—',
+      },
+      {
+        key: 'youth_age_group_label',
+        header: 'Youth Age Group',
+        width: '120px',
+        render: (row) => row.youth_age_group_label ?? '—',
+      },
+      {
+        key: 'email',
+        header: 'E-mail Address',
+        width: '160px',
+        render: (row) => row.email ?? '—',
+      },
+      {
+        key: 'contact_number',
+        header: 'Contact No.',
+        width: '120px',
+        render: (row) => row.contact_number ?? '—',
+      },
+      {
+        key: 'educational_attainment_label',
+        header: 'Highest Educational Attainment',
+        width: '160px',
+        render: (row) => row.educational_attainment_label ?? '—',
+      },
+      {
+        key: 'work_status_label',
+        header: 'Work Status',
+        width: '110px',
+        render: (row) => row.work_status_label ?? '—',
+      },
+      {
+        key: 'is_registered_voter',
+        header: 'Registered Voter?',
+        width: '110px',
+        render: (row) => boolLabel(row.is_registered_voter ?? null),
+      },
+      {
+        key: 'voted_last_election',
+        header: 'Voted Last Election',
+        width: '120px',
+        render: (row) => boolLabel(row.voted_last_election ?? null),
+      },
+      {
+        key: 'attended_kk_assembly',
+        header: 'Attended KK Assembly?',
+        width: '150px',
+        render: (row) => row.attended_kk_assembly ? `Yes (${row.kk_assembly_count ?? 0}x)` : 'No',
       },
     );
+
     return result;
   }, [isAdmin, navigate]);
 
@@ -138,6 +221,34 @@ const YouthRecordListPage = () => {
 
   const resetPage = () => setPage(1);
 
+  const handleCopy = async () => {
+    if (!filingYear || !copyTargetYear) return;
+    const sourceCategories = categories.filter((c) => c.filing_year === Number(filingYear));
+    const targetCategories = categories.filter((c) => c.filing_year === Number(copyTargetYear));
+    if (sourceCategories.length === 0 || targetCategories.length === 0) {
+      showToast.error({ title: 'Source or target year has no category' });
+      return;
+    }
+    setCopying(true);
+    try {
+      let totalCopied = 0;
+      for (const sourceCat of sourceCategories) {
+        const targetCat = targetCategories.find((c) => c.name === sourceCat.name && c.filing_year === Number(copyTargetYear));
+        if (targetCat) {
+          const res = await youthRecordApi.copyRecords(sourceCat.id, targetCat.id);
+          totalCopied += res.data.copied;
+        }
+      }
+      showToast.success({ title: `${totalCopied} record${totalCopied === 1 ? '' : 's'} copied to ${copyTargetYear}` });
+      setCopyDialogOpen(false);
+      setCopyTargetYear('');
+    } catch (error) {
+      showToast.error({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Try again.' });
+    } finally {
+      setCopying(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -146,9 +257,16 @@ const YouthRecordListPage = () => {
           ? 'Review and compare youth records by barangay, status, and category.'
           : 'Create drafts, submit records, and monitor returned items.'}
         actions={(
-          <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
-            <LuPlus /> Add Record
-          </Button>
+          <HStack gap={2}>
+            {isAdmin && filingYear && (
+              <Button variant="outline" colorPalette="blue" onClick={() => setCopyDialogOpen(true)}>
+                <LuCopy /> Copy to Year
+              </Button>
+            )}
+            <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
+              <LuPlus /> Add Record
+            </Button>
+          </HStack>
         )}
       />
 
@@ -182,10 +300,17 @@ const YouthRecordListPage = () => {
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
+          <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 180px' }} maxW={{ lg: '200px' }}>
+            <NativeSelect.Field aria-label="Filter by year" value={filingYear} onChange={(event) => { setFilingYear(event.target.value); resetPage(); }} minH="44px">
+              <option value="">All Years</option>
+              {uniqueYears.map((year) => <option key={year} value={year}>{year}</option>)}
+            </NativeSelect.Field>
+            <NativeSelect.Indicator />
+          </NativeSelect.Root>
           <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 210px' }} maxW={{ lg: '240px' }}>
             <NativeSelect.Field aria-label="Filter by category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); resetPage(); }} minH="44px">
               <option value="">All Categories</option>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.filing_year ? ` (${category.filing_year})` : ''}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
@@ -219,6 +344,49 @@ const YouthRecordListPage = () => {
           onPageChange: setPage,
         }}
       />
+
+      <Dialog.Root open={copyDialogOpen} onOpenChange={(details) => setCopyDialogOpen(details.open)}>
+        <Portal>
+          <Dialog.Backdrop bg="rgba(0, 0, 0, 0.58)" />
+          <Dialog.Positioner>
+            <Dialog.Content maxW="440px">
+              <Dialog.Header>
+                <Dialog.Title>Copy records from {filingYear}</Dialog.Title>
+              </Dialog.Header>
+              <Dialog.Body>
+                <Text color="text.secondary" mb={4}>
+                  All records from the current year's categories will be copied as DRAFT to the target year's matching categories.
+                </Text>
+                <NativeSelect.Root>
+                  <NativeSelect.Field aria-label="Target year" value={copyTargetYear} onChange={(e) => setCopyTargetYear(e.target.value)} minH="44px">
+                    <option value="">Select target year</option>
+                    {uniqueYears.filter((y) => y !== Number(filingYear)).map((year) => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Button variant="outline" onClick={() => setCopyDialogOpen(false)} disabled={copying}>Cancel</Button>
+                <Button
+                  colorPalette="blue"
+                  onClick={handleCopy}
+                  loading={copying}
+                  disabled={!copyTargetYear}
+                >
+                  Copy to {copyTargetYear || '...'}
+                </Button>
+              </Dialog.Footer>
+              <Dialog.CloseTrigger asChild>
+                <IconButton aria-label="Close" variant="ghost" size="sm" position="absolute" top={3} right={3}>
+                  <LuX />
+                </IconButton>
+              </Dialog.CloseTrigger>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
+      </Dialog.Root>
     </DashboardLayout>
   );
 };

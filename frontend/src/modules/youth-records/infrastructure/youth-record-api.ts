@@ -3,23 +3,27 @@ import { apiClient } from '../../../infrastructure/api-client';
 export type YouthRecordStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'ARCHIVED';
 
 export type YouthRecord = {
-  id: string; 
-  display_name: string; 
-  birth_date: string; 
+  id: string;
+  display_name: string;
+  birth_date: string;
   age_at_submission: number;
   version: number;
   status: YouthRecordStatus;
-  barangay_id: string; 
-  category_id: string; 
+  barangay_id: string;
+  category_id: string;
   created_at: string;
-  sex_label?: string; 
-  civil_status_label?: string; 
+  sex_label?: string;
+  civil_status_label?: string;
   youth_classification_label?: string;
-  youth_age_group_label?: string; 
-  educational_attainment_label?: string; 
+  youth_age_group_label?: string;
+  educational_attainment_label?: string;
   work_status_label?: string;
-  email?: string; 
+  email?: string;
   contact_number?: string;
+  is_registered_voter?: boolean;
+  voted_last_election?: boolean;
+  attended_kk_assembly?: boolean;
+  kk_assembly_count?: number;
   custom_values?: Record<string, unknown>;
   barangay_name?: string | null;
   category_name?: string | null;
@@ -61,6 +65,7 @@ export interface ListParams {
   status?: string;
   category_id?: string;
   barangay_id?: string;
+  filing_year?: number;
   sortField?: 'created_at' | 'display_name' | 'birth_date' | 'status' | 'barangay_name';
   sortDir?: 'asc' | 'desc';
 }
@@ -101,6 +106,7 @@ export const youthRecordApi = {
     if (params.barangay_id) query.append('barangayId', params.barangay_id);
     if (params.sortField) query.append('sortField', params.sortField);
     if (params.sortDir) query.append('sortDir', params.sortDir);
+    if (params.filing_year) query.append('filingYear', params.filing_year.toString());
 
     const res = await apiClient.request<{ data: YouthRecord[]; meta: any }>(`/youth-records?${query.toString()}`);
     return res;
@@ -149,5 +155,12 @@ export const youthRecordApi = {
 
   async getHistory(id: string): Promise<{ data: AuditLog[] }> {
     return await apiClient.request<{ data: AuditLog[] }>(`/youth-records/${id}/history`);
+  },
+
+  async copyRecords(sourceCategoryId: string, targetCategoryId: string): Promise<{ data: { copied: number } }> {
+    return await apiClient.request<{ data: { copied: number } }>('/youth-records/copy', {
+      method: 'POST',
+      body: JSON.stringify({ source_category_id: sourceCategoryId, target_category_id: targetCategoryId }),
+    });
   },
 };

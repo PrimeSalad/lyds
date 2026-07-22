@@ -38,8 +38,14 @@ export const listYouthRecordsQuerySchema = z.object({
   categoryId: z.string().uuid().optional(),
   status: z.enum(['DRAFT', 'SUBMITTED', 'RETURNED', 'APPROVED', 'ARCHIVED']).optional(),
   search: z.string().optional(),
+  filingYear: z.coerce.number().int().min(2000).max(2100).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
   sortField: z.enum(['created_at', 'display_name', 'birth_date', 'status', 'barangay_name']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
+});
+
+export const copyYouthRecordsSchema = z.object({
+  source_category_id: z.string().uuid(),
+  target_category_id: z.string().uuid(),
 });

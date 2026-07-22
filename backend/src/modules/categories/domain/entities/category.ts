@@ -18,6 +18,7 @@ export interface Category {
   name: string;
   description: string | null;
   record_type: string;
+  filing_year: number;
   status: CategoryStatus;
   permission_mode: CategoryPermissionMode;
   allow_sk_export: boolean;

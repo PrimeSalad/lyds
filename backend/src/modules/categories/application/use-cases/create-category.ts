@@ -13,5 +13,6 @@ export const createCategory = async (input: CreateCategoryInput, profileId: stri
     ...input,
     status: 'PUBLISHED',
     created_by: profileId,
+    updated_by: profileId,
   });
 };

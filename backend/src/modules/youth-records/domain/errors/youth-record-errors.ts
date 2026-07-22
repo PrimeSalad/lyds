@@ -4,4 +4,5 @@ export const YouthRecordErrors = {
   VERSION_CONFLICT: { status: 409, code: 'VERSION_CONFLICT', message: 'The record was updated by someone else. Please refresh and try again.' },
   BARANGAY_MISMATCH: { status: 403, code: 'BARANGAY_MISMATCH', message: 'You do not have permission to access records for this barangay.' },
   CATEGORY_PERMISSION_DENIED: { status: 403, code: 'CATEGORY_PERMISSION_DENIED', message: 'You do not have permission to use this category.' },
+  FORBIDDEN: { status: 403, code: 'FORBIDDEN', message: 'Administrator access required.' },
 } as const;

@@ -10,6 +10,7 @@ youthRecordRouter.use(requireAuth);
 
 youthRecordRouter.get('/', requireBarangayAccess, youthRecordController.list);
 youthRecordRouter.post('/', requireBarangayAccess, youthRecordController.create);
+youthRecordRouter.post('/copy', requireAdmin, youthRecordController.copy);
 youthRecordRouter.get('/:recordId', requireBarangayAccess, youthRecordController.getById);
 youthRecordRouter.patch('/:recordId', requireBarangayAccess, youthRecordController.update);
 youthRecordRouter.post('/:recordId/submit', requireBarangayAccess, youthRecordController.submit);

@@ -65,6 +65,12 @@ const BarangayListPage = () => {
         }
       },
       variant: 'danger',
+      confirm: {
+        title: (row) => `Deactivate ${row.name}?`,
+        description: (row) => `${row.name} will no longer be available for new records or account assignments. Existing records will remain unchanged.`,
+        confirmLabel: 'Deactivate',
+        variant: 'danger',
+      },
       show: (row) => isAdmin && row.is_active,
     },
     {
@@ -77,6 +83,11 @@ const BarangayListPage = () => {
         } catch {
           showToast.error('Failed to activate');
         }
+      },
+      confirm: {
+        title: (row) => `Activate ${row.name}?`,
+        description: (row) => `${row.name} will become available for records and account assignments.`,
+        confirmLabel: 'Activate',
       },
       show: (row) => isAdmin && !row.is_active,
     },

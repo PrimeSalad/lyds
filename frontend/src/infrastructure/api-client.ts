@@ -17,8 +17,14 @@ export const apiClient = {
     });
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `HTTP ${res.status}`);
+      const error = await res.json().catch(() => ({ message: 'Request failed' })) as {
+        message?: string;
+        error?: { message?: string } | string;
+        errors?: Array<{ message?: string }>;
+      };
+      const nestedMessage = typeof error.error === 'string' ? error.error : error.error?.message;
+      const message = error.message || nestedMessage || error.errors?.[0]?.message;
+      throw new Error(message || `Request failed with status ${res.status}`);
     }
 
     if (res.status === 204) return undefined as T;

@@ -10,6 +10,7 @@ import { store } from './redux/store';
 import { ErrorPage } from './ui/components/error-page';
 import { I18nProvider } from './utilities/i18n';
 import { reportError } from './utilities/error-reporting';
+import { AppToaster } from './shared/components/AppToaster';
 import './ui/styles/index.css';
 
 export const ErrorFallback = ({ error }: FallbackProps) => {
@@ -27,6 +28,7 @@ const renderApp = (container: HTMLElement) => {
             <I18nProvider>
               <ErrorBoundary fallbackRender={ErrorFallback}>
                 <App />
+                <AppToaster />
               </ErrorBoundary>
             </I18nProvider>
           </DataProvider>

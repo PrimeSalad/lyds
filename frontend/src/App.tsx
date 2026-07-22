@@ -1,9 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, BrowserRouter } from 'react-router';
+import { Routes, Route, BrowserRouter, Link as RouterLink } from 'react-router';
 import { AuthGuard } from './modules/auth/presentation/components/AuthGuard';
 import LoginPage from './modules/auth/presentation/pages/LoginPage';
 import DashboardPage from './modules/dashboard/presentation/pages/DashboardPage';
-import { Spinner, Box } from '@chakra-ui/react';
+import { Spinner, Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
+import { LuHouse } from 'react-icons/lu';
 
 const BarangayListPage = lazy(() => import('./modules/barangays/presentation/pages/BarangayListPage'));
 const BarangayFormPage = lazy(() => import('./modules/barangays/presentation/pages/BarangayFormPage'));
@@ -29,10 +30,16 @@ const PageLoader = () => (
 );
 
 const NotFoundPage = () => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
-    <h1>404</h1>
-    <p>Page not found</p>
-  </div>
+  <Box minH="100dvh" display="grid" placeItems="center" bg="page.bg" px={4}>
+    <VStack textAlign="center" gap={4} maxW="md">
+      <Text color="primary.700" fontWeight="800" fontSize="sm">ERROR 404</Text>
+      <Heading as="h1" fontSize={{ base: '2xl', md: '3xl' }}>Page not found</Heading>
+      <Text color="text.secondary">The page may have moved or the address may be incorrect.</Text>
+      <Button asChild colorPalette="green" mt={2}>
+        <RouterLink to="/"><LuHouse />Return to Dashboard</RouterLink>
+      </Button>
+    </VStack>
+  </Box>
 );
 
 const Lazy = ({ children }: { children: React.ReactNode }) => (

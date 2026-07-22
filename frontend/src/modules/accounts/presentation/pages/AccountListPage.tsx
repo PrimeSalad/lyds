@@ -58,6 +58,12 @@ const AccountListPage = () => {
         }
       },
       variant: 'danger',
+      confirm: {
+        title: (row) => `Deactivate ${row.full_name}?`,
+        description: 'This account will immediately lose access to the system. It can be reactivated later.',
+        confirmLabel: 'Deactivate',
+        variant: 'danger',
+      },
       show: (row) => row.account_status === 'ACTIVE',
     },
     {
@@ -70,6 +76,11 @@ const AccountListPage = () => {
         } catch {
           showToast.error('Failed to activate');
         }
+      },
+      confirm: {
+        title: (row) => `Activate ${row.full_name}?`,
+        description: 'This account will regain access using its existing credentials and barangay assignment.',
+        confirmLabel: 'Activate',
       },
       show: (row) => row.account_status === 'INACTIVE',
     },

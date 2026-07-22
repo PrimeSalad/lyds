@@ -11,6 +11,12 @@ interface TextFieldProps {
   placeholder?: string;
   helpText?: string;
   disabled?: boolean;
+  readOnly?: boolean;
+  autoComplete?: string;
+  min?: number;
+  max?: number;
+  onBlur?: () => void;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 export const TextField = ({
@@ -24,9 +30,15 @@ export const TextField = ({
   placeholder,
   helpText,
   disabled,
+  readOnly,
+  autoComplete,
+  min,
+  max,
+  onBlur,
+  ref,
 }: TextFieldProps) => (
   <Field.Root invalid={!!error} required={required}>
-    <Field.Label>{label}</Field.Label>
+    <Field.Label fontWeight="600" color="text.primary">{label}</Field.Label>
     <Input
       name={name}
       type={type}
@@ -34,6 +46,17 @@ export const TextField = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
+      readOnly={readOnly}
+      autoComplete={autoComplete}
+      min={min}
+      max={max}
+      onBlur={onBlur}
+      ref={ref}
+      minH="44px"
+      bg={readOnly ? 'surface.muted' : 'surface'}
+      borderColor="border.strong"
+      _hover={{ borderColor: readOnly ? 'border.strong' : 'gray.400' }}
+      _focusVisible={{ borderColor: 'primary.600', boxShadow: '0 0 0 1px var(--chakra-colors-primary-600)' }}
     />
     {helpText && !error && <Field.HelperText>{helpText}</Field.HelperText>}
     {error && <Field.ErrorText>{error}</Field.ErrorText>}
@@ -49,6 +72,8 @@ interface TextareaFieldProps {
   required?: boolean;
   placeholder?: string;
   rows?: number;
+  onBlur?: () => void;
+  ref?: React.Ref<HTMLTextAreaElement>;
 }
 
 export const TextareaField = ({
@@ -60,15 +85,21 @@ export const TextareaField = ({
   required,
   placeholder,
   rows = 3,
+  onBlur,
+  ref,
 }: TextareaFieldProps) => (
   <Field.Root invalid={!!error} required={required}>
-    <Field.Label>{label}</Field.Label>
+    <Field.Label fontWeight="600" color="text.primary">{label}</Field.Label>
     <Textarea
       name={name}
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
+      onBlur={onBlur}
+      ref={ref}
+      borderColor="border.strong"
+      _focusVisible={{ borderColor: 'primary.600', boxShadow: '0 0 0 1px var(--chakra-colors-primary-600)' }}
     />
     {error && <Field.ErrorText>{error}</Field.ErrorText>}
   </Field.Root>
@@ -84,6 +115,9 @@ interface SelectFieldProps {
   required?: boolean;
   placeholder?: string;
   disabled?: boolean;
+  helpText?: string;
+  onBlur?: () => void;
+  ref?: React.Ref<HTMLSelectElement>;
 }
 
 export const SelectField = ({
@@ -96,14 +130,22 @@ export const SelectField = ({
   required,
   placeholder,
   disabled,
+  helpText,
+  onBlur,
+  ref,
 }: SelectFieldProps) => (
   <Field.Root invalid={!!error} required={required}>
-    <Field.Label>{label}</Field.Label>
+    <Field.Label fontWeight="600" color="text.primary">{label}</Field.Label>
     <NativeSelect.Root disabled={disabled}>
       <NativeSelect.Field
         name={name}
         value={value ?? ''}
         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+        onBlur={onBlur}
+        ref={ref}
+        minH="44px"
+        borderColor="border.strong"
+        bg="surface"
       >
         {placeholder && <option value="" disabled>{placeholder}</option>}
         {options.map((opt) => (
@@ -114,6 +156,7 @@ export const SelectField = ({
       </NativeSelect.Field>
       <NativeSelect.Indicator />
     </NativeSelect.Root>
+    {helpText && !error && <Field.HelperText>{helpText}</Field.HelperText>}
     {error && <Field.ErrorText>{error}</Field.ErrorText>}
   </Field.Root>
 );
@@ -138,6 +181,8 @@ export const CheckboxField = ({
       name={name}
       checked={checked}
       onCheckedChange={(e) => onChange(!!e.checked)}
+      colorPalette="green"
+      minH="44px"
     >
       <Checkbox.HiddenInput />
       <Checkbox.Control />

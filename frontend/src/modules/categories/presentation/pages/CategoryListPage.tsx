@@ -5,6 +5,7 @@ import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
 import { categoryApi, type Category } from '../../infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const colorMap: Record<string, string> = {
@@ -19,6 +20,7 @@ const CategoryListPage = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingAction, setPendingAction] = useState<{ category: Category; action: 'publish' | 'archive' } | null>(null);
 
   const loadCategories = async () => {
     try {
@@ -89,10 +91,10 @@ const CategoryListPage = () => {
                 <Button size="sm" variant="outline" onClick={() => navigate(`/categories/${cat.id}/edit`)}>Edit</Button>
                 <Button size="sm" variant="outline" onClick={() => navigate(`/categories/${cat.id}/fields`)}>Fields</Button>
                 {cat.status === 'DRAFT' && (
-                  <Button size="sm" colorPalette="green" onClick={() => handlePublish(cat.id)}>Publish</Button>
+                  <Button size="sm" colorPalette="green" onClick={() => setPendingAction({ category: cat, action: 'publish' })}>Publish</Button>
                 )}
                 {cat.status !== 'ARCHIVED' && (
-                  <Button size="sm" colorPalette="red" variant="outline" onClick={() => handleArchive(cat.id)}>Archive</Button>
+                  <Button size="sm" colorPalette="red" variant="outline" onClick={() => setPendingAction({ category: cat, action: 'archive' })}>Archive</Button>
                 )}
               </HStack>
             </Card.Footer>
@@ -102,6 +104,19 @@ const CategoryListPage = () => {
       {!loading && categories.length === 0 && (
         <Text color="gray.500" textAlign="center" mt={8}>No categories found.</Text>
       )}
+      <ConfirmDialog
+        open={!!pendingAction}
+        onOpenChange={({ open }) => { if (!open) setPendingAction(null); }}
+        title={pendingAction?.action === 'publish' ? 'Publish this category?' : 'Archive this category?'}
+        description={pendingAction?.action === 'publish'
+          ? `${pendingAction.category.name} will become available for new youth records. Review its fields before continuing.`
+          : `${pendingAction?.category.name ?? 'This category'} will no longer be available for new records. Existing records will remain accessible.`}
+        confirmLabel={pendingAction?.action === 'publish' ? 'Publish' : 'Archive'}
+        variant={pendingAction?.action === 'archive' ? 'danger' : 'default'}
+        onConfirm={() => pendingAction?.action === 'publish'
+          ? handlePublish(pendingAction.category.id)
+          : pendingAction ? handleArchive(pendingAction.category.id) : undefined}
+      />
     </DashboardLayout>
   );
 };

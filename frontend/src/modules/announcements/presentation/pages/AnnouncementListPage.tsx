@@ -12,6 +12,7 @@ import {
   type AnnouncementAudience,
 } from '../../infrastructure/announcement-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 
 const audienceOptions = [
   { value: 'ALL', label: 'Everyone' },
@@ -37,6 +38,7 @@ const AnnouncementListPage = () => {
   const [audience, setAudience] = useState<AnnouncementAudience>('ALL');
   const [barangayId, setBarangayId] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [announcementToArchive, setAnnouncementToArchive] = useState<Announcement | null>(null);
 
   const barangayNameById = useMemo(
     () => new Map(barangays.map((barangay) => [barangay.id, barangay.name])),
@@ -190,7 +192,7 @@ const AnnouncementListPage = () => {
                         </HStack>
                       </Box>
                       {isAdmin && announcement.status === 'PUBLISHED' && (
-                        <Button size="sm" variant="outline" colorPalette="red" onClick={() => handleArchive(announcement.id)}>
+                        <Button size="sm" variant="outline" colorPalette="red" onClick={() => setAnnouncementToArchive(announcement)}>
                           Archive
                         </Button>
                       )}
@@ -206,6 +208,15 @@ const AnnouncementListPage = () => {
           )}
         </VStack>
       </SimpleGrid>
+      <ConfirmDialog
+        open={!!announcementToArchive}
+        onOpenChange={({ open }) => { if (!open) setAnnouncementToArchive(null); }}
+        title="Archive this announcement?"
+        description={`"${announcementToArchive?.title ?? 'This announcement'}" will disappear from active announcement feeds.`}
+        confirmLabel="Archive"
+        variant="danger"
+        onConfirm={() => announcementToArchive ? handleArchive(announcementToArchive.id) : undefined}
+      />
     </DashboardLayout>
   );
 };

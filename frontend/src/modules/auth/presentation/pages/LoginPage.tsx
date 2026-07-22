@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, Container, Field, Image, Input, Stack, Text, Heading, IconButton } from '@chakra-ui/react';
-import { LuEye, LuEyeOff } from 'react-icons/lu';
+import { Alert, Box, Button, Container, Field, Image, Input, Stack, Text, Heading, IconButton } from '@chakra-ui/react';
+import { LuEye, LuEyeOff, LuLogIn } from 'react-icons/lu';
 import { authApi } from '../../infrastructure/auth-api';
 import { useAppDispatch } from '../../../../redux/hooks';
 import { loadProfile } from '../../application/auth-store';
@@ -32,43 +32,57 @@ export const LoginPage = () => {
   };
 
   return (
-    <Box minH="100vh" display="flex" alignItems="center" justifyContent="center" bg="page.bg">
-      <Container maxW="sm" w="full" p={6}>
-        <Stack gap={8}>
+    <Box minH="100dvh" display="flex" alignItems="center" justifyContent="center" bg="page.bg" px={4} py={8}>
+      <Container maxW="md" w="full" p={0}>
+        <Stack gap={6}>
           <Box textAlign="center">
-            <Image src="/brand/lydo-logo.png" alt="LYDO logo" mx="auto" h="92px" objectFit="contain" mb={4} />
-            <Heading size="lg" color="primary.700">SK Youth IMS</Heading>
-            <Text color="text.secondary" mt={2}>Sign in to your account</Text>
+            <Image src="/brand/lydo-logo.png" alt="Boac LYDS logo" mx="auto" h={{ base: '76px', md: '88px' }} objectFit="contain" mb={4} />
+            <Heading as="h1" fontSize={{ base: '1.5rem', md: '1.75rem' }} color="primary.800" fontWeight="750">
+              Boac Youth Information System
+            </Heading>
+            <Text color="text.secondary" mt={2}>Authorized account access</Text>
           </Box>
 
-          <Box as="form" onSubmit={handleSubmit}>
-            <Stack gap={4}>
+          <Box as="form" onSubmit={handleSubmit} bg="surface" borderWidth="1px" borderColor="border" borderRadius="md" boxShadow="panel" p={{ base: 5, md: 7 }}>
+            <Stack gap={5}>
+              <Box>
+                <Heading as="h2" fontSize="lg" fontWeight="700">Sign in</Heading>
+                <Text color="text.secondary" fontSize="sm" mt={1}>Enter your official account credentials.</Text>
+              </Box>
               <Field.Root required>
-                <Field.Label>Email</Field.Label>
+                <Field.Label fontWeight="600">Email address</Field.Label>
                 <Input
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  minH="48px"
+                  borderColor="border.strong"
                 />
               </Field.Root>
 
               <Field.Root required>
-                <Field.Label>Password</Field.Label>
+                <Field.Label fontWeight="600">Password</Field.Label>
                 <Box position="relative">
                   <Input
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    pr="40px"
+                    pr="48px"
+                    minH="48px"
+                    borderColor="border.strong"
                   />
                   <IconButton
                     type="button"
                     variant="ghost"
                     size="sm"
                     position="absolute"
-                    right="4px"
+                    right="2px"
                     top="50%"
                     transform="translateY(-50%)"
                     onClick={() => setShowPassword(!showPassword)}
@@ -80,7 +94,13 @@ export const LoginPage = () => {
               </Field.Root>
 
               {error && (
-                <Text color="danger" fontSize="sm">{error}</Text>
+                <Alert.Root status="error" borderRadius="md" role="alert">
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Title>Sign in failed</Alert.Title>
+                    <Alert.Description>{error}</Alert.Description>
+                  </Alert.Content>
+                </Alert.Root>
               )}
 
               <Button
@@ -89,11 +109,16 @@ export const LoginPage = () => {
                 size="lg"
                 loading={loading}
                 w="full"
+                minH="48px"
               >
+                <LuLogIn />
                 Sign In
               </Button>
             </Stack>
           </Box>
+          <Text textAlign="center" color="text.muted" fontSize="xs">
+            Local Youth Development Office, Municipality of Boac
+          </Text>
         </Stack>
       </Container>
     </Box>

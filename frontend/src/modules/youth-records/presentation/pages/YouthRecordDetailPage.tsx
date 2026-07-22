@@ -9,6 +9,7 @@ import { SectionHeader } from '../../../../shared/components/SectionHeader';
 import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { showToast } from '../../../../shared/toast';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 
 const DetailField = ({ label, value }: { label: string; value?: string | number | boolean }) => (
   <Box>
@@ -72,6 +73,7 @@ const YouthRecordDetailPage = () => {
   
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
+  const [pendingAction, setPendingAction] = useState<'submit' | 'approve' | 'archive' | 'restore' | null>(null);
 
   const loadData = async () => {
     if (!recordId) return;
@@ -167,12 +169,12 @@ const YouthRecordDetailPage = () => {
           {record.status === 'DRAFT' && (
             <>
               <Button colorPalette="blue" onClick={() => navigate(`/youth-records/${record.id}/edit`)}>Edit</Button>
-              <Button colorPalette="green" onClick={() => handleAction('submit')} loading={actionLoading}>Submit</Button>
+              <Button colorPalette="green" onClick={() => setPendingAction('submit')} loading={actionLoading}>Submit</Button>
             </>
           )}
           {record.status === 'SUBMITTED' && isAdmin && (
             <>
-              <Button colorPalette="green" onClick={() => handleAction('approve')} loading={actionLoading}>Approve</Button>
+              <Button colorPalette="green" onClick={() => setPendingAction('approve')} loading={actionLoading}>Approve</Button>
               <Button colorPalette="orange" onClick={() => setReturnDialogOpen(true)}>Return</Button>
             </>
           )}
@@ -180,10 +182,10 @@ const YouthRecordDetailPage = () => {
             <Button colorPalette="blue" onClick={() => navigate(`/youth-records/${record.id}/edit`)}>Edit</Button>
           )}
           {record.status === 'APPROVED' && isAdmin && (
-            <Button colorPalette="gray" onClick={() => handleAction('archive')} loading={actionLoading}>Archive</Button>
+            <Button colorPalette="gray" onClick={() => setPendingAction('archive')} loading={actionLoading}>Archive</Button>
           )}
           {record.status === 'ARCHIVED' && isAdmin && (
-            <Button colorPalette="gray" variant="outline" onClick={() => handleAction('restore')} loading={actionLoading}>Restore</Button>
+            <Button colorPalette="gray" variant="outline" onClick={() => setPendingAction('restore')} loading={actionLoading}>Restore</Button>
           )}
         </HStack>
 
@@ -295,6 +297,26 @@ const YouthRecordDetailPage = () => {
           </Dialog.Content>
         </Dialog.Positioner>
       </Dialog.Root>
+
+      <ConfirmDialog
+        open={!!pendingAction}
+        onOpenChange={({ open }) => { if (!open) setPendingAction(null); }}
+        title={{
+          submit: 'Submit this record?',
+          approve: 'Approve this record?',
+          archive: 'Archive this record?',
+          restore: 'Restore this record?',
+        }[pendingAction ?? 'submit']}
+        description={{
+          submit: 'The record will be locked for review until an administrator approves or returns it.',
+          approve: 'This confirms that the youth profile has been reviewed and is ready for official reporting.',
+          archive: 'The record will be removed from active lists but retained in the system history.',
+          restore: 'The record will return to the approved records list.',
+        }[pendingAction ?? 'submit']}
+        confirmLabel={{ submit: 'Submit', approve: 'Approve', archive: 'Archive', restore: 'Restore' }[pendingAction ?? 'submit']}
+        variant={pendingAction === 'archive' ? 'danger' : 'default'}
+        onConfirm={() => pendingAction ? handleAction(pendingAction) : undefined}
+      />
 
     </DashboardLayout>
   );

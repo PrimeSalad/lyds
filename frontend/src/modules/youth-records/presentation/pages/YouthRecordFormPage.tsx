@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Box, Button, HStack, VStack, Grid, GridItem, Spinner } from '@chakra-ui/react';
-import { useForm, Controller } from 'react-hook-form';
+import { Alert, Box, Button, Flex, VStack, Grid, GridItem, Spinner, Text } from '@chakra-ui/react';
+import { useForm, Controller, type FieldErrors } from 'react-hook-form';
+import { LuSave, LuSend, LuX } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
 import { TextField, SelectField, CheckboxField, TextareaField } from '../../../../shared/forms/FormFields';
@@ -13,6 +14,7 @@ import { categoryApi, type Category, type CategoryField } from '../../../categor
 import { referenceDataApi, type ReferenceOption } from '../../../reference-data/infrastructure/reference-data-api';
 import { youthRecordApi, type CreateInput } from '../../infrastructure/youth-record-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 
 const computeAge = (birthDate: string): number => {
   if (!birthDate) return 0;
@@ -167,6 +169,11 @@ const YouthRecordFormPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
+  const [formOptionsLoading, setFormOptionsLoading] = useState(true);
+  const [formOptionsError, setFormOptionsError] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [pendingSubmitData, setPendingSubmitData] = useState<YouthRecordFormValues | null>(null);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [sexOptions, setSexOptions] = useState<{ value: string; label: string }[]>([]);
@@ -177,7 +184,7 @@ const YouthRecordFormPage = () => {
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [recordVersion, setRecordVersion] = useState<number | null>(null);
   
-  const { control, handleSubmit, watch, reset, setValue } = useForm<YouthRecordFormValues>({
+  const { control, handleSubmit, watch, reset, setValue, formState: { isDirty } } = useForm<YouthRecordFormValues>({
     defaultValues: {
       category_id: '',
       barangay_id: '',
@@ -225,6 +232,8 @@ const YouthRecordFormPage = () => {
 
   useEffect(() => {
     const loadFormOptions = async () => {
+      setFormOptionsLoading(true);
+      setFormOptionsError(null);
       try {
         const [
           categoryRes,
@@ -251,8 +260,12 @@ const YouthRecordFormPage = () => {
         setYouthClassificationOptions(toSelectOptions(youthClassificationRes.data));
         setEducationalAttainmentOptions(toSelectOptions(educationalAttainmentRes.data));
         setWorkStatusOptions(toSelectOptions(workStatusRes.data));
-      } catch {
-        showToast.error('Failed to load form options');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Failed to load form options';
+        setFormOptionsError(message);
+        showToast.error({ title: 'Could not load form options', description: message });
+      } finally {
+        setFormOptionsLoading(false);
       }
     };
 
@@ -402,6 +415,7 @@ const YouthRecordFormPage = () => {
 
   const onSubmit = async (data: YouthRecordFormValues, isDraft = false) => {
     setLoading(true);
+    setSubmissionError(null);
     try {
       const payload = toPayload(data);
       if (isEditing) {
@@ -411,17 +425,44 @@ const YouthRecordFormPage = () => {
           version: recordVersion,
           submit_on_update: !isDraft,
         });
-        showToast.success('Record updated successfully');
+        showToast.success(isDraft ? 'Draft updated' : 'Record updated and submitted');
       } else {
         await youthRecordApi.create({ ...payload, submit_on_create: !isDraft });
-        showToast.success('Record created successfully');
+        showToast.success(isDraft ? 'Draft saved' : 'Record saved and submitted');
       }
       navigate('/youth-records');
     } catch (error) {
-      showToast.error(error instanceof Error ? error.message : 'Failed to save record');
+      const message = error instanceof Error ? error.message : 'Failed to save record';
+      setSubmissionError(message);
+      showToast.error({ title: isDraft ? 'Draft was not saved' : 'Record was not submitted', description: message });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInvalid = (errors: FieldErrors<YouthRecordFormValues>) => {
+    const errorCount = Object.keys(errors).length;
+    const message = errorCount === 1
+      ? 'Review the highlighted field before continuing.'
+      : `Review the ${errorCount} highlighted fields before continuing.`;
+    setSubmissionError(message);
+    showToast.warning({ title: 'Some information is missing', description: message });
+  };
+
+  const requestSubmit = handleSubmit(
+    (data) => {
+      setSubmissionError(null);
+      setPendingSubmitData(data);
+    },
+    handleInvalid,
+  );
+
+  const handleCancel = () => {
+    if (isDirty) {
+      setDiscardDialogOpen(true);
+      return;
+    }
+    navigate('/youth-records');
   };
 
   if (fetching) {
@@ -440,14 +481,44 @@ const YouthRecordFormPage = () => {
         title={isEditing ? 'Edit Youth Record' : 'Add Youth Record'}
         description="Capture required KK profile details before submission."
         actions={(
-          <Button variant="outline" colorPalette="gray" onClick={handleSubmit((d) => onSubmit(d, true))} loading={loading}>
+          <Button type="button" variant="outline" colorPalette="gray" onClick={handleSubmit((d) => onSubmit(d, true), handleInvalid)} loading={loading} disabled={formOptionsLoading}>
+            <LuSave />
             Save Draft
           </Button>
         )}
       />
 
-      <Box as="form" onSubmit={handleSubmit((d) => onSubmit(d, false))} maxW="880px" bg="white" p={{ base: 4, md: 6 }} borderRadius="lg" border="1px solid" borderColor="border">
-        <SectionHeader>Record Setup</SectionHeader>
+      <Box
+        as="form"
+        onSubmit={requestSubmit}
+        maxW="960px"
+        bg="white"
+        p={{ base: 4, md: 6, lg: 8 }}
+        borderRadius="md"
+        border="1px solid"
+        borderColor="border"
+        boxShadow="panel"
+      >
+        {formOptionsError && (
+          <Alert.Root status="error" mb={6} borderRadius="md">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Form options could not be loaded</Alert.Title>
+              <Alert.Description>{formOptionsError}. Refresh the page before submitting.</Alert.Description>
+            </Alert.Content>
+          </Alert.Root>
+        )}
+        {submissionError && (
+          <Alert.Root status="error" mb={6} borderRadius="md" role="alert">
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>Check the record details</Alert.Title>
+              <Alert.Description>{submissionError}</Alert.Description>
+            </Alert.Content>
+          </Alert.Root>
+        )}
+
+        <SectionHeader mt={0}>Record Setup</SectionHeader>
         <Grid templateColumns={{ base: '1fr', md: isAdmin ? 'repeat(2, 1fr)' : '1fr' }} gap={4}>
           {isAdmin && (
             <GridItem>
@@ -457,6 +528,8 @@ const YouthRecordFormPage = () => {
                   placeholder="Select barangay"
                   options={barangays.map((barangay) => ({ value: barangay.id, label: barangay.name }))}
                   error={fieldState.error?.message}
+                  disabled={formOptionsLoading}
+                  helpText={formOptionsLoading ? 'Loading barangays...' : undefined}
                   {...field}
                 />
               )} />
@@ -469,6 +542,8 @@ const YouthRecordFormPage = () => {
                 placeholder="Select category"
                 options={categories.map((category) => ({ value: category.id, label: category.name }))}
                 error={fieldState.error?.message}
+                disabled={formOptionsLoading}
+                helpText={formOptionsLoading ? 'Loading record categories...' : undefined}
                 {...field}
               />
             )} />
@@ -478,7 +553,7 @@ const YouthRecordFormPage = () => {
         <SectionHeader>Personal Information</SectionHeader>
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           <GridItem>
-            <Controller name="first_name" control={control} rules={{ required: 'Required' }} render={({ field, fieldState }) => (
+            <Controller name="first_name" control={control} rules={{ required: 'First name is required' }} render={({ field, fieldState }) => (
               <TextField label="First Name*" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
@@ -488,7 +563,7 @@ const YouthRecordFormPage = () => {
             )} />
           </GridItem>
           <GridItem>
-            <Controller name="last_name" control={control} rules={{ required: 'Required' }} render={({ field, fieldState }) => (
+            <Controller name="last_name" control={control} rules={{ required: 'Last name is required' }} render={({ field, fieldState }) => (
               <TextField label="Last Name*" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
@@ -502,12 +577,18 @@ const YouthRecordFormPage = () => {
         <SectionHeader>Birthday & Age</SectionHeader>
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           <GridItem>
-            <Controller name="birth_date" control={control} rules={{ required: 'Required' }} render={({ field, fieldState }) => (
+            <Controller name="birth_date" control={control} rules={{
+              required: 'Birth date is required',
+              validate: (value) => {
+                const recordAge = computeAge(value);
+                return (recordAge >= 15 && recordAge <= 30) || 'Youth records must be for ages 15 to 30';
+              },
+            }} render={({ field, fieldState }) => (
               <TextField type="date" label="Birth Date*" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
           <GridItem>
-            <TextField label="Age" value={String(age)} onChange={() => {}} disabled />
+            <TextField label="Age" value={birthDate ? String(age) : ''} onChange={() => {}} readOnly helpText="Calculated from the birth date" />
           </GridItem>
         </Grid>
 
@@ -529,20 +610,24 @@ const YouthRecordFormPage = () => {
             )} />
           </GridItem>
           <GridItem>
-            <TextField label="Youth Age Group" value={ageGroup} onChange={() => {}} disabled />
+            <TextField label="Youth Age Group" value={birthDate ? ageGroup : ''} onChange={() => {}} readOnly />
           </GridItem>
         </Grid>
 
         <SectionHeader>Contact Information</SectionHeader>
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           <GridItem>
-            <Controller name="email" control={control} render={({ field, fieldState }) => (
-              <TextField label="Email" type="email" error={fieldState.error?.message} {...field} />
+            <Controller name="email" control={control} rules={{
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email address' },
+            }} render={({ field, fieldState }) => (
+              <TextField label="Email" type="email" autoComplete="email" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
           <GridItem>
-            <Controller name="contact_number" control={control} render={({ field, fieldState }) => (
-              <TextField label="Contact Number" error={fieldState.error?.message} {...field} />
+            <Controller name="contact_number" control={control} rules={{
+              pattern: { value: /^(09|\+639)\d{9}$/, message: 'Use a valid Philippine mobile number' },
+            }} render={({ field, fieldState }) => (
+              <TextField label="Contact Number" type="tel" autoComplete="tel" placeholder="09XXXXXXXXX" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
         </Grid>
@@ -602,21 +687,52 @@ const YouthRecordFormPage = () => {
           )} />
           {attendedKkAssembly && (
             <Controller name="kk_assembly_count" control={control} rules={{ min: 1 }} render={({ field, fieldState }) => (
-              <TextField type="number" label="How Many Times?*" error={fieldState.error?.message} value={String(field.value)} onChange={(val) => field.onChange(Number(val))} />
+              <TextField type="number" min={1} label="How Many Times?*" error={fieldState.error?.message} value={String(field.value)} onChange={(val) => field.onChange(Number(val))} />
             )} />
           )}
         </VStack>
 
-        <HStack gap={3} mt={8} pt={4} borderTop="1px solid" borderColor="gray.200">
-          <Button type="submit" colorPalette="green" loading={loading}>
+        <Flex
+          gap={3}
+          mt={8}
+          pt={4}
+          borderTop="1px solid"
+          borderColor="border"
+          direction={{ base: 'column', sm: 'row' }}
+          align={{ base: 'stretch', sm: 'center' }}
+        >
+          <Button type="submit" colorPalette="green" loading={loading} disabled={formOptionsLoading || !!formOptionsError} minH="48px">
+            <LuSend />
             Save & Submit
           </Button>
-          <Button variant="outline" onClick={() => navigate('/youth-records')}>
+          <Button type="button" variant="outline" onClick={handleCancel} disabled={loading} minH="48px">
+            <LuX />
             Cancel
           </Button>
-        </HStack>
+          <Text fontSize="sm" color="text.muted" ml={{ sm: 'auto' }}>
+            Required fields are marked with *
+          </Text>
+        </Flex>
 
       </Box>
+
+      <ConfirmDialog
+        open={!!pendingSubmitData}
+        onOpenChange={({ open }) => { if (!open) setPendingSubmitData(null); }}
+        title="Submit this youth record?"
+        description={`This will send ${pendingSubmitData?.first_name || 'the record'} ${pendingSubmitData?.last_name || ''} for review. Confirm that the details are complete and accurate.`}
+        confirmLabel="Save & Submit"
+        onConfirm={() => pendingSubmitData ? onSubmit(pendingSubmitData, false) : undefined}
+      />
+      <ConfirmDialog
+        open={discardDialogOpen}
+        onOpenChange={({ open }) => setDiscardDialogOpen(open)}
+        title="Discard unsaved changes?"
+        description="Changes made on this page have not been saved and cannot be recovered."
+        confirmLabel="Discard Changes"
+        variant="danger"
+        onConfirm={() => navigate('/youth-records')}
+      />
     </DashboardLayout>
   );
 };

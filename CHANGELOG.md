@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added app-wide toast notifications and accessible confirmation dialogs for record workflow changes, account/barangay status changes, archiving, discarding forms, and signing out.
 - Added announcement management: admins can publish/archive scoped announcements, SK officials can view active announcements, and the dashboard shows recent announcements.
 - Added LYDO logo branding from `assets/logo and poster lydo.png` to the frontend public assets and app shell.
 
 ### Changed
 
+- Refined the frontend into a restrained, responsive civic operations UI with a compact icon sidebar, mobile record cards, stronger form hierarchy, accessible focus states, and reduced-motion support.
+- Improved the Youth Record form with option loading/error states, inline validation summaries, age and contact validation, submission confirmation, and unsaved-change protection.
 - Improved the SK Youth dashboard UI with a responsive app shell, consistent page headers, tokenized typography/colors, polished tables/forms, and mobile-safe navigation.
 - Improved report exports with admin barangay/category/status filters, SK assigned-barangay scope messaging, and proper XLSX blob handling in the frontend API client.
 - Improved category field management with a table-layout preview for custom fields.
@@ -23,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed app notifications not appearing by mounting the Chakra toaster and improved API errors to surface nested backend messages.
+- Fixed bulk imports to load real published category IDs, use an accurate four-step workflow, catch asynchronous file-read failures, and download the spreadsheet template correctly.
+- Added the missing `happy-dom` and Playwright test dependencies required by the existing frontend verification setup.
 - Fixed frontend TypeScript failures in youth record forms, import/report select controls, import routing after commit, and Chakra dialog structure for returned records.
 - Fixed admin report exports so selected barangay/category/status filters reach the backend instead of always exporting all records.
 - Fixed youth record creation so dropdown placeholders are real empty options, the form submits category/reference UUIDs expected by the backend, and computed youth age group stores the correct reference option ID.

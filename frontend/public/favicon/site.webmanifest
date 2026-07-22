@@ -1,22 +1,22 @@
 {
-  "name": "2026 Boilerplate",
-  "short_name": "2026 Boilerplate",
-  "description": "A local-first boilerplate for 2026",
+  "name": "Boac LYDS",
+  "short_name": "LYDS",
+  "description": "Boac Youth Information Management System",
   "icons": [
     {
-      "src": "/web-app-manifest-192x192.png",
+      "src": "/favicon/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/web-app-manifest-512x512.png",
+      "src": "/favicon/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#dcdcdc",
-  "background_color": "#dcdcdc",
+  "theme_color": "#16A34A",
+  "background_color": "#ffffff",
   "display": "standalone"
 }

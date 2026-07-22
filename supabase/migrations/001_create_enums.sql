@@ -1,0 +1,9 @@
+-- Enum types for the SK Youth Information Management System
+
+CREATE TYPE account_role AS ENUM ('ADMIN', 'SK_OFFICIAL');
+CREATE TYPE account_status AS ENUM ('ACTIVE', 'INACTIVE');
+CREATE TYPE category_status AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+CREATE TYPE category_permission_mode AS ENUM ('SK_FILLABLE', 'SK_VIEW_ONLY', 'ADMIN_ONLY');
+CREATE TYPE record_status AS ENUM ('DRAFT', 'SUBMITTED', 'RETURNED', 'APPROVED', 'ARCHIVED');
+CREATE TYPE custom_field_type AS ENUM ('SHORT_TEXT', 'LONG_TEXT', 'NUMBER', 'DATE', 'YES_NO', 'SINGLE_SELECT', 'MULTI_SELECT');
+CREATE TYPE import_status AS ENUM ('PENDING', 'VALIDATING', 'VALIDATED', 'COMMITTING', 'COMMITTED', 'FAILED', 'CANCELLED');

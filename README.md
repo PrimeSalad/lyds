@@ -1,0 +1,112 @@
+# 2026 Boilerplate for TypeScript/React v1.3
+
+Use this boilerplate to build production-ready web apps. Full-stack TypeScript, React 19, and Express with authentication, encrypted persistence, SEO, i18n, accessibility, and a modern developer experience—all configured and ready to extend.
+
+## Who this README is for
+
+This file is the fast, practical entry point for vibe coders and junior developers who want to start building quickly.
+
+If you want deep implementation details (architecture, auth internals, reducer patterns, agent workflows), use the linked docs in the **Deep Technical Context** section.
+
+## Features
+
+- **Core:** TypeScript, React 19, Vite, Express, Passport auth (test user), encrypted localStorage persistence, Redux Toolkit (persistent + non-persistent slices), React Router with lazy-loaded pages
+- **SEO & metadata:** Sitemap, `<PageMeta>` component, React 19 document metadata (title, description, Open Graph, Twitter, canonical), policy-writing guide page
+- **Accessibility:** Skip-to-content link, stable IDs (`useId`), aria-live announcements (`useAnnounce`), Chakra UI
+- **i18n:** react-intl, locales (en, ar, fr, zh), RTL for Arabic, language switcher, English fallback—[use it or ignore it](docs/I18N.md); when you need translation, it's ready
+- **UX and polish:** Page transitions (`<PageTransition>`), animated buttons (Framer Motion), scroll-to-top on route change, light/dark mode
+- **Resilience:** Error boundaries, centralized client error handler, server error-handler middleware, Suspense boundaries
+- **Developer experience:** Vitest unit tests (`npm run test:unit`), Playwright E2E, ESLint (custom config), type-check script, `npm run test` for full pre-commit/CI (lint + type-check + unit + E2E)
+
+## Getting Started
+
+### Start a New Project from This Boilerplate
+
+Use this workflow when you want to turn this repository into your own product instead of contributing back.
+
+1. Clone the repo: `git clone git@github.com:bishopZ/2026-Boilerplate.git` and `cd 2026-Boilerplate`
+2. Remove git history: `rm -rf .git` then `git init`
+3. Run the rebrand skill with your new project details: *Use the skill at `skills/rebrand/SKILL.md` with `site_title="<Your Project Title>"` and `site_description="<Your Project Description>"`*
+4. Create your first commit
+5. Run the [Development Setup](#development-setup) below
+
+### Development Setup
+
+1. Copy the env template: `cp .envTemplate .env` — default values work for local development; set strong random values for `SESSION_SECRET` and `LOCAL_STORAGE_KEY` before deploying to production
+2. Run `npm install`
+3. Run `npm run dev`
+4. Login with username `test` and password `test`
+
+## Build Fast (Most Common Commands)
+
+| Goal | Command |
+|---|---|
+| Start coding | `npm run dev` |
+| Run unit tests | `npm run test:unit` |
+| Validate before commit | `npm run test` |
+| Build for production | `npm run build` |
+| Preview production build | `npm run preview` |
+| Run production server | `npm start` |
+
+For the full command reference and workflows, see [docs/SCRIPTS.md](docs/SCRIPTS.md).
+For script implementation details (like i18n validation), see [scripts/README.md](scripts/README.md).
+
+## Deep Technical Context (AI Agents + Advanced Developers)
+
+### AI/Agent Guidance
+
+- [AGENTS.md](AGENTS.md) — Project operating instructions and coding expectations
+- [.cursor/rules/](.cursor/rules/) — Enforced rule files for React, Redux, and server patterns
+- Skills:
+  - [skills/rebrand/SKILL.md](skills/rebrand/SKILL.md)
+  - [skills/hidden-admin-auth/SKILL.md](skills/hidden-admin-auth/SKILL.md)
+  - [skills/policy-guide/SKILL.md](skills/policy-guide/SKILL.md)
+  - [skills/add-redirect/SKILL.md](skills/add-redirect/SKILL.md)
+
+### Architecture and Implementation Docs
+
+- [Architecture](docs/ARCHITECTURE.md) — System diagram, directory structure, key patterns
+- [Authentication](docs/AUTHENTICATION.md) — JWT flow, hardcoded user, and migration paths
+- [Feature flags](docs/FEATURE_FLAGS.md) — Env + runtime starter pattern for safe rollout
+- [Auth profiles](docs/AUTH_PROFILES.md) — Starter `local` / `supabase` / `postgres` backing modes
+- [API](docs/API.md) — API contracts and OpenAPI type-generation workflow
+- [Client](src/client/README.md) — How the frontend is organized
+- [Hooks](src/client/hooks/README.md) — useState vs custom hook vs Redux
+- [Redux](src/client/redux/README.md) — Persistence, slices, pitfalls
+- [Server](src/server/README.md) — MVC structure, routes, middleware
+- [Playwright](playwright/README.md) — How to run E2E tests
+- [Technology choices](docs/TECHNOLOGY.md) — Why this stack
+- [Contributing](docs/CONTRIBUTING.md) — How to contribute
+- [Internationalization](docs/I18N.md) — i18n guide
+- [Redirects](docs/REDIRECTS.md) — Where URL redirects live and how to add them safely
+
+## Requirements
+
+- Node.js >= 24.13.1, npm >= 11.10.1
+- `.env` file (copy from `.envTemplate`)
+
+Unit tests run with `npm run test:unit` and require no dev server. E2E tests run via Playwright with the dev server starting automatically. See [playwright/README.md](playwright/README.md).
+
+## GitHub Actions CI
+
+Pull requests and pushes to `main` run **CI** (`.github/workflows/ci.yml`): ESLint, TypeScript `tsc --noEmit`, and Playwright E2E (server starts automatically via `webServer`). The workflow uses committed [`.github/ci.env`](.github/ci.env) (non-production placeholders) so no repository secrets are required for the default pipeline.
+
+### Configuration on github.com
+
+1. **Enable Actions** (usually on by default): Repository **Settings → Actions → General** → under “Actions permissions”, allow **Actions** (e.g. “Allow all actions and reusable workflows” or your org’s stricter policy). Forks from outside contributors may need **Settings → Actions → General → Fork pull request workflows** set to how you want fork PRs to run.
+2. **Optional — required checks**: **Settings → Rules** (branch rules) or **Settings → Branches** (classic protection) for `main` → add a rule → enable **Require status checks to pass** → select **`CI OK`** (and/or the individual jobs **Lint**, **Typecheck**, **E2E (Playwright)** if you prefer granular gates).
+3. **Optional — merge queue**: If you use a merge queue, the workflow already listens for `merge_group`; ensure the queue is enabled in the branch rule and that **`CI OK`** is among the required checks.
+
+No `CODECOV_TOKEN` or other secrets are needed unless you extend the workflow.
+
+## Contributing
+
+We welcome contributions. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
+## Sponsors
+
+[Time 2 Magic](https://time2magic.com)
+
+## License
+
+MIT

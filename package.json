@@ -1,0 +1,11 @@
+{
+  "name": "sk-youth-system",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "test:frontend": "npm --prefix frontend test",
+    "test:backend": "npm --prefix backend test",
+    "build": "npm --prefix frontend run build && npm --prefix backend run build"
+  }
+}

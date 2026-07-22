@@ -364,6 +364,7 @@ const YouthRecordListPage = () => {
         data={records}
         actions={actions}
         loading={loading}
+        variant="excel"
         emptyMessage="No youth records match these filters."
         pagination={{
           page: meta.page,

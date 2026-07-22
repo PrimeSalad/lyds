@@ -198,7 +198,7 @@ const YouthRecordListPage = () => {
       {
         key: 'email',
         header: 'Email',
-        width: '200px',
+        width: '240px',
         render: (row) => row.email ?? '—',
       },
       {
@@ -210,13 +210,13 @@ const YouthRecordListPage = () => {
       {
         key: 'educational_attainment_label',
         header: 'Education',
-        width: '160px',
+        width: '200px',
         render: (row) => row.educational_attainment_label ?? '—',
       },
       {
         key: 'work_status_label',
         header: 'Work Status',
-        width: '110px',
+        width: '150px',
         render: (row) => row.work_status_label ?? '—',
       },
       {

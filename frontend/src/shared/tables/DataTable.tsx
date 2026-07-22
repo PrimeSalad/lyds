@@ -167,14 +167,22 @@ export const DataTable = <T,>({
       )}
 
       <Card.Root borderColor="border" borderRadius="md" overflow="hidden" boxShadow="panel" display={{ base: 'none', md: 'flex' }}>
-      <Box overflowX="auto" width="full">
-        <Table.Root size="sm" variant="line">
+      <Box overflowX="auto" width="full" css={{ '&::-webkit-scrollbar': { height: '6px' }, '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '3px' } }}>
+        <Table.Root size="sm" variant="line" css={{ tableLayout: 'fixed', minWidth: 'max-content' }}>
           <Table.Header>
             <Table.Row bg="surface.muted">
               {columns.map((col) => (
                 <Table.ColumnHeader
                   key={col.key}
                   width={col.width}
+                  whiteSpace="nowrap"
+                  fontSize="xs"
+                  fontWeight="600"
+                  color="text.secondary"
+                  textTransform="uppercase"
+                  letterSpacing="0.05em"
+                  py={2}
+                  px={2}
                   cursor={col.sortable ? 'pointer' : undefined}
                   userSelect={col.sortable ? 'none' : undefined}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -184,15 +192,15 @@ export const DataTable = <T,>({
                       : undefined
                   }
                 >
-                  <HStack gap={2} py={1}>
-                    <Text>{col.header}</Text>
+                  <HStack gap={1} py={0}>
+                    <Text fontSize="xs">{col.header}</Text>
                     {sortKey === col.key && (
-                      sortDir === 'asc' ? <LuArrowUp size={14} aria-hidden="true" /> : <LuArrowDown size={14} aria-hidden="true" />
+                      sortDir === 'asc' ? <LuArrowUp size={12} aria-hidden="true" /> : <LuArrowDown size={12} aria-hidden="true" />
                     )}
                   </HStack>
                 </Table.ColumnHeader>
               ))}
-              {actions && actions.length > 0 && <Table.ColumnHeader width="100px">Actions</Table.ColumnHeader>}
+              {actions && actions.length > 0 && <Table.ColumnHeader width="80px" fontSize="xs" fontWeight="600" py={2} px={2}>Actions</Table.ColumnHeader>}
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -204,19 +212,19 @@ export const DataTable = <T,>({
               </Table.Row>
             ) : (
               paginated.map((row, idx) => (
-                <Table.Row key={getRowKey(row, idx)} _hover={{ bg: 'surface.muted' }}>
+                <Table.Row key={getRowKey(row, idx)} _hover={{ bg: 'surface.muted' }} borderBottomWidth="1px" borderColor="border">
                   {columns.map((col) => (
-                    <Table.Cell key={col.key}>
+                    <Table.Cell key={col.key} whiteSpace="nowrap" fontSize="xs" py={2} px={2} maxW={col.width} overflow="hidden" textOverflow="ellipsis">
                       {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                     </Table.Cell>
                   ))}
                   {actions && actions.length > 0 && (
-                    <Table.Cell>
+                    <Table.Cell py={2} px={2}>
                       <HStack gap={1}>
                         {availableActions(row).map((action) => (
                             <Button
                               key={action.label}
-                              size="xs"
+                              size="2xs"
                               variant={action.variant === 'danger' ? 'outline' : 'ghost'}
                               colorPalette={action.variant === 'danger' ? 'red' : undefined}
                               onClick={() => handleAction(action, row)}

@@ -17,6 +17,7 @@ import {
   LuLogOut,
   LuMapPin,
   LuMegaphone,
+  LuSettings,
   LuUpload,
   LuUserCog,
   LuUsersRound,
@@ -161,6 +162,21 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         </Box>
       )}
       <Box mt={3} pt={3} borderTop="1px solid" borderColor="border">
+        <Button
+          asChild
+          width="full"
+          minH="44px"
+          variant="ghost"
+          justifyContent="flex-start"
+          color={location.pathname === '/account-settings' ? 'primary.800' : 'text.secondary'}
+          bg={location.pathname === '/account-settings' ? 'primary.50' : 'transparent'}
+          onClick={onClose}
+        >
+          <RouterLink to="/account-settings" aria-current={location.pathname === '/account-settings' ? 'page' : undefined}>
+            <LuSettings />
+            Account Settings
+          </RouterLink>
+        </Button>
         <Button
           width="full"
           minH="44px"

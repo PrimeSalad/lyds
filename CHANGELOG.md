@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added self-service Account Settings for all authenticated users, including profile details and password updates.
 - Added app-wide toast notifications and accessible confirmation dialogs for record workflow changes, account/barangay status changes, archiving, discarding forms, and signing out.
 - Added announcement management: admins can publish/archive scoped announcements, SK officials can view active announcements, and the dashboard shows recent announcements.
 - Added LYDO logo branding from `assets/logo and poster lydo.png` to the frontend public assets and app shell.
 
 ### Changed
 
+- Removed the role label from the dashboard top bar and placed Account Settings and Sign Out together in the sidebar footer.
 - Redesigned the sign-in experience with bundled Poppins/Questrial fonts, full-width accessible controls, and a compact mobile-first composition; moved sign out from the top bar to the sidebar footer.
 - Refined the frontend into a restrained, responsive civic operations UI with a compact icon sidebar, mobile record cards, stronger form hierarchy, accessible focus states, and reduced-motion support.
 - Improved the Youth Record form with option loading/error states, inline validation summaries, age and contact validation, submission confirmation, and unsaved-change protection.

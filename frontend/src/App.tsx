@@ -10,6 +10,7 @@ const BarangayListPage = lazy(() => import('./modules/barangays/presentation/pag
 const BarangayFormPage = lazy(() => import('./modules/barangays/presentation/pages/BarangayFormPage'));
 const AccountListPage = lazy(() => import('./modules/accounts/presentation/pages/AccountListPage'));
 const AccountFormPage = lazy(() => import('./modules/accounts/presentation/pages/AccountFormPage'));
+const AccountSettingsPage = lazy(() => import('./modules/accounts/presentation/pages/AccountSettingsPage'));
 const AuditLogListPage = lazy(() => import('./modules/audit-logs/presentation/pages/AuditLogListPage'));
 const YouthRecordListPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordListPage'));
 const YouthRecordFormPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordFormPage'));
@@ -60,6 +61,7 @@ const App = () => (
         <Route path="/accounts" element={<Lazy><AccountListPage /></Lazy>} />
         <Route path="/accounts/new" element={<Lazy><AccountFormPage /></Lazy>} />
         <Route path="/accounts/:accountId/edit" element={<Lazy><AccountFormPage /></Lazy>} />
+        <Route path="/account-settings" element={<Lazy><AccountSettingsPage /></Lazy>} />
         {/* Youth Records */}
         <Route path="/youth-records" element={<Lazy><YouthRecordListPage /></Lazy>} />
         <Route path="/youth-records/new" element={<Lazy><YouthRecordFormPage /></Lazy>} />

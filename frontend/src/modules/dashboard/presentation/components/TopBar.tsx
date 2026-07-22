@@ -1,15 +1,11 @@
 import { Box, Text, HStack, IconButton, Image } from '@chakra-ui/react';
-import { useSelector } from 'react-redux';
-import { type RootState } from '../../../../redux/store';
-import { LuMenu, LuShieldCheck } from 'react-icons/lu';
+import { LuMenu } from 'react-icons/lu';
 
 type TopBarProps = {
   onOpenNavigation?: () => void;
 };
 
 export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
-  const profile = useSelector((state: RootState) => state.auth.profile);
-
   return (
     <Box
         as="header"
@@ -40,12 +36,6 @@ export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
               Boac Youth
             </Text>
           </HStack>
-        </HStack>
-        <HStack gap={2} display={{ base: 'none', sm: 'flex' }} color="text.secondary">
-          <LuShieldCheck aria-hidden="true" />
-          <Text fontSize="sm" fontWeight="600">
-            {profile?.role === 'SK_OFFICIAL' ? 'SK Official' : 'Administrator'}
-          </Text>
         </HStack>
     </Box>
   );

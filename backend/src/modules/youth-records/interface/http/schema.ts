@@ -20,6 +20,7 @@ export const createYouthRecordSchema = z.object({
   voted_last_election: z.boolean().default(false),
   attended_kk_assembly: z.boolean().default(false),
   kk_assembly_count: z.number().int().min(0).default(0),
+  custom_values: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export const updateYouthRecordSchema = createYouthRecordSchema.partial().extend({

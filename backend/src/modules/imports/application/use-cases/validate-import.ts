@@ -3,7 +3,7 @@ import { spreadsheetParser } from '../../infrastructure/services/spreadsheet-par
 import { rowValidator } from '../../infrastructure/services/row-validator';
 import { duplicateChecker } from '../../infrastructure/services/duplicate-checker';
 import { supabaseAdmin } from '../../../../config/supabase';
-import type { ImportBatch } from '../../domain/entities/import-batch';
+import type { ImportBatch, ImportRowResult } from '../../domain/entities/import-batch';
 
 export const validateImport = async (input: { categoryId: string; barangayId: string; fileData: string; fileName: string; fileType: string; uploadedBy: string }): Promise<ImportBatch> => {
   // Decode base64
@@ -21,13 +21,13 @@ export const validateImport = async (input: { categoryId: string; barangayId: st
   });
 
   try {
-    const { headers, rows } = await spreadsheetParser.parse(fileBuffer, input.fileType);
+    const { rows } = await spreadsheetParser.parse(fileBuffer, input.fileType);
     
     // Get reference options
     const { data: referenceOptions } = await supabaseAdmin.from('reference_options').select('id, category_code, label').eq('is_active', true);
     const ctx = { referenceOptions: referenceOptions ?? [] };
 
-    const validatedRows = rows.map((rawRow, i) => {
+    const validatedRows: Omit<ImportRowResult, 'id' | 'created_at'>[] = rows.map((rawRow, i) => {
       const { isValid, normalizedData, validationErrors, validationWarnings } = rowValidator.validate(rawRow, ctx);
       return {
         batch_id: batch.id,

@@ -15,7 +15,7 @@ export const spreadsheetParser = {
     let worksheet: ExcelJS.Worksheet | undefined;
 
     if (fileType.includes('spreadsheetml') || fileType.includes('xlsx')) {
-      await workbook.xlsx.load(fileBuffer);
+      await workbook.xlsx.load(fileBuffer as any);
       worksheet = workbook.worksheets[0];
     } else if (fileType.includes('csv')) {
       const bufferStream = new stream.PassThrough();

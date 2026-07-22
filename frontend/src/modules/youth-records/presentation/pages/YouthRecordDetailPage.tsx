@@ -17,6 +17,47 @@ const DetailField = ({ label, value }: { label: string; value?: string | number 
   </Box>
 );
 
+const formatDetailValue = (value: unknown) => {
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) return value.join(', ');
+  if (value && typeof value === 'object') return JSON.stringify(value);
+  return value === null || value === undefined ? '-' : String(value);
+};
+
+const normalizeFieldIdentity = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const coreCustomValueKeys = new Set([
+  'category_id',
+  'barangay_id',
+  'display_name',
+  'first_name',
+  'middle_name',
+  'last_name',
+  'suffix',
+  'ext_name',
+  'birth_date',
+  'age_at_submission',
+  'sex_assigned_at_birth_id',
+  'sex_id',
+  'civil_status_id',
+  'youth_classification_id',
+  'youth_age_group_id',
+  'educational_attainment_id',
+  'work_status_id',
+  'email',
+  'contact_number',
+  'purok',
+  'is_registered_voter',
+  'is_registered_sk_voter',
+  'is_registered_national_voter',
+  'voted_last_election',
+  'attended_kk_assembly',
+  'kk_assembly_count',
+].map(normalizeFieldIdentity));
+
+const visibleCustomValues = (values: Record<string, unknown>) =>
+  Object.entries(values).filter(([key]) => !coreCustomValueKeys.has(normalizeFieldIdentity(key)));
+
 const YouthRecordDetailPage = () => {
   const navigate = useNavigate();
   const { recordId } = useParams();
@@ -193,6 +234,17 @@ const YouthRecordDetailPage = () => {
             <DetailField label="How Many Times?" value={record.kk_assembly_count} />
           )}
         </Grid>
+
+        {record.custom_values && visibleCustomValues(record.custom_values).length > 0 && (
+          <>
+            <SectionHeader>Category Fields</SectionHeader>
+            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+              {visibleCustomValues(record.custom_values).map(([key, value]) => (
+                <DetailField key={key} label={key.replace(/_/g, ' ')} value={formatDetailValue(value)} />
+              ))}
+            </Grid>
+          </>
+        )}
       </Box>
 
       <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="lg" border="1px solid" borderColor="border">

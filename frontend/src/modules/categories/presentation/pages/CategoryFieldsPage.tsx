@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { Box, Heading, Button, HStack, VStack, Text, Badge, Card, SimpleGrid, Table } from '@chakra-ui/react';
 import { PageHeader } from '../../../../shared/components/PageHeader';
-import { TextField, SelectField, CheckboxField } from '../../../../shared/forms/FormFields';
+import { TextField, SelectField, CheckboxField, TextareaField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
 import { categoryApi, type CategoryWithFields, type CategoryField } from '../../infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
@@ -16,6 +16,27 @@ const fieldTypeOptions = [
   { value: 'SINGLE_SELECT', label: 'Single Select' },
   { value: 'MULTI_SELECT', label: 'Multi Select' },
 ];
+
+const selectFieldTypes = new Set(['SINGLE_SELECT', 'MULTI_SELECT', 'SELECT']);
+
+const optionLabelsToText = (options: unknown): string => {
+  if (!Array.isArray(options)) return '';
+  return options
+    .map((option) => {
+      if (typeof option === 'string') return option;
+      if (option && typeof option === 'object' && 'label' in option) return String((option as { label: unknown }).label ?? '');
+      return '';
+    })
+    .filter(Boolean)
+    .join('\n');
+};
+
+const textToOptions = (value: string) =>
+  value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((label) => ({ value: label, label }));
 
 const CategoryFieldsPage = () => {
   const { categoryId } = useParams();
@@ -34,6 +55,7 @@ const CategoryFieldsPage = () => {
   const [formRequired, setFormRequired] = useState(false);
   const [formHelpText, setFormHelpText] = useState('');
   const [formSortOrder, setFormSortOrder] = useState('0');
+  const [formOptionsText, setFormOptionsText] = useState('');
 
   const loadData = async () => {
     if (!categoryId) return;
@@ -61,6 +83,7 @@ const CategoryFieldsPage = () => {
     setFormRequired(false);
     setFormHelpText('');
     setFormSortOrder('0');
+    setFormOptionsText('');
     setEditingId(null);
     setShowAdd(false);
   };
@@ -74,6 +97,7 @@ const CategoryFieldsPage = () => {
     setFormRequired(field.is_required);
     setFormHelpText(field.help_text || '');
     setFormSortOrder(String(field.sort_order));
+    setFormOptionsText(optionLabelsToText(field.options));
   };
 
   const handleSave = async () => {
@@ -84,6 +108,7 @@ const CategoryFieldsPage = () => {
       field_type: formType,
       is_required: formRequired,
       help_text: formHelpText,
+      options: selectFieldTypes.has(formType) ? textToOptions(formOptionsText) : null,
       sort_order: parseInt(formSortOrder, 10) || 0,
     };
 
@@ -97,8 +122,8 @@ const CategoryFieldsPage = () => {
       }
       resetForm();
       loadData();
-    } catch {
-      showToast.error('Failed to save field');
+    } catch (error) {
+      showToast.error(error instanceof Error ? error.message : 'Failed to save field');
     }
   };
 
@@ -184,6 +209,16 @@ const CategoryFieldsPage = () => {
                     <TextField label="Sort Order" name="sortOrder" type="number" value={formSortOrder} onChange={setFormSortOrder} />
                   </SimpleGrid>
                   <TextField label="Help Text" name="helpText" value={formHelpText} onChange={setFormHelpText} />
+                  {selectFieldTypes.has(formType) && (
+                    <TextareaField
+                      label="Options"
+                      name="options"
+                      value={formOptionsText}
+                      onChange={setFormOptionsText}
+                      placeholder={'One option per line\nStudent\nEmployed\nUnemployed'}
+                      rows={4}
+                    />
+                  )}
                   <CheckboxField label="Required" name="required" checked={formRequired} onChange={setFormRequired} />
                   <HStack gap={2}>
                     <Button size="sm" colorPalette="green" onClick={handleSave}>Save</Button>
@@ -200,6 +235,9 @@ const CategoryFieldsPage = () => {
                       {field.is_required && <Badge colorPalette="red">Required</Badge>}
                     </HStack>
                     {field.help_text && <Text fontSize="sm" color="gray.600">{field.help_text}</Text>}
+                    {selectFieldTypes.has(field.field_type) && optionLabelsToText(field.options) && (
+                      <Text fontSize="sm" color="gray.600">Options: {optionLabelsToText(field.options).replace(/\n/g, ', ')}</Text>
+                    )}
                   </VStack>
                   <Button size="sm" variant="outline" onClick={() => handleEditClick(field)}>Edit</Button>
                 </HStack>
@@ -224,6 +262,16 @@ const CategoryFieldsPage = () => {
                   <TextField label="Sort Order" name="sortOrder" type="number" value={formSortOrder} onChange={setFormSortOrder} />
                 </SimpleGrid>
                 <TextField label="Help Text" name="helpText" value={formHelpText} onChange={setFormHelpText} />
+                {selectFieldTypes.has(formType) && (
+                  <TextareaField
+                    label="Options"
+                    name="options"
+                    value={formOptionsText}
+                    onChange={setFormOptionsText}
+                    placeholder={'One option per line\nStudent\nEmployed\nUnemployed'}
+                    rows={4}
+                  />
+                )}
                 <CheckboxField label="Required" name="required" checked={formRequired} onChange={setFormRequired} />
                 <HStack gap={2}>
                   <Button size="sm" colorPalette="green" onClick={handleSave}>Save</Button>

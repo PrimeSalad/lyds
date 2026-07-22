@@ -36,6 +36,18 @@ export const barangayRepository = {
     return data;
   },
 
+  async findByNameAndMunicipality(name: string, municipality: string): Promise<Barangay | null> {
+    const { data, error } = await supabaseAdmin
+      .from(TABLE)
+      .select('*')
+      .eq('name', name)
+      .eq('municipality', municipality)
+      .is('deleted_at', null)
+      .single();
+    if (error) return null;
+    return data;
+  },
+
   async create(input: CreateBarangayInput): Promise<Barangay> {
     const { data, error } = await supabaseAdmin
       .from(TABLE)

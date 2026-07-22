@@ -7,6 +7,7 @@ export type YouthRecord = {
   display_name: string; 
   birth_date: string; 
   age_at_submission: number;
+  version: number;
   status: YouthRecordStatus;
   barangay_id: string; 
   category_id: string; 
@@ -19,6 +20,7 @@ export type YouthRecord = {
   work_status_label?: string;
   email?: string; 
   contact_number?: string;
+  custom_values?: Record<string, unknown>;
 };
 
 export type YouthRecordDetail = YouthRecord & {
@@ -35,6 +37,7 @@ export type YouthRecordDetail = YouthRecord & {
   voted_last_election?: boolean | null;
   attended_kk_assembly: boolean;
   kk_assembly_count?: number;
+  custom_values?: Record<string, unknown>;
 };
 
 export type AuditLog = {
@@ -75,9 +78,10 @@ export type CreateInput = {
   voted_last_election: boolean;
   attended_kk_assembly: boolean;
   kk_assembly_count: number;
+  custom_values?: Record<string, unknown>;
 };
 
-export type UpdateInput = Partial<CreateInput>;
+export type UpdateInput = Partial<CreateInput> & { version: number };
 
 export const youthRecordApi = {
   async list(params: ListParams = {}): Promise<{ data: YouthRecord[]; meta: { page: number; pageSize: number; totalItems: number; totalPages: number } }> {

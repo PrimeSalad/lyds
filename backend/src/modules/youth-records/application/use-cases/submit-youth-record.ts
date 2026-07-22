@@ -1,7 +1,6 @@
 import { youthRecordRepository } from '../../infrastructure/repositories/youth-record-repository';
 import { canTransition } from '../../domain/rules/status-transitions';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
-import { API_ERRORS } from '../../../../config/api-error';
 import { auditService } from '../../../audit-logs/infrastructure/audit-service';
 
 export const submitYouthRecord = async (id: string, authContext: any) => {
@@ -23,12 +22,14 @@ export const submitYouthRecord = async (id: string, authContext: any) => {
   });
 
   await auditService.log({
+    actor_profile_id: authContext.profileId,
+    actor_role: authContext.role,
     action: 'STATUS_CHANGE',
     entity_type: 'YOUTH_RECORD',
     entity_id: record.id,
-    actor_id: authContext.profileId,
-    old_data: { status: record.status },
-    new_data: { status: 'SUBMITTED' },
+    barangay_id: record.barangay_id,
+    before_data: { status: record.status },
+    after_data: { status: 'SUBMITTED' },
   });
 
   return updatedRecord;

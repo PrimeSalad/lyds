@@ -15,9 +15,9 @@ const CategoryFormPage = () => {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [recordType, setRecordType] = useState('');
+  const [recordType, setRecordType] = useState('YOUTH_PROFILE');
   const [permissionMode, setPermissionMode] = useState('SK_FILLABLE');
-  const [allowSkExport, setAllowSkExport] = useState(false);
+  const [allowSkExport, setAllowSkExport] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
 
@@ -48,10 +48,10 @@ const CategoryFormPage = () => {
 
     try {
       const payload = {
-        code,
-        name,
-        description,
-        record_type: recordType,
+        code: code.trim().toUpperCase().replace(/\s+/g, '_'),
+        name: name.trim(),
+        description: description.trim() || null,
+        record_type: recordType.trim() || 'YOUTH_PROFILE',
         permission_mode: permissionMode,
         allow_sk_export: allowSkExport,
       };
@@ -59,13 +59,14 @@ const CategoryFormPage = () => {
       if (isEditing) {
         await categoryApi.update(categoryId!, payload);
         showToast.success('Category updated');
+        navigate('/categories');
       } else {
-        await categoryApi.create(payload);
-        showToast.success('Category created');
+        const res = await categoryApi.create(payload);
+        showToast.success('Category created. Add fields for this category.');
+        navigate(`/categories/${res.data.id}/fields`);
       }
-      navigate('/categories');
-    } catch {
-      showToast.error('Failed to save category');
+    } catch (error) {
+      showToast.error(error instanceof Error ? error.message : 'Failed to save category');
     } finally {
       setLoading(false);
     }
@@ -112,7 +113,7 @@ const CategoryFormPage = () => {
             value={recordType}
             onChange={setRecordType}
             required
-            placeholder="e.g. profile, transaction"
+            placeholder="YOUTH_PROFILE"
           />
           <SelectField
             label="Permission Mode"

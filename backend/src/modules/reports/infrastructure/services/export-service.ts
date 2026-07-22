@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 
 export const exportService = {
-  async generateExport(data: any[], title: string): Promise<Buffer> {
+  async generateExport(data: any[], _title: string): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Export Data');
     
@@ -52,6 +52,7 @@ export const exportService = {
       ]);
     }
     
-    return await workbook.xlsx.writeBuffer() as Buffer;
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer as ArrayBuffer);
   }
 };

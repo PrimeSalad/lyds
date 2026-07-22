@@ -11,7 +11,7 @@ export const createCategory = async (input: CreateCategoryInput, profileId: stri
 
   return categoryRepository.createCategory({
     ...input,
-    status: 'DRAFT',
+    status: 'PUBLISHED',
     created_by: profileId,
   });
 };

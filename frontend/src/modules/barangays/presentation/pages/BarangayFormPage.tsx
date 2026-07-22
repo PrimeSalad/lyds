@@ -7,6 +7,16 @@ import { showToast } from '../../../../shared/toast';
 import { barangayApi } from '../../infrastructure/barangay-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 
+const BOAC_MUNICIPALITY = 'Boac';
+const MARINDUQUE_PROVINCE = 'Marinduque';
+
+const toBarangayCode = (value: string) =>
+  `BOAC-${value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')}`;
+
 const BarangayFormPage = () => {
   const navigate = useNavigate();
   const { barangayId } = useParams();
@@ -14,8 +24,8 @@ const BarangayFormPage = () => {
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [municipality, setMunicipality] = useState('');
-  const [province, setProvince] = useState('');
+  const [municipality, setMunicipality] = useState(BOAC_MUNICIPALITY);
+  const [province, setProvince] = useState(MARINDUQUE_PROVINCE);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
 
@@ -42,16 +52,34 @@ const BarangayFormPage = () => {
     setLoading(true);
 
     try {
+      const trimmedName = name.trim();
+      const trimmedMunicipality = municipality.trim() || BOAC_MUNICIPALITY;
+      const trimmedProvince = province.trim() || MARINDUQUE_PROVINCE;
+      const trimmedCode = code.trim() || toBarangayCode(trimmedName);
+
+      if (!trimmedName) {
+        throw new Error('Barangay name is required.');
+      }
+
       if (isEditing) {
-        await barangayApi.update(barangayId!, { name, municipality, province });
+        await barangayApi.update(barangayId!, {
+          name: trimmedName,
+          municipality: trimmedMunicipality,
+          province: trimmedProvince,
+        });
         showToast.success('Barangay updated');
       } else {
-        await barangayApi.create({ code, name, municipality, province });
+        await barangayApi.create({
+          code: trimmedCode,
+          name: trimmedName,
+          municipality: trimmedMunicipality,
+          province: trimmedProvince,
+        });
         showToast.success('Barangay created');
       }
       navigate('/barangays');
-    } catch {
-      showToast.error('Failed to save barangay');
+    } catch (error) {
+      showToast.error(error instanceof Error ? error.message : 'Failed to save barangay');
     } finally {
       setLoading(false);
     }
@@ -73,9 +101,8 @@ const BarangayFormPage = () => {
             name="code"
             value={code}
             onChange={setCode}
-            required
             disabled={isEditing}
-            placeholder="e.g. BRG-001"
+            placeholder={name ? toBarangayCode(name) : 'Auto-generated from name'}
           />
           <TextField
             label="Name"

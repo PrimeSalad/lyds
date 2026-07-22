@@ -1,6 +1,5 @@
 import { categoryRepository } from '../../infrastructure/repositories/category-repository';
 import type { Category } from '../../domain/entities/category';
-import type { Profile } from '../../../accounts/domain/entities/account';
 
 export const listCategories = async (role: string): Promise<Category[]> => {
   if (role === 'ADMIN') {

@@ -11,7 +11,7 @@ export interface Barangay {
 }
 
 export interface CreateBarangayInput {
-  code: string;
+  code?: string;
   name: string;
   municipality?: string;
   province?: string;

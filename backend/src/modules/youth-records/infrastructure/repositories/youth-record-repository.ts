@@ -97,7 +97,7 @@ export const youthRecordRepository = {
     return data as YouthRecord;
   },
 
-  async transitionStatus(id: string, newStatus: RecordStatus, actorId: string, extra: any = {}) {
+  async transitionStatus(id: string, newStatus: RecordStatus, _actorId: string, extra: any = {}) {
     const record = await this.getRecordById(id);
     if (!record) throw YouthRecordErrors.NOT_FOUND;
 

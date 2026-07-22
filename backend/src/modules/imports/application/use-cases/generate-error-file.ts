@@ -30,5 +30,6 @@ export const generateErrorFile = async (batchId: string): Promise<Buffer> => {
     worksheet.addRow(['No errors found in this batch.']);
   }
   
-  return await workbook.xlsx.writeBuffer() as Buffer;
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer as ArrayBuffer);
 };

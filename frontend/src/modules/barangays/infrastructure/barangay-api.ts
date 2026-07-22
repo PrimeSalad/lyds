@@ -27,7 +27,7 @@ export const barangayApi = {
     return res.data;
   },
 
-  async create(input: { code: string; name: string; municipality?: string; province?: string }): Promise<Barangay> {
+  async create(input: { code?: string; name: string; municipality?: string; province?: string }): Promise<Barangay> {
     const res = await apiClient.request<{ data: Barangay }>('/barangays', {
       method: 'POST',
       body: JSON.stringify(input),

@@ -18,5 +18,6 @@ export const generateTemplate = async (): Promise<Buffer> => {
   // Basic formatting
   worksheet.getRow(1).font = { bold: true };
   
-  return await workbook.xlsx.writeBuffer() as Buffer;
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer as ArrayBuffer);
 };

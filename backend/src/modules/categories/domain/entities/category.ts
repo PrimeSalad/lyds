@@ -1,6 +1,16 @@
 export type CategoryStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-export type CategoryPermissionMode = 'PUBLIC' | 'RESTRICTED' | 'PRIVATE';
-export type CustomFieldType = 'TEXT' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'SELECT' | 'MULTI_SELECT';
+export type CategoryPermissionMode = 'SK_FILLABLE' | 'SK_VIEW_ONLY' | 'ADMIN_ONLY' | 'PUBLIC' | 'RESTRICTED' | 'PRIVATE';
+export type CustomFieldType =
+  | 'TEXT'
+  | 'SHORT_TEXT'
+  | 'LONG_TEXT'
+  | 'NUMBER'
+  | 'DATE'
+  | 'BOOLEAN'
+  | 'YES_NO'
+  | 'SELECT'
+  | 'SINGLE_SELECT'
+  | 'MULTI_SELECT';
 
 export interface Category {
   id: string;

@@ -2,7 +2,7 @@ import { supabaseAdmin } from '../../../../config/supabase';
 import type { ImportBatch, ImportRowResult, ImportBatchStatus } from '../../domain/entities/import-batch';
 
 export const importRepository = {
-  async createBatch(input: Omit<ImportBatch, 'created_at' | 'updated_at'>): Promise<ImportBatch> {
+  async createBatch(input: Omit<ImportBatch, 'id' | 'created_at' | 'updated_at'>): Promise<ImportBatch> {
     const { data, error } = await supabaseAdmin
       .from('import_batches')
       .insert(input)

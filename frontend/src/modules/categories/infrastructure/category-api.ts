@@ -19,7 +19,7 @@ export type CategoryWithFields = Category & { fields: CategoryField[] };
 export interface CreateCategoryInput {
   code: string;
   name: string;
-  description: string;
+  description: string | null;
   record_type: string;
   permission_mode: string;
   allow_sk_export: boolean;
@@ -32,9 +32,11 @@ export interface CategoryField {
   category_id: string;
   field_key: string;
   label: string;
-  field_type: 'SHORT_TEXT' | 'LONG_TEXT' | 'NUMBER' | 'DATE' | 'YES_NO' | 'SINGLE_SELECT' | 'MULTI_SELECT';
+  field_type: 'TEXT' | 'SHORT_TEXT' | 'LONG_TEXT' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'YES_NO' | 'SELECT' | 'SINGLE_SELECT' | 'MULTI_SELECT';
   is_required: boolean;
+  is_active?: boolean;
   help_text: string;
+  options?: unknown;
   sort_order: number;
 }
 
@@ -44,6 +46,7 @@ export interface CreateFieldInput {
   field_type: string;
   is_required: boolean;
   help_text: string;
+  options?: unknown;
   sort_order: number;
 }
 

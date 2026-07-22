@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Redesigned the sign-in experience with bundled Poppins/Questrial fonts, full-width accessible controls, and a compact mobile-first composition; moved sign out from the top bar to the sidebar footer.
 - Refined the frontend into a restrained, responsive civic operations UI with a compact icon sidebar, mobile record cards, stronger form hierarchy, accessible focus states, and reduced-motion support.
 - Improved the Youth Record form with option loading/error states, inline validation summaries, age and contact validation, submission confirmation, and unsaved-change protection.
 - Improved the SK Youth dashboard UI with a responsive app shell, consistent page headers, tokenized typography/colors, polished tables/forms, and mobile-safe navigation.

@@ -51,8 +51,8 @@ const config = defineConfig({
         success: { DEFAULT: { value: '#166534' }, light: { value: '#F0FDF4' } },
       },
       fonts: {
-        heading: { value: "Inter, 'Segoe UI', ui-sans-serif, system-ui, sans-serif" },
-        body: { value: "Inter, 'Segoe UI', ui-sans-serif, system-ui, sans-serif" },
+        heading: { value: "Poppins, 'Segoe UI', ui-sans-serif, system-ui, sans-serif" },
+        body: { value: "Questrial, 'Segoe UI', ui-sans-serif, system-ui, sans-serif" },
       },
       shadows: {
         panel: { value: '0 1px 2px rgba(18, 59, 39, 0.05), 0 8px 24px rgba(18, 59, 39, 0.04)' },

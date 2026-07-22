@@ -1,13 +1,7 @@
-import { useState } from 'react';
-import { Box, Text, Button, HStack, IconButton, Image } from '@chakra-ui/react';
-import { useSelector, useDispatch } from 'react-redux';
+import { Box, Text, HStack, IconButton, Image } from '@chakra-ui/react';
+import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
-import { clearProfile } from '../../../auth/application/auth-store';
-import { authApi } from '../../../auth/infrastructure/auth-api';
-import { useNavigate } from 'react-router';
-import { LuLogOut, LuMenu, LuShieldCheck } from 'react-icons/lu';
-import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
-import { showToast } from '../../../../shared/toast';
+import { LuMenu, LuShieldCheck } from 'react-icons/lu';
 
 type TopBarProps = {
   onOpenNavigation?: () => void;
@@ -15,27 +9,9 @@ type TopBarProps = {
 
 export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
   const profile = useSelector((state: RootState) => state.auth.profile);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await authApi.signOut();
-      dispatch(clearProfile());
-      navigate('/login');
-    } catch (error) {
-      showToast.error({
-        title: 'Could not sign out',
-        description: error instanceof Error ? error.message : 'Please try again.',
-      });
-      throw error;
-    }
-  };
 
   return (
-    <>
-      <Box
+    <Box
         as="header"
         h="64px"
         bg="white"
@@ -65,30 +41,13 @@ export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
             </Text>
           </HStack>
         </HStack>
-        <HStack gap={{ base: 2, sm: 4 }}>
-          <HStack gap={2} display={{ base: 'none', sm: 'flex' }} color="text.secondary">
-            <LuShieldCheck aria-hidden="true" />
-            <Box textAlign="right">
-              <Text fontSize="sm" fontWeight="600">
-                {profile?.role === 'SK_OFFICIAL' ? 'SK Official' : 'Administrator'}
-              </Text>
-            </Box>
-          </HStack>
-          <Button variant="ghost" size="sm" minH="44px" onClick={() => setLogoutDialogOpen(true)}>
-            <LuLogOut />
-            <Text display={{ base: 'none', sm: 'inline' }}>Sign Out</Text>
-          </Button>
+        <HStack gap={2} display={{ base: 'none', sm: 'flex' }} color="text.secondary">
+          <LuShieldCheck aria-hidden="true" />
+          <Text fontSize="sm" fontWeight="600">
+            {profile?.role === 'SK_OFFICIAL' ? 'SK Official' : 'Administrator'}
+          </Text>
         </HStack>
-      </Box>
-      <ConfirmDialog
-        open={logoutDialogOpen}
-        onOpenChange={({ open }) => setLogoutDialogOpen(open)}
-        title="Sign out of this account?"
-        description="Any unsaved changes on the current page will be lost."
-        confirmLabel="Sign Out"
-        onConfirm={handleLogout}
-      />
-    </>
+    </Box>
   );
 };
 

@@ -11,6 +11,10 @@ import { ErrorPage } from './ui/components/error-page';
 import { I18nProvider } from './utilities/i18n';
 import { reportError } from './utilities/error-reporting';
 import { AppToaster } from './shared/components/AppToaster';
+import '@fontsource/poppins/latin-500.css';
+import '@fontsource/poppins/latin-600.css';
+import '@fontsource/poppins/latin-700.css';
+import '@fontsource/questrial/latin-400.css';
 import './ui/styles/index.css';
 
 export const ErrorFallback = ({ error }: FallbackProps) => {

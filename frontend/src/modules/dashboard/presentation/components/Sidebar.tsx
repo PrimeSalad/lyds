@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { Box, Button, HStack, IconButton, Image, VStack, Text, Badge } from '@chakra-ui/react';
-import { Link as RouterLink, useLocation } from 'react-router';
-import { useSelector } from 'react-redux';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
+import { useDispatch, useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
+import { clearProfile } from '../../../auth/application/auth-store';
+import { authApi } from '../../../auth/infrastructure/auth-api';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
+import { showToast } from '../../../../shared/toast';
 import {
   LuChartNoAxesCombined,
   LuClipboardList,
@@ -9,6 +14,7 @@ import {
   LuFilePlus2,
   LuLayoutDashboard,
   LuListTree,
+  LuLogOut,
   LuMapPin,
   LuMegaphone,
   LuUpload,
@@ -46,11 +52,30 @@ type SidebarProps = {
 
 export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const profile = useSelector((state: RootState) => state.auth.profile);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
   const links = profile?.role === 'ADMIN' ? adminLinks : skLinks;
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.signOut();
+      dispatch(clearProfile());
+      onClose?.();
+      navigate('/login');
+    } catch (error) {
+      showToast.error({
+        title: 'Could not sign out',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+      throw error;
+    }
+  };
 
   return (
-    <Box
+    <>
+      <Box
       as="nav"
       aria-label="Primary navigation"
       w={{ base: '280px', lg: '256px' }}
@@ -135,7 +160,30 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           <Text fontSize="sm" fontWeight="600">Assigned barangay only</Text>
         </Box>
       )}
-    </Box>
+      <Box mt={3} pt={3} borderTop="1px solid" borderColor="border">
+        <Button
+          width="full"
+          minH="44px"
+          variant="ghost"
+          justifyContent="flex-start"
+          color="danger"
+          _hover={{ bg: 'danger.light', color: 'danger' }}
+          onClick={() => setLogoutDialogOpen(true)}
+        >
+          <LuLogOut />
+          Sign Out
+        </Button>
+      </Box>
+      </Box>
+      <ConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={({ open }) => setLogoutDialogOpen(open)}
+        title="Sign out of this account?"
+        description="Any unsaved changes on the current page will be lost."
+        confirmLabel="Sign Out"
+        onConfirm={handleLogout}
+      />
+    </>
   );
 };
 

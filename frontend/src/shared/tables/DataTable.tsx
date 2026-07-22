@@ -170,7 +170,7 @@ export const DataTable = <T,>({
       <Box overflowX="auto" width="full" css={{ '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-track': { bg: 'surface.muted' }, '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '4px' } }}>
         <Table.Root size="sm" variant="outline" css={{ tableLayout: 'fixed', minWidth: 'max-content', borderCollapse: 'collapse' }} borderWidth="1px" borderColor="border.strong">
           <Table.Header>
-            <Table.Row bg="surface.muted" borderBottomWidth="2px" borderColor="border.strong">
+            <Table.Row bg="primary.700" borderBottomWidth="2px" borderColor="primary.900">
               {columns.map((col) => (
                 <Table.ColumnHeader
                   key={col.key}
@@ -178,14 +178,14 @@ export const DataTable = <T,>({
                   whiteSpace="nowrap"
                   fontSize="xs"
                   fontWeight="700"
-                  color="text.primary"
+                  color="white"
                   textTransform="uppercase"
                   letterSpacing="0.03em"
                   textAlign="center"
                   py={3}
                   px={3}
                   borderRightWidth="1px"
-                  borderColor="border.strong"
+                  borderColor="primary.600"
                   _last={{ borderRightWidth: '0' }}
                   cursor={col.sortable ? 'pointer' : undefined}
                   userSelect={col.sortable ? 'none' : undefined}
@@ -204,7 +204,7 @@ export const DataTable = <T,>({
                   </HStack>
                 </Table.ColumnHeader>
               ))}
-              {actions && actions.length > 0 && <Table.ColumnHeader width="90px" fontSize="xs" fontWeight="700" textAlign="center" py={3} px={3} borderLeftWidth="1px" borderColor="border.strong">Actions</Table.ColumnHeader>}
+              {actions && actions.length > 0 && <Table.ColumnHeader width="90px" fontSize="xs" fontWeight="700" color="white" textAlign="center" py={3} px={3} borderLeftWidth="1px" borderColor="primary.600">Actions</Table.ColumnHeader>}
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -216,7 +216,7 @@ export const DataTable = <T,>({
               </Table.Row>
             ) : (
               paginated.map((row, idx) => (
-                <Table.Row key={getRowKey(row, idx)} _hover={{ bg: 'surface.muted' }} borderBottomWidth="1px" borderColor="border.strong">
+                <Table.Row key={getRowKey(row, idx)} bg={idx % 2 === 0 ? 'white' : 'surface.muted'} _hover={{ bg: 'primary.50' }} borderBottomWidth="1px" borderColor="border.strong">
                   {columns.map((col) => (
                     <Table.Cell key={col.key} fontSize="sm" textAlign="center" py={3} px={3} borderRightWidth="1px" borderColor="border.strong" _last={{ borderRightWidth: '0' }} verticalAlign="middle">
                       <Box whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxW="100%">

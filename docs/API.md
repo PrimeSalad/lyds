@@ -32,6 +32,7 @@ Legacy compatibility endpoints (browser redirect flow):
 
 ### Application API
 
+- `POST /api/v1/youth-records` — creates a youth record; `birth_date` may be `null`, in which case computed age and age group are also `null`.
 - `GET /api/key` — returns the local-storage encryption key (requires auth)
 - `GET /api/v1/announcements` — list visible announcements for the current user; admins receive the management list.
 - `POST /api/v1/announcements` — create a published announcement (admin only).

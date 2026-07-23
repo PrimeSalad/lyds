@@ -17,7 +17,8 @@ import { DashboardLayout } from '../../../dashboard/presentation/pages/Dashboard
 
 type SortValue = 'barangay-asc' | 'barangay-desc' | 'newest' | 'oldest' | 'name-asc' | 'name-desc';
 
-const formatBirthDate = (dateStr: string) => {
+const formatBirthDate = (dateStr: string | null) => {
+  if (!dateStr) return '—';
   const d = new Date(dateStr);
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');

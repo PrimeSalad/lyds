@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Table, Text, HStack, Button, Input, VStack, Spinner, Box, Card, IconButton } from '@chakra-ui/react';
-import { LuArrowDown, LuArrowUp, LuChevronLeft, LuChevronRight, LuSearch, LuX } from 'react-icons/lu';
+import { LuArrowDown, LuArrowUp, LuSearch, LuX } from 'react-icons/lu';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Pagination } from '../components/Pagination';
 
 export interface Column<T> {
   key: string;
@@ -294,31 +295,12 @@ export const DataTable = <T,>({
         ))}
       </VStack>
 
-      {totalPages > 1 && (
-        <HStack justify="space-between" gap={3}>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={currentPage === 1}
-            onClick={() => changePage(currentPage - 1)}
-          >
-            <LuChevronLeft />
-            Previous
-          </Button>
-          <Text fontSize="sm" color="text.secondary">
-            Page {currentPage} of {totalPages}
-          </Text>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={currentPage === totalPages}
-            onClick={() => changePage(currentPage + 1)}
-          >
-            Next
-            <LuChevronRight />
-          </Button>
-        </HStack>
-      )}
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        totalItems={pagination?.totalItems ?? filtered.length}
+        onPageChange={changePage}
+      />
 
       {pendingAction?.action.confirm && (
         <ConfirmDialog

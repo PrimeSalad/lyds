@@ -81,6 +81,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/youth-records:
+    post:
+      tags: [app]
+      summary: Create a youth record
+      description: |
+        Creates a youth profile. Birth date is optional when it has not yet
+        been collected; age and youth age group are then returned as null.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateYouthRecordInput'
+      responses:
+        '201':
+          description: Youth record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouthRecordResponse'
+        '400':
+          description: Invalid record data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /login/password:
     post:
       tags: [legacy]
@@ -148,6 +174,60 @@ components:
       properties:
         key:
           type: [string, "null"]
+    CreateYouthRecordInput:
+      type: object
+      required: [category_id, first_name, last_name]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        barangay_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        suffix:
+          type: string
+        birth_date:
+          type: [string, "null"]
+          format: date
+          description: May be null when the source record has no known birth date.
+        submit_on_create:
+          type: boolean
+          default: false
+    YouthRecord:
+      type: object
+      required: [id, category_id, barangay_id, display_name, birth_date, age_at_submission, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        barangay_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        birth_date:
+          type: [string, "null"]
+          format: date
+        age_at_submission:
+          type: [integer, "null"]
+        status:
+          type: string
+          enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
+    YouthRecordResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/YouthRecord'
     ErrorResponse:
       type: object
       required: [status, code, message]

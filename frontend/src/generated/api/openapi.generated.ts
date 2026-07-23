@@ -137,6 +137,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/youth-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a youth record
+         * @description Creates a youth profile. Birth date is optional when it has not yet
+         *     been collected; age and youth age group are then returned as null.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateYouthRecordInput"];
+                };
+            };
+            responses: {
+                /** @description Youth record created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["YouthRecordResponse"];
+                    };
+                };
+                /** @description Invalid record data */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/login/password": {
         parameters: {
             query?: never;
@@ -246,6 +299,40 @@ export interface components {
         };
         EncryptionKeyResponse: {
             key: string | null;
+        };
+        CreateYouthRecordInput: {
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            barangay_id?: string;
+            first_name: string;
+            middle_name?: string;
+            last_name: string;
+            suffix?: string;
+            /**
+             * Format: date
+             * @description May be null when the source record has no known birth date.
+             */
+            birth_date?: string | null;
+            /** @default false */
+            submit_on_create: boolean;
+        };
+        YouthRecord: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            barangay_id: string;
+            display_name: string;
+            /** Format: date */
+            birth_date: string | null;
+            age_at_submission: number | null;
+            /** @enum {string} */
+            status: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+        };
+        YouthRecordResponse: {
+            data: components["schemas"]["YouthRecord"];
         };
         ErrorResponse: {
             status: number;

@@ -10,8 +10,8 @@ export interface YouthRecord {
   middle_name: string | null;
   last_name: string | null;
   suffix: string | null;
-  birth_date: string;
-  age_at_submission: number;
+  birth_date: string | null;
+  age_at_submission: number | null;
   sex_assigned_at_birth_id: string | null;
   civil_status_id: string | null;
   youth_classification_id: string | null;

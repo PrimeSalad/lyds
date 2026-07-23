@@ -293,7 +293,7 @@ const YouthRecordFormPage = () => {
             middle_name: res.data.middle_name ?? '',
             last_name: res.data.last_name ?? '',
             suffix: res.data.suffix ?? '',
-            birth_date: res.data.birth_date,
+            birth_date: res.data.birth_date ?? '',
             sex_assigned_at_birth_id: res.data.sex_assigned_at_birth_id ?? '',
             civil_status_id: res.data.civil_status_id ?? '',
             youth_classification_id: res.data.youth_classification_id ?? '',
@@ -323,7 +323,7 @@ const YouthRecordFormPage = () => {
     middle_name: data.middle_name.trim() || undefined,
     last_name: data.last_name.trim(),
     suffix: data.suffix.trim() || undefined,
-    birth_date: data.birth_date,
+    birth_date: data.birth_date || null,
     sex_assigned_at_birth_id: data.sex_assigned_at_birth_id,
     civil_status_id: data.civil_status_id,
     youth_classification_id: data.youth_classification_id,
@@ -588,17 +588,17 @@ const YouthRecordFormPage = () => {
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           <GridItem>
             <Controller name="birth_date" control={control} rules={{
-              required: 'Birth date is required',
               validate: (value) => {
+                if (!value) return true;
                 const recordAge = computeAge(value);
                 return (recordAge >= 15 && recordAge <= 30) || 'Youth records must be for ages 15 to 30';
               },
             }} render={({ field, fieldState }) => (
-              <TextField type="date" label="Birth Date*" error={fieldState.error?.message} {...field} />
+              <TextField type="date" label="Birth Date" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
           <GridItem>
-            <TextField label="Age" value={birthDate ? String(age) : ''} onChange={() => {}} readOnly helpText="Calculated from the birth date" />
+            <TextField label="Age" value={birthDate ? String(age) : ''} onChange={() => {}} readOnly helpText="Calculated when a birth date is available" />
           </GridItem>
         </Grid>
 

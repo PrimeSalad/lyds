@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Heading, HStack, Badge, Text, VStack, Button } from '@chakra-ui/react';
+import { Heading, Badge, Text, VStack } from '@chakra-ui/react';
 import { DataTable, type Column } from '../../../../shared/tables/DataTable';
 import { auditLogApi, type AuditLog } from '../../infrastructure/audit-log-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
@@ -25,12 +25,14 @@ const AuditLogListPage = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const loadLogs = async (p: number) => {
     try {
       const result = await auditLogApi.list({ page: p, pageSize: 25 });
       setLogs(result.data);
       setTotalPages(result.meta.totalPages);
+      setTotalItems(result.meta.totalItems);
     } catch {
       // Toast would be nice but we keep it simple
     } finally {
@@ -89,19 +91,13 @@ const AuditLogListPage = () => {
         data={logs}
         loading={loading}
         emptyMessage="No audit logs found."
+        pagination={{
+          page,
+          totalPages,
+          totalItems,
+          onPageChange: setPage,
+        }}
       />
-
-      {totalPages > 1 && (
-        <HStack justify="center" gap={2} mt={4}>
-          <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage(page - 1)}>
-            Previous
-          </Button>
-          <Text fontSize="sm">Page {page} of {totalPages}</Text>
-          <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
-            Next
-          </Button>
-        </HStack>
-      )}
     </DashboardLayout>
   );
 };

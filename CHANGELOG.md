@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replaced one-step list pagination with responsive numbered pages, first/last controls, and direct page jumping for youth records and audit logs.
+- Allowed youth records with an unknown birth date and age, while retaining data-quality visibility for incomplete profiles.
 - Removed the role label from the dashboard top bar and placed Account Settings and Sign Out together in the sidebar footer.
 - Redesigned the sign-in experience with bundled Poppins/Questrial fonts, full-width accessible controls, and a compact mobile-first composition; moved sign out from the top bar to the sidebar footer.
 - Refined the frontend into a restrained, responsive civic operations UI with a compact icon sidebar, mobile record cards, stronger form hierarchy, accessible focus states, and reduced-motion support.

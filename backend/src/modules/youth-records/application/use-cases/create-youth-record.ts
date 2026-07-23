@@ -19,8 +19,9 @@ export const createYouthRecord = async (input: any, authContext: any) => {
     throw API_ERRORS.validation('Barangay ID is required.');
   }
 
-  const age = computeAge(profileInput.birth_date);
-  const ageGroupCode = computeAgeGroup(age);
+  const birthDate = profileInput.birth_date || null;
+  const age = birthDate ? computeAge(birthDate) : null;
+  const ageGroupCode = age === null ? null : computeAgeGroup(age);
   const ageGroup = ageGroupCode
     ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)
     : null;
@@ -30,13 +31,16 @@ export const createYouthRecord = async (input: any, authContext: any) => {
     displayName = `${profileInput.first_name} ${profileInput.last_name}`;
   }
 
-  const duplicates = await youthRecordRepository.checkDuplicates(barangayId, displayName, profileInput.birth_date);
+  const duplicates = birthDate && displayName
+    ? await youthRecordRepository.checkDuplicates(barangayId, displayName, birthDate)
+    : [];
   const submittedAt = submit_on_create ? new Date().toISOString() : null;
 
   const recordData = {
     ...profileInput,
     barangay_id: barangayId,
     display_name: displayName,
+    birth_date: birthDate,
     age_at_submission: age,
     youth_age_group_id: ageGroup?.id ?? null,
     status: submit_on_create ? 'SUBMITTED' : 'DRAFT',

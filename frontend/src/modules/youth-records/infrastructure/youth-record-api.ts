@@ -6,8 +6,8 @@ export type YouthRecord = {
   id: string;
   row_number?: number;
   display_name: string;
-  birth_date: string;
-  age_at_submission: number;
+  birth_date: string | null;
+  age_at_submission: number | null;
   version: number;
   status: YouthRecordStatus;
   barangay_id: string;
@@ -80,7 +80,7 @@ export type CreateInput = {
   middle_name?: string;
   last_name: string;
   suffix?: string;
-  birth_date: string;
+  birth_date?: string | null;
   sex_assigned_at_birth_id?: string;
   civil_status_id?: string;
   youth_classification_id?: string;

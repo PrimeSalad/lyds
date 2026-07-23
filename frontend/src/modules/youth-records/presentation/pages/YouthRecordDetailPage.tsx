@@ -200,7 +200,7 @@ const YouthRecordDetailPage = () => {
         <SectionHeader>Birthday & Age</SectionHeader>
         <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
           <DetailField label="Birth Date" value={record.birth_date ? new Date(record.birth_date).toLocaleDateString() : '-'} />
-          <DetailField label="Age at Submission" value={record.age_at_submission} />
+          <DetailField label="Age at Submission" value={record.age_at_submission ?? '—'} />
         </Grid>
 
         <SectionHeader>Youth Classification</SectionHeader>

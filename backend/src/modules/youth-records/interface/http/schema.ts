@@ -8,7 +8,10 @@ export const createYouthRecordSchema = z.object({
   middle_name: z.string().max(100).optional(),
   last_name: z.string().min(1).max(100).optional(),
   suffix: z.string().max(20).optional(),
-  birth_date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+  birth_date: z.string()
+    .refine((val) => !Number.isNaN(Date.parse(val)), 'Invalid date')
+    .nullable()
+    .optional(),
   sex_assigned_at_birth_id: z.string().uuid().optional(),
   civil_status_id: z.string().uuid().optional(),
   youth_classification_id: z.string().uuid().optional(),

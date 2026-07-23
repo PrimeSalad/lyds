@@ -30,13 +30,19 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
     }
   }
 
-  if (updateData.birth_date) {
-    updateData.age_at_submission = computeAge(updateData.birth_date);
-    const ageGroupCode = computeAgeGroup(updateData.age_at_submission);
-    const ageGroup = ageGroupCode
-      ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)
-      : null;
-    updateData.youth_age_group_id = ageGroup?.id ?? null;
+  if ('birth_date' in updateData) {
+    if (updateData.birth_date) {
+      updateData.age_at_submission = computeAge(updateData.birth_date);
+      const ageGroupCode = computeAgeGroup(updateData.age_at_submission);
+      const ageGroup = ageGroupCode
+        ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)
+        : null;
+      updateData.youth_age_group_id = ageGroup?.id ?? null;
+    } else {
+      updateData.birth_date = null;
+      updateData.age_at_submission = null;
+      updateData.youth_age_group_id = null;
+    }
   }
 
   updateData.updated_by = authContext.profileId;

@@ -6,7 +6,7 @@ export type AnalyticsProfile = {
   display_name: string;
   first_name: string | null;
   last_name: string | null;
-  birth_date: string;
+  birth_date: string | null;
   age_at_submission: number | null;
   status: RecordStatus;
   email: string | null;
@@ -128,6 +128,7 @@ export const buildDashboardAnalytics = (
   )).length;
   const duplicateGroups = new Map<string, number>();
   profiles.forEach((profile) => {
+    if (!profile.birth_date) return;
     const key = `${profile.barangay_id}|${profile.display_name.trim().toLocaleLowerCase()}|${profile.birth_date}`;
     duplicateGroups.set(key, (duplicateGroups.get(key) ?? 0) + 1);
   });

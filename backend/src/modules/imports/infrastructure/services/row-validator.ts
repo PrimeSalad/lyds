@@ -2,6 +2,43 @@ export interface ValidationContext {
   referenceOptions: { category_code: string; label: string; id: string }[];
 }
 
+const monthNumbers: Record<string, number> = {
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
+};
+
+const parseDateParts = (monthValue: string, dayValue: string, yearValue: string): Date | undefined => {
+  const normalizedMonth = monthValue.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const month = /^\d+$/.test(normalizedMonth)
+    ? Number(normalizedMonth)
+    : monthNumbers[normalizedMonth.slice(0, 3)];
+  const day = Number(dayValue.replace(/[oO]/g, '0').replace(/\D/g, ''));
+  const year = Number(yearValue.replace(/\D/g, ''));
+
+  if (!month || !day || !year) return undefined;
+
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return date;
+};
+
 export const rowValidator = {
   validate(rawRow: Record<string, string>, ctx: ValidationContext): { isValid: boolean; normalizedData: any; validationErrors: string[]; validationWarnings: string[] } {
     const errors: string[] = [];
@@ -42,11 +79,23 @@ export const rowValidator = {
       const day = getValue(['DAY']);
       const year = getValue(['YEAR']);
       if (month && day && year) {
-        birthDate = new Date(`${year}-${month}-${day}`);
+        birthDate = parseDateParts(month, day, year);
+        if (/[oO]/.test(day) && birthDate) {
+          warnings.push(`Normalized birth day "${day}" to "${day.replace(/[oO]/g, '0')}".`);
+        }
       }
     }
 
-    if (!birthDate || isNaN(birthDate.getTime())) {
+    const hasBirthDateInput = Boolean(
+      birthdayRaw ||
+      getValue(['MONTH']) ||
+      getValue(['DAY']) ||
+      getValue(['YEAR']),
+    );
+
+    if (!hasBirthDateInput) {
+      warnings.push('Birth Date is missing; age and youth age group will remain blank.');
+    } else if (!birthDate || isNaN(birthDate.getTime())) {
       errors.push('Valid Birth Date is required.');
     } else if (birthDate > new Date()) {
       errors.push('Birth Date cannot be in the future.');

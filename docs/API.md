@@ -35,18 +35,22 @@ Legacy compatibility endpoints (browser redirect flow):
 - `POST /api/v1/youth-records` — creates a youth record; `birth_date` may be `null`, in which case computed age and age group are also `null`.
 - `GET /api/v1/youth-records/:recordId` — returns the full youth profile with readable barangay, category, and reference-option labels for the detail/edit experience.
 - `PATCH /api/v1/youth-records/:recordId` — updates youth information with optimistic version checking. Administrator edits to submitted/approved records preserve the current workflow status unless a separate workflow action is used.
+- `POST /api/v1/youth-records/approve-drafts` — admin bulk action that approves every non-deleted draft youth profile.
+- `POST /api/v1/youth-records/approve-submitted-by-barangay` — admin review-queue action that approves submitted profiles for one barangay, optionally restricted by `filing_year`.
 - `GET /api/key` — returns the local-storage encryption key (requires auth)
 - `GET /api/v1/announcements` — list visible announcements for the current user; admins receive the management list.
 - `POST /api/v1/announcements` — create a published announcement (admin only).
 - `PATCH /api/v1/announcements/:announcementId` — update announcement content, audience, scope, expiry, or status (admin only).
 - `POST /api/v1/announcements/:announcementId/archive` — archive an announcement without destructive deletion (admin only).
 - `GET /api/v1/categories` — lists visible categories with live non-deleted record totals scoped to the current account and active field totals.
+- `DELETE /api/v1/categories/:categoryId` — soft-deletes an archived category so it disappears from the active category list without breaking historical youth-record references.
 - `GET /api/v1/imports` — lists paginated spreadsheet-import history, scoped to the assigned barangay for SK officials.
 - `POST /api/v1/imports/validate` — parses an XLSX/CSV file, detects official KK title/header rows, applies annual age rules, and reports invalid or duplicate rows without creating youth records.
 - `GET /api/v1/imports/:batchId` and `GET /api/v1/imports/:batchId/rows` — return one import and its paginated row-by-row validation results.
 - `POST /api/v1/imports/:batchId/commit` — atomically creates submitted youth records from valid rows after a final duplicate recheck.
 - `POST /api/v1/imports/:batchId/cancel` — cancels an uncommitted import.
 - `GET /api/v1/imports/template` and `GET /api/v1/imports/:batchId/error-file` — download the template and row correction report.
+- `GET /api/v1/reports/dashboard` — returns dashboard analytics; pass `filingYear` to scope Barangay Coverage and annual youth-profile metrics to that filing year.
 - `GET /api/v1/reports/export` — exports youth records as CSV or XLSX; pass `filingYear` for the print-ready annual `KK Youth Profile <year>.xlsx` workbook. SK officials are forced to their assigned barangay, while admins may also pass `barangayId`, `categoryId`, and `status` filters.
 
 ## REST Conventions Used

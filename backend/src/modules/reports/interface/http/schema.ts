@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+export const dashboardQuerySchema = z.object({
+  filingYear: z.coerce.number().int().min(2000).max(2100).optional(),
+});
+
 export const exportRecordsQuerySchema = z.object({
   format: z.enum(['csv', 'xlsx']).default('xlsx'),
   barangayId: z.string().uuid().optional(),

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Badge, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, Card, SimpleGrid, Text } from '@chakra-ui/react';
 import { DataTable, type Column, type Action } from '../../../../shared/tables/DataTable';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { StatusBadge } from '../../../../shared/components/StatusBadge';
@@ -13,6 +13,19 @@ const AccountListPage = () => {
 
   const [accounts, setAccounts] = useState<ProfileWithAssignment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const summary = useMemo(() => accounts.reduce((acc, account) => {
+    acc.total += 1;
+    if (account.account_status === 'ACTIVE') acc.active += 1;
+    if (account.account_status === 'INACTIVE') acc.inactive += 1;
+    if (account.role === 'ADMIN') acc.admin += 1;
+    return acc;
+  }, {
+    total: 0,
+    active: 0,
+    inactive: 0,
+    admin: 0,
+  }), [accounts]);
 
   const loadAccounts = async () => {
     try {
@@ -31,11 +44,12 @@ const AccountListPage = () => {
 
   const columns: Column<ProfileWithAssignment>[] = [
     { key: 'full_name', header: 'Name', sortable: true },
-    { key: 'role', header: 'Role', render: (row) => <Badge colorPalette={row.role === 'ADMIN' ? 'blue' : 'green'}>{row.role}</Badge> },
+    { key: 'role', header: 'Role', align: 'center', render: (row) => <Badge colorPalette={row.role === 'ADMIN' ? 'blue' : 'green'}>{row.role}</Badge> },
     { key: 'barangay_name', header: 'Barangay', render: (row) => row.barangay_name ?? <Text color="text.muted">-</Text> },
     {
       key: 'account_status',
       header: 'Status',
+      align: 'center',
       render: (row) => <StatusBadge status={row.account_status} />,
     },
     { key: 'contact_number', header: 'Contact', render: (row) => row.contact_number ?? '-' },
@@ -98,6 +112,28 @@ const AccountListPage = () => {
         )}
       />
 
+      <SimpleGrid columns={{ base: 1, sm: 2, xl: 4 }} gap={4} mb={6}>
+        {[
+          { label: 'Total accounts', value: summary.total, tone: 'blue' },
+          { label: 'Active', value: summary.active, tone: 'green' },
+          { label: 'Inactive', value: summary.inactive, tone: 'orange' },
+          { label: 'Administrators', value: summary.admin, tone: 'purple' },
+        ].map((item) => (
+          <Card.Root key={item.label} borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">{item.label}</Text>
+              <Text fontSize="2xl" fontWeight="700" color={`${item.tone}.700`} mt={1}>{item.value}</Text>
+            </Card.Body>
+          </Card.Root>
+        ))}
+      </SimpleGrid>
+
+      <Box mb={3}>
+        <Text fontFamily="heading" fontWeight="600">Account directory</Text>
+        <Text color="text.muted" fontSize="sm" mt={1}>
+          Review barangay assignments, roles, and access status.
+        </Text>
+      </Box>
       <DataTable
         columns={columns}
         data={accounts}

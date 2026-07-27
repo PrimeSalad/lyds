@@ -1,6 +1,6 @@
 :root {
-  --font-heading: Poppins, 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
-  --font-body: Questrial, 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: Poppins, sans-serif;
+  --font-body: Questrial, sans-serif;
   --focus-ring: #15803d;
 }
 
@@ -43,6 +43,7 @@ input,
 select,
 textarea,
 [role='button'] {
+  font-family: inherit;
   touch-action: manipulation;
 }
 

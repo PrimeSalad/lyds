@@ -10,6 +10,7 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface Action<T> {
@@ -132,7 +133,17 @@ export const DataTable = <T,>({
   return (
     <VStack align="stretch" gap={4}>
       {(searchPlaceholder || filters) && (
-        <HStack gap={3} align="stretch" wrap="wrap" bg="surface" borderWidth="1px" borderColor="border" borderRadius="md" p={3}>
+        <HStack
+          gap={3}
+          align="center"
+          wrap="wrap"
+          bg="surface"
+          borderWidth="1px"
+          borderColor="border"
+          borderRadius="lg"
+          px={{ base: 3, md: 4 }}
+          py={3}
+        >
           {searchPlaceholder && searchKey && (
             <Box position="relative" w={{ base: 'full', md: '320px' }}>
               <Box position="absolute" left={3} top="50%" transform="translateY(-50%)" color="text.muted" pointerEvents="none">
@@ -171,59 +182,123 @@ export const DataTable = <T,>({
         </HStack>
       )}
 
-      <Card.Root borderColor="border" borderRadius="md" overflow="hidden" boxShadow="panel" display={{ base: 'none', md: 'flex' }}>
-      <Box overflowX="auto" width="full" css={isExcel ? { '&::-webkit-scrollbar': { height: '8px' }, '&::-webkit-scrollbar-track': { bg: 'surface.muted' }, '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '4px' } } : undefined}>
-        <Table.Root size="sm" variant={isExcel ? 'outline' : 'line'} css={isExcel ? { tableLayout: 'fixed', minWidth: 'max-content', borderCollapse: 'collapse' } : undefined} borderWidth={isExcel ? '1px' : undefined} borderColor={isExcel ? 'border.strong' : undefined}>
+      <Card.Root
+        borderColor="border"
+        borderRadius="lg"
+        overflow="hidden"
+        boxShadow="panel"
+        display={{ base: 'none', md: 'flex' }}
+      >
+      <Box
+        overflowX="auto"
+        width="full"
+        css={{
+          '&::-webkit-scrollbar': { height: '8px' },
+          '&::-webkit-scrollbar-track': { bg: 'surface.muted' },
+          '&::-webkit-scrollbar-thumb': { bg: 'border.strong', borderRadius: '4px' },
+        }}
+      >
+        <Table.Root
+          size="sm"
+          variant="line"
+          css={isExcel ? { tableLayout: 'fixed', minWidth: 'max-content' } : undefined}
+        >
           <Table.Header>
-            <Table.Row bg={isExcel ? 'primary.700' : 'surface.muted'} borderBottomWidth="2px" borderColor={isExcel ? 'primary.900' : 'border.strong'}>
+            <Table.Row bg="surface.muted" borderBottomWidth="1px" borderColor="border.strong">
               {columns.map((col) => (
                 <Table.ColumnHeader
                   key={col.key}
                   width={col.width}
                   whiteSpace="nowrap"
-                  fontSize="xs"
-                  fontWeight="700"
-                  color={isExcel ? 'white' : 'text.primary'}
-                  textTransform="uppercase"
-                  letterSpacing="0.03em"
-                  textAlign="center"
-                  py={isExcel ? 3 : 2}
-                  px={isExcel ? 3 : 2}
+                  fontFamily="heading"
+                  fontSize="sm"
+                  fontWeight="600"
+                  color="text.primary"
+                  textAlign={col.align ?? 'left'}
+                  py={3}
+                  px={4}
                   borderRightWidth={isExcel ? '1px' : undefined}
-                  borderColor={isExcel ? 'primary.600' : undefined}
+                  borderColor="border"
                   _last={isExcel ? { borderRightWidth: '0' } : undefined}
-                  cursor={col.sortable ? 'pointer' : undefined}
-                  userSelect={col.sortable ? 'none' : undefined}
-                  onClick={col.sortable ? () => handleSort(col.key) : undefined}
                   aria-sort={
                     col.sortable && sortKey === col.key
                       ? sortDir === 'asc' ? 'ascending' : 'descending'
                       : undefined
                   }
                 >
-                  <HStack gap={isExcel ? 1 : 2} py={0} justify="center">
-                    <Text fontSize="xs">{col.header}</Text>
-                    {sortKey === col.key && (
-                      sortDir === 'asc' ? <LuArrowUp size={12} aria-hidden="true" /> : <LuArrowDown size={12} aria-hidden="true" />
-                    )}
-                  </HStack>
+                  {col.sortable ? (
+                    <Button
+                      variant="plain"
+                      size="xs"
+                      h="auto"
+                      minW="0"
+                      p={0}
+                      fontFamily="heading"
+                      fontSize="sm"
+                      fontWeight="600"
+                      color="text.primary"
+                      onClick={() => handleSort(col.key)}
+                      aria-label={`Sort by ${col.header}`}
+                    >
+                      {col.header}
+                      {sortKey === col.key && (
+                        sortDir === 'asc'
+                          ? <LuArrowUp size={14} aria-hidden="true" />
+                          : <LuArrowDown size={14} aria-hidden="true" />
+                      )}
+                    </Button>
+                  ) : col.header}
                 </Table.ColumnHeader>
               ))}
-              {actions && actions.length > 0 && <Table.ColumnHeader width={isExcel ? '90px' : '100px'} fontSize="xs" fontWeight="700" color={isExcel ? 'white' : 'text.primary'} textAlign="center" py={isExcel ? 3 : 2} px={isExcel ? 3 : 2} borderLeftWidth={isExcel ? '1px' : undefined} borderColor={isExcel ? 'primary.600' : undefined}>Actions</Table.ColumnHeader>}
+              {actions && actions.length > 0 && (
+                <Table.ColumnHeader
+                  width={isExcel ? '120px' : '160px'}
+                  fontFamily="heading"
+                  fontSize="sm"
+                  fontWeight="600"
+                  color="text.primary"
+                  textAlign="right"
+                  py={3}
+                  px={4}
+                  borderLeftWidth={isExcel ? '1px' : undefined}
+                  borderColor="border"
+                >
+                  Actions
+                </Table.ColumnHeader>
+              )}
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {paginated.length === 0 ? (
               <Table.Row>
-                <Table.Cell colSpan={columns.length + (actions ? 1 : 0)} textAlign="center" py={isExcel ? 12 : 8}>
+                <Table.Cell colSpan={columns.length + (actions ? 1 : 0)} textAlign="center" py={12}>
                   <Text color="text.muted">{emptyMessage}</Text>
                 </Table.Cell>
               </Table.Row>
             ) : (
               paginated.map((row, idx) => (
-                <Table.Row key={getRowKey(row, idx)} bg={isExcel ? (idx % 2 === 0 ? 'white' : 'surface.muted') : undefined} _hover={isExcel ? { bg: 'primary.50' } : { bg: 'surface.muted' }} borderBottomWidth="1px" borderColor={isExcel ? 'border.strong' : 'border'}>
+                <Table.Row
+                  key={getRowKey(row, idx)}
+                  bg={isExcel && idx % 2 !== 0 ? 'surface.muted' : 'surface'}
+                  _hover={{ bg: 'primary.50' }}
+                  borderBottomWidth="1px"
+                  borderColor="border"
+                  transition="background-color 0.15s ease"
+                >
                   {columns.map((col) => (
-                    <Table.Cell key={col.key} fontSize={isExcel ? 'sm' : undefined} textAlign="center" py={isExcel ? 3 : 2} px={isExcel ? 3 : 2} borderRightWidth={isExcel ? '1px' : undefined} borderColor={isExcel ? 'border.strong' : undefined} _last={isExcel ? { borderRightWidth: '0' } : undefined} verticalAlign="middle">
+                    <Table.Cell
+                      key={col.key}
+                      fontFamily="body"
+                      fontSize="sm"
+                      color="text.primary"
+                      textAlign={col.align ?? 'left'}
+                      py={3}
+                      px={4}
+                      borderRightWidth={isExcel ? '1px' : undefined}
+                      borderColor="border"
+                      _last={isExcel ? { borderRightWidth: '0' } : undefined}
+                      verticalAlign="middle"
+                    >
                       {isExcel ? (
                         <Box whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" maxW="100%">
                           {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
@@ -234,12 +309,12 @@ export const DataTable = <T,>({
                     </Table.Cell>
                   ))}
                   {actions && actions.length > 0 && (
-                    <Table.Cell py={isExcel ? 3 : 2} px={isExcel ? 3 : 2} borderLeftWidth={isExcel ? '1px' : undefined} borderColor={isExcel ? 'border.strong' : undefined} textAlign="center">
-                      <HStack gap={1} justify="center">
+                    <Table.Cell py={3} px={4} borderLeftWidth={isExcel ? '1px' : undefined} borderColor="border" textAlign="right">
+                      <HStack gap={1} justify="flex-end">
                         {availableActions(row).map((action) => (
                             <Button
                               key={action.label}
-                              size="xs"
+                              size="sm"
                               variant={action.variant === 'danger' ? 'outline' : 'ghost'}
                               colorPalette={action.variant === 'danger' ? 'red' : undefined}
                               onClick={() => handleAction(action, row)}
@@ -260,15 +335,15 @@ export const DataTable = <T,>({
 
       <VStack display={{ base: 'flex', md: 'none' }} align="stretch" gap={3}>
         {paginated.length === 0 ? (
-          <Box borderWidth="1px" borderColor="border" borderRadius="md" bg="surface" p={6} textAlign="center">
+          <Box borderWidth="1px" borderColor="border" borderRadius="lg" bg="surface" p={6} textAlign="center" boxShadow="panel">
             <Text color="text.muted">{emptyMessage}</Text>
           </Box>
         ) : paginated.map((row, idx) => (
-          <Box key={getRowKey(row, idx)} borderWidth="1px" borderColor="border" borderRadius="md" bg="surface" p={4} boxShadow="panel">
+          <Box key={getRowKey(row, idx)} borderWidth="1px" borderColor="border" borderRadius="lg" bg="surface" p={4} boxShadow="panel">
             <VStack align="stretch" gap={3}>
               {columns.map((col) => (
                 <HStack key={col.key} justify="space-between" align="flex-start" gap={4}>
-                  <Text color="text.muted" fontSize="sm" flexShrink={0}>{col.header}</Text>
+                  <Text fontFamily="heading" fontWeight="500" color="text.muted" fontSize="xs" flexShrink={0}>{col.header}</Text>
                   <Box textAlign="right" fontSize="sm" minW={0} overflowWrap="anywhere">
                     {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                   </Box>

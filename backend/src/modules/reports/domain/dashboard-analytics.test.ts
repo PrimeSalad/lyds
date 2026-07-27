@@ -54,7 +54,7 @@ describe('buildDashboardAnalytics', () => {
 
     const result = buildDashboardAnalytics(
       profiles,
-      [{ id: 'barangay-1', name: 'Agot' }, { id: 'barangay-2', name: 'Agumaymayan' }],
+      [{ id: 'barangay-1', name: 'Agot', is_active: true }, { id: 'barangay-2', name: 'Agumaymayan', is_active: false }],
       2,
       new Date('2026-07-22T00:00:00.000Z'),
     );
@@ -69,7 +69,7 @@ describe('buildDashboardAnalytics', () => {
     const duplicate = makeProfile({ id: 'profile-2', email: null, contact_number: null });
     const result = buildDashboardAnalytics(
       [makeProfile({ updated_at: '2026-05-01T00:00:00.000Z' }), duplicate],
-      [{ id: 'barangay-1', name: 'Agot' }],
+      [{ id: 'barangay-1', name: 'Agot', is_active: true }],
       0,
       new Date('2026-07-22T00:00:00.000Z'),
     );

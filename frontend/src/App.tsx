@@ -15,6 +15,7 @@ const AuditLogListPage = lazy(() => import('./modules/audit-logs/presentation/pa
 const YouthRecordListPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordListPage'));
 const YouthRecordFormPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordFormPage'));
 const YouthRecordDetailPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordDetailPage'));
+const ReviewQueuePage = lazy(() => import('./modules/youth-records/presentation/pages/ReviewQueuePage'));
 const CategoryListPage = lazy(() => import('./modules/categories/presentation/pages/CategoryListPage'));
 const CategoryFormPage = lazy(() => import('./modules/categories/presentation/pages/CategoryFormPage'));
 const CategoryFieldsPage = lazy(() => import('./modules/categories/presentation/pages/CategoryFieldsPage'));
@@ -67,6 +68,7 @@ const App = () => (
         <Route path="/youth-records/new" element={<Lazy><YouthRecordFormPage /></Lazy>} />
         <Route path="/youth-records/:recordId" element={<Lazy><YouthRecordDetailPage /></Lazy>} />
         <Route path="/youth-records/:recordId/edit" element={<Lazy><YouthRecordFormPage /></Lazy>} />
+        <Route path="/review-queue" element={<Lazy><ReviewQueuePage /></Lazy>} />
         {/* Categories */}
         <Route path="/categories" element={<Lazy><CategoryListPage /></Lazy>} />
         <Route path="/categories/new" element={<Lazy><CategoryFormPage /></Lazy>} />

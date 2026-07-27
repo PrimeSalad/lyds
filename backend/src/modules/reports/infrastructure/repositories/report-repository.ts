@@ -100,8 +100,11 @@ export const reportRepository = {
     };
   },
 
-  async getDashboardAnalytics(barangayId?: string | null) {
-    const profiles = await fetchAllPages((from, to) => {
+  async getDashboardAnalytics(filters: Pick<ReportFilters, 'barangayId' | 'filingYear'> = {}) {
+    const annualCategoryIds = filters.filingYear
+      ? await getAnnualCategoryIds(filters.filingYear)
+      : null;
+    const profiles = annualCategoryIds?.length === 0 ? [] : await fetchAllPages((from, to) => {
       let query = supabaseAdmin.from('youth_profiles').select(`
         id, barangay_id, display_name, first_name, last_name, birth_date, age_at_submission,
         status, email, contact_number, sex_assigned_at_birth_id, civil_status_id,
@@ -111,18 +114,19 @@ export const reportRepository = {
         age_group:reference_options!youth_age_group_id(label),
         classification:reference_options!youth_classification_id(label)
       `).is('deleted_at', null);
-      if (barangayId) query = query.eq('barangay_id', barangayId);
+      if (filters.barangayId) query = query.eq('barangay_id', filters.barangayId);
+      if (annualCategoryIds) query = query.in('category_id', annualCategoryIds);
       return query.range(from, to);
     });
 
-    let barangayQuery = supabaseAdmin.from('barangays').select('id, name')
-      .eq('is_active', true).is('deleted_at', null)
+    let barangayQuery = supabaseAdmin.from('barangays').select('id, name, is_active')
+      .is('deleted_at', null)
       .eq('municipality', boacMunicipality).eq('province', marinduqueProvince).order('name');
-    if (barangayId) barangayQuery = barangayQuery.eq('id', barangayId);
+    if (filters.barangayId) barangayQuery = barangayQuery.eq('id', filters.barangayId);
 
     const [barangayResult, accountResult] = await Promise.all([
       barangayQuery,
-      barangayId
+      filters.barangayId
         ? Promise.resolve({ count: 0, error: null })
         : supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true })
           .eq('role', 'SK_OFFICIAL').eq('account_status', 'ACTIVE'),
@@ -158,7 +162,7 @@ export const reportRepository = {
 
     return buildDashboardAnalytics(
       normalizedProfiles,
-      (barangayResult.data ?? []).map((barangay) => ({ id: barangay.id, name: barangay.name })),
+      (barangayResult.data ?? []).map((barangay) => ({ id: barangay.id, name: barangay.name, is_active: barangay.is_active })),
       accountResult.count ?? 0,
     );
   },
@@ -200,7 +204,7 @@ export const reportRepository = {
 
   async getByBarangay() {
     const { data: barangays, error: barangayError } = await supabaseAdmin.from('barangays')
-      .select('id, name').eq('is_active', true).is('deleted_at', null)
+      .select('id, name, is_active').is('deleted_at', null)
       .eq('municipality', boacMunicipality).eq('province', marinduqueProvince).order('name');
     if (barangayError) throw barangayError;
 

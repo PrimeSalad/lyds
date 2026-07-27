@@ -160,6 +160,59 @@ export const youthRecordRepository = {
     }, record.version);
   },
 
+  async approveDraftRecords(actorId: string) {
+    const approvedAt = new Date().toISOString();
+    const { data, error } = await supabaseAdmin
+      .from('youth_profiles')
+      .update({
+        status: 'APPROVED',
+        submitted_by: actorId,
+        submitted_at: approvedAt,
+        approved_by: actorId,
+        approved_at: approvedAt,
+        updated_by: actorId,
+      })
+      .eq('status', 'DRAFT')
+      .is('deleted_at', null)
+      .select('id');
+
+    if (error) throw new Error(error.message);
+    return data?.length ?? 0;
+  },
+
+  async approveSubmittedRecordsByBarangay(actorId: string, barangayId: string, filingYear?: number) {
+    let categoryIds: string[] | null = null;
+    if (filingYear) {
+      const { data: categories, error: categoryError } = await supabaseAdmin
+        .from('categories')
+        .select('id')
+        .eq('filing_year', filingYear)
+        .eq('record_type', 'YOUTH_PROFILE')
+        .is('deleted_at', null);
+      if (categoryError) throw new Error(categoryError.message);
+      categoryIds = (categories ?? []).map((category) => category.id);
+      if (categoryIds.length === 0) return 0;
+    }
+
+    const approvedAt = new Date().toISOString();
+    let query = supabaseAdmin
+      .from('youth_profiles')
+      .update({
+        status: 'APPROVED',
+        approved_by: actorId,
+        approved_at: approvedAt,
+        updated_by: actorId,
+      })
+      .eq('barangay_id', barangayId)
+      .eq('status', 'SUBMITTED')
+      .is('deleted_at', null);
+    if (categoryIds) query = query.in('category_id', categoryIds);
+
+    const { data, error } = await query.select('id');
+    if (error) throw new Error(error.message);
+    return data?.length ?? 0;
+  },
+
   async checkDuplicates(barangayId: string, displayName: string, birthDate: string, excludeId?: string) {
     let query = supabaseAdmin
       .from('youth_profiles')

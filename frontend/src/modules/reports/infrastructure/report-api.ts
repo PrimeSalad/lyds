@@ -36,6 +36,7 @@ export type DashboardAnalytics = {
   barangayCoverage: Array<{
     barangayId: string;
     barangayName: string;
+    isActive: boolean;
     totalRecords: number;
     pendingReview: number;
     approved: number;
@@ -77,7 +78,12 @@ type BarangaySummary = {
 };
 
 export const reportApi = {
-  getDashboard: () => apiClient.request<{ data: DashboardAnalytics }>('/reports/dashboard'),
+  getDashboard: (params?: { filingYear?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.filingYear) searchParams.set('filingYear', params.filingYear.toString());
+    const qs = searchParams.toString();
+    return apiClient.request<{ data: DashboardAnalytics }>(`/reports/dashboard${qs ? `?${qs}` : ''}`);
+  },
   getSummary: (params?: { barangayId?: string; categoryId?: string; status?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.barangayId) searchParams.set('barangayId', params.barangayId);

@@ -144,6 +144,17 @@ export const youthRecordApi = {
     await apiClient.request(`/youth-records/${id}/approve`, { method: 'POST' });
   },
 
+  async approveDrafts(): Promise<{ data: { approved_count: number } }> {
+    return await apiClient.request<{ data: { approved_count: number } }>('/youth-records/approve-drafts', { method: 'POST' });
+  },
+
+  async approveSubmittedByBarangay(input: { barangay_id: string; filing_year?: number }): Promise<{ data: { approved_count: number } }> {
+    return await apiClient.request<{ data: { approved_count: number } }>('/youth-records/approve-submitted-by-barangay', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
   async archive(id: string): Promise<void> {
     await apiClient.request(`/youth-records/${id}/archive`, { method: 'POST' });
   },

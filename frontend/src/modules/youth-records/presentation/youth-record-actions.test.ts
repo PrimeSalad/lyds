@@ -22,6 +22,16 @@ describe('getYouthRecordActions', () => {
     });
   });
 
+  it('shows administrator review actions for a draft profile', () => {
+    expect(getYouthRecordActions('DRAFT', true)).toEqual({
+      canEdit: true,
+      canSubmit: true,
+      canReview: true,
+      canArchive: true,
+      canRestore: false,
+    });
+  });
+
   it('lets an SK user edit and submit a returned profile without archive access', () => {
     expect(getYouthRecordActions('RETURNED', false)).toEqual({
       canEdit: true,

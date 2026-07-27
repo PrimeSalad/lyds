@@ -325,12 +325,13 @@ const ImportPage = () => {
   };
 
   const columns: Column<ImportRow>[] = [
-    { key: 'row_number', header: 'Sheet row', width: '100px', sortable: true },
+    { key: 'row_number', header: 'Sheet row', width: '100px', sortable: true, align: 'center' },
     { key: 'name', header: 'Youth name', width: '240px', render: rowName },
     {
       key: 'result',
       header: 'Result',
       width: '120px',
+      align: 'center',
       render: (row) => <Badge colorPalette={resultColor(row)}>{resultLabel(row)}</Badge>,
     },
     {

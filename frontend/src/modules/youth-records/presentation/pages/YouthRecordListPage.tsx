@@ -7,6 +7,7 @@ import { type RootState } from '../../../../redux/store';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
 import {
@@ -44,6 +45,7 @@ const YouthRecordListPage = () => {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportYear, setExportYear] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [bulkApproveOpen, setBulkApproveOpen] = useState(false);
   const [sort, setSort] = useState<SortValue>(isAdmin ? 'barangay-asc' : 'newest');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
@@ -303,6 +305,50 @@ const YouthRecordListPage = () => {
     }
   };
 
+  const handleApproveDrafts = async () => {
+    try {
+      const response = await youthRecordApi.approveDrafts();
+      showToast.success({
+        title: 'Drafts approved',
+        description: `${response.data.approved_count.toLocaleString()} draft record${response.data.approved_count === 1 ? '' : 's'} were approved.`,
+      });
+      setBulkApproveOpen(false);
+
+      setLoading(true);
+      const [sortField, sortDir] = sort === 'barangay-asc'
+        ? ['barangay_name', 'asc'] as const
+        : sort === 'barangay-desc'
+          ? ['barangay_name', 'desc'] as const
+          : sort === 'oldest'
+            ? ['created_at', 'asc'] as const
+            : sort === 'name-asc'
+              ? ['display_name', 'asc'] as const
+              : sort === 'name-desc'
+                ? ['display_name', 'desc'] as const
+                : ['created_at', 'desc'] as const;
+      const refreshed = await youthRecordApi.list({
+        page,
+        pageSize: 25,
+        search,
+        status,
+        category_id: categoryId,
+        barangay_id: isAdmin ? barangayId : undefined,
+        filing_year: filingYear ? Number(filingYear) : undefined,
+        sortField,
+        sortDir,
+      });
+      setRecords(refreshed.data);
+      setMeta(refreshed.meta);
+    } catch (error) {
+      showToast.error({
+        title: 'Draft approval failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -312,6 +358,11 @@ const YouthRecordListPage = () => {
           : 'Create drafts, submit records, and monitor returned items.'}
         actions={(
           <HStack gap={2} wrap="wrap">
+            {isAdmin && (
+              <Button variant="outline" colorPalette="orange" onClick={() => setBulkApproveOpen(true)}>
+                Approve Drafts
+              </Button>
+            )}
             <Button variant="outline" colorPalette="green" onClick={openExportDialog} disabled={exportYears.length === 0}>
               <LuDownload aria-hidden="true" /> Export Excel
             </Button>
@@ -464,6 +515,16 @@ const YouthRecordListPage = () => {
           </Dialog.Positioner>
         </Portal>
       </Dialog.Root>
+
+      <ConfirmDialog
+        open={bulkApproveOpen}
+        onOpenChange={({ open }) => { if (!open) setBulkApproveOpen(false); }}
+        title="Approve all draft records?"
+        description="This will mark every draft youth record as approved, including records that never went through the regular review step."
+        confirmLabel="Approve Drafts"
+        variant="default"
+        onConfirm={handleApproveDrafts}
+      />
 
     </DashboardLayout>
   );

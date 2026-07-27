@@ -29,6 +29,7 @@ export type AnalyticsProfile = {
 export type AnalyticsBarangay = {
   id: string;
   name: string;
+  is_active: boolean;
 };
 
 const statuses: RecordStatus[] = ['DRAFT', 'SUBMITTED', 'APPROVED', 'RETURNED', 'ARCHIVED'];
@@ -95,6 +96,7 @@ export const buildDashboardAnalytics = (
   const barangayStats = new Map(barangays.map((barangay) => [barangay.id, {
     barangayId: barangay.id,
     barangayName: barangay.name,
+    isActive: barangay.is_active,
     totalRecords: 0,
     pendingReview: 0,
     approved: 0,

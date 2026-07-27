@@ -52,6 +52,7 @@ export const categoryApi = {
   update: (id: string, data: UpdateCategoryInput) => apiClient.request<{ data: Category }>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   publish: (id: string) => apiClient.request(`/categories/${id}/publish`, { method: 'POST' }),
   archive: (id: string) => apiClient.request(`/categories/${id}/archive`, { method: 'POST' }),
+  delete: (id: string) => apiClient.request(`/categories/${id}`, { method: 'DELETE' }),
   listFields: (id: string) => apiClient.request<{ data: CategoryField[] }>(`/categories/${id}/fields`),
   createField: (id: string, data: CreateFieldInput) => apiClient.request<{ data: CategoryField }>(`/categories/${id}/fields`, { method: 'POST', body: JSON.stringify(data) }),
   updateField: (categoryId: string, fieldId: string, data: UpdateFieldInput) => apiClient.request<{ data: CategoryField }>(`/categories/${categoryId}/fields/${fieldId}`, { method: 'PATCH', body: JSON.stringify(data) }),

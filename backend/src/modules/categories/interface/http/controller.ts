@@ -6,6 +6,7 @@ import { createCategory } from '../../application/use-cases/create-category';
 import { updateCategory } from '../../application/use-cases/update-category';
 import { publishCategory } from '../../application/use-cases/publish-category';
 import { archiveCategory } from '../../application/use-cases/archive-category';
+import { deleteCategory } from '../../application/use-cases/delete-category';
 import { listCategoryFields } from '../../application/use-cases/list-category-fields';
 import { createCategoryField } from '../../application/use-cases/create-category-field';
 import { updateCategoryField } from '../../application/use-cases/update-category-field';
@@ -56,6 +57,13 @@ export const categoryController = {
     const ctx = (req as AuthenticatedRequest).authContext!;
     const category = await archiveCategory(id, ctx.profileId);
     res.json({ data: category });
+  },
+
+  async delete(req: Request, res: Response) {
+    const id = String(req.params.categoryId);
+    const ctx = (req as AuthenticatedRequest).authContext!;
+    await deleteCategory(id, ctx.profileId);
+    res.status(204).end();
   },
 
   async listFields(req: Request, res: Response) {

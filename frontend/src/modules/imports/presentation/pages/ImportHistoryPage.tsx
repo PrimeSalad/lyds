@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Badge, Box, Button, HStack, NativeSelect, Text } from '@chakra-ui/react';
+import { useEffect, useMemo, useState } from 'react';
+import { Badge, Box, Button, Card, HStack, NativeSelect, SimpleGrid, Text } from '@chakra-ui/react';
 import { useNavigate } from 'react-router';
 import { LuPlus, LuUpload } from 'react-icons/lu';
 import { PageHeader } from '../../../../shared/components/PageHeader';
@@ -60,6 +60,25 @@ const ImportHistoryPage = () => {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState<PaginationMeta>({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
 
+  const summary = useMemo(() => {
+    const counts = batches.reduce((acc, batch) => {
+      acc.total += batch.total_rows;
+      acc.ready += batch.valid_rows;
+      acc.skipped += batch.invalid_rows + batch.duplicate_rows;
+      if (batch.status === 'COMMITTED') acc.committed += 1;
+      if (batch.status === 'VALIDATED') acc.readyToReview += 1;
+      return acc;
+    }, {
+      total: 0,
+      ready: 0,
+      skipped: 0,
+      committed: 0,
+      readyToReview: 0,
+    });
+
+    return counts;
+  }, [batches]);
+
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true);
@@ -117,6 +136,7 @@ const ImportHistoryPage = () => {
       key: 'status',
       header: 'Status',
       width: '150px',
+      align: 'center',
       render: (batch) => <Badge colorPalette={statusColor[batch.status]}>{statusLabel[batch.status]}</Badge>,
     },
     {
@@ -164,27 +184,43 @@ const ImportHistoryPage = () => {
         )}
       />
 
-      <Box mb={4}>
-        <HStack gap={3} align="center" wrap="wrap" bg="surface" borderWidth="1px" borderColor="border" borderRadius="md" p={3}>
-          <LuUpload aria-hidden="true" />
-          <Text fontWeight="600" fontSize="sm">Filter imports</Text>
-          <NativeSelect.Root width={{ base: 'full', sm: '220px' }}>
-            <NativeSelect.Field
-              aria-label="Filter imports by status"
-              minH="44px"
-              value={status}
-              onChange={(event) => { setStatus(event.target.value as ImportBatchStatus | ''); setPage(1); }}
-            >
-              <option value="">All statuses</option>
-              {Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </HStack>
-        <Text mt={3} color="text.muted" fontSize="sm" aria-live="polite">
-          {loading ? 'Loading imports…' : `${meta.totalItems.toLocaleString()} import${meta.totalItems === 1 ? '' : 's'} found`}
-        </Text>
-      </Box>
+      <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" mb={5}>
+        <Card.Body p={{ base: 4, md: 5 }}>
+          <SimpleGrid columns={{ base: 1, md: 4 }} gap={3} mb={4}>
+            {[
+              { label: 'Visible imports', value: meta.totalItems.toLocaleString(), tone: 'blue' },
+              { label: 'Ready rows', value: summary.ready.toLocaleString(), tone: 'green' },
+              { label: 'Skipped rows', value: summary.skipped.toLocaleString(), tone: 'orange' },
+              { label: 'Ready to review', value: summary.readyToReview.toLocaleString(), tone: 'purple' },
+            ].map((item) => (
+              <Box key={item.label} p={4} borderRadius="md" bg="surface.muted" borderWidth="1px" borderColor="border">
+                <Text color="text.muted" fontSize="sm">{item.label}</Text>
+                <Text color={`${item.tone}.700`} fontSize="2xl" fontWeight="700" mt={1}>{item.value}</Text>
+              </Box>
+            ))}
+          </SimpleGrid>
+
+          <HStack gap={3} align="center" wrap="wrap">
+            <LuUpload aria-hidden="true" />
+            <Text fontWeight="600" fontSize="sm">Filter imports</Text>
+            <NativeSelect.Root width={{ base: 'full', sm: '220px' }}>
+              <NativeSelect.Field
+                aria-label="Filter imports by status"
+                minH="44px"
+                value={status}
+                onChange={(event) => { setStatus(event.target.value as ImportBatchStatus | ''); setPage(1); }}
+              >
+                <option value="">All statuses</option>
+                {Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
+          </HStack>
+          <Text mt={3} color="text.muted" fontSize="sm" aria-live="polite">
+            {loading ? 'Loading imports…' : `${meta.totalItems.toLocaleString()} import${meta.totalItems === 1 ? '' : 's'} found`}
+          </Text>
+        </Card.Body>
+      </Card.Root>
 
       <DataTable
         columns={columns}

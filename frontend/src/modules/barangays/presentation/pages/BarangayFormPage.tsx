@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Box, Button, HStack, VStack } from '@chakra-ui/react';
+import { Box, Button, Card, Grid, Heading, HStack, Text, VStack } from '@chakra-ui/react';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { TextField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
@@ -94,49 +94,91 @@ const BarangayFormPage = () => {
         description="Maintain barangay code, location, and administrative labels."
       />
 
-      <Box as="form" onSubmit={handleSubmit} maxW="640px" bg="white" border="1px solid" borderColor="border" borderRadius="lg" p={{ base: 4, md: 6 }}>
-        <VStack gap={4} align="stretch">
-          <TextField
-            label="Code"
-            name="code"
-            value={code}
-            onChange={setCode}
-            disabled={isEditing}
-            placeholder={name ? toBarangayCode(name) : 'Auto-generated from name'}
-          />
-          <TextField
-            label="Name"
-            name="name"
-            value={name}
-            onChange={setName}
-            required
-            placeholder="Barangay name"
-          />
-          <TextField
-            label="Municipality"
-            name="municipality"
-            value={municipality}
-            onChange={setMunicipality}
-            placeholder="Municipality"
-          />
-          <TextField
-            label="Province"
-            name="province"
-            value={province}
-            onChange={setProvince}
-            placeholder="Province"
-          />
+      <Grid
+        maxW="1040px"
+        templateColumns={{ base: '1fr', lg: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)' }}
+        gap={6}
+        alignItems="start"
+      >
+        <Card.Root as="form" onSubmit={handleSubmit} borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body p={{ base: 5, md: 7 }}>
+            <VStack gap={5} align="stretch">
+              <Box>
+                <Heading as="h2" fontSize="lg" fontWeight="600">
+                  {isEditing ? 'Barangay details' : 'Create a barangay'}
+                </Heading>
+                <Text color="text.secondary" fontSize="sm" mt={2}>
+                  Use the official barangay name and location used in youth records.
+                </Text>
+              </Box>
+              <TextField
+                label="Code"
+                name="code"
+                value={code}
+                onChange={setCode}
+                disabled={isEditing}
+                placeholder={name ? toBarangayCode(name) : 'Auto-generated from name'}
+              />
+              <TextField
+                label="Name"
+                name="name"
+                value={name}
+                onChange={setName}
+                required
+                placeholder="Barangay name"
+              />
+              <TextField
+                label="Municipality"
+                name="municipality"
+                value={municipality}
+                onChange={setMunicipality}
+                placeholder="Municipality"
+              />
+              <TextField
+                label="Province"
+                name="province"
+                value={province}
+                onChange={setProvince}
+                placeholder="Province"
+              />
 
-          <HStack gap={3} mt={4}>
-            <Button type="submit" colorPalette="green" loading={loading}>
-              {isEditing ? 'Update' : 'Create'}
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/barangays')}>
-              Cancel
-            </Button>
-          </HStack>
-        </VStack>
-      </Box>
+              <HStack gap={3} pt={2} wrap="wrap">
+                <Button type="submit" colorPalette="green" loading={loading}>
+                  {isEditing ? 'Update Barangay' : 'Create Barangay'}
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/barangays')}>
+                  Cancel
+                </Button>
+              </HStack>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+
+        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body p={{ base: 5, md: 6 }}>
+            <VStack align="stretch" gap={4}>
+              <Box>
+                <Heading as="h3" fontSize="md" fontWeight="600">Directory rules</Heading>
+                <Text color="text.secondary" fontSize="sm" mt={2}>
+                  Barangays stay visible after deactivation so historical records and coverage remain complete.
+                </Text>
+              </Box>
+              <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
+                <Text fontFamily="heading" fontWeight="600" fontSize="sm">Automatic code</Text>
+                <Text color="text.secondary" fontSize="sm" mt={1}>
+                  New codes follow the BOAC-BARANGAY-NAME format when no custom code is supplied.
+                </Text>
+              </Box>
+              <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
+                <Text fontFamily="heading" fontWeight="600" fontSize="sm">Safe status changes</Text>
+                <Text color="text.secondary" fontSize="sm" mt={1}>
+                  Use Activate or Deactivate from the directory instead of removing a barangay.
+                </Text>
+              </Box>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+      </Grid>
     </DashboardLayout>
   );
 };

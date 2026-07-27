@@ -20,7 +20,7 @@ const CategoryListPage = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pendingAction, setPendingAction] = useState<{ category: Category; action: 'publish' | 'archive' } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ category: Category; action: 'publish' | 'archive' | 'delete' } | null>(null);
 
   const loadCategories = async () => {
     try {
@@ -57,6 +57,16 @@ const CategoryListPage = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await categoryApi.delete(id);
+      showToast.success('Category deleted');
+      loadCategories();
+    } catch {
+      showToast.error('Failed to delete category');
+    }
+  };
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -74,7 +84,7 @@ const CategoryListPage = () => {
           <Card.Root key={cat.id} borderColor="border" borderRadius="lg">
             <Card.Header>
               <HStack justify="space-between">
-                <Text fontFamily="mono" fontSize="sm" color="gray.500">{cat.code}</Text>
+                <Text fontSize="sm" color="gray.500">{cat.code}</Text>
                 <StatusBadge status={cat.status || 'DRAFT'} />
               </HStack>
               <Heading size="md" mt={2}>{cat.name}</Heading>
@@ -97,6 +107,9 @@ const CategoryListPage = () => {
                 {cat.status !== 'ARCHIVED' && (
                   <Button size="sm" colorPalette="red" variant="outline" onClick={() => setPendingAction({ category: cat, action: 'archive' })}>Archive</Button>
                 )}
+                {cat.status === 'ARCHIVED' && (
+                  <Button size="sm" colorPalette="red" onClick={() => setPendingAction({ category: cat, action: 'delete' })}>Delete</Button>
+                )}
               </HStack>
             </Card.Footer>
           </Card.Root>
@@ -108,15 +121,23 @@ const CategoryListPage = () => {
       <ConfirmDialog
         open={!!pendingAction}
         onOpenChange={({ open }) => { if (!open) setPendingAction(null); }}
-        title={pendingAction?.action === 'publish' ? 'Publish this category?' : 'Archive this category?'}
+        title={pendingAction?.action === 'publish'
+          ? 'Publish this category?'
+          : pendingAction?.action === 'archive'
+            ? 'Archive this category?'
+            : 'Delete this archived category?'}
         description={pendingAction?.action === 'publish'
           ? `${pendingAction.category.name} will become available for new youth records. Review its fields before continuing.`
-          : `${pendingAction?.category.name ?? 'This category'} will no longer be available for new records. Existing records will remain accessible.`}
-        confirmLabel={pendingAction?.action === 'publish' ? 'Publish' : 'Archive'}
-        variant={pendingAction?.action === 'archive' ? 'danger' : 'default'}
+          : pendingAction?.action === 'archive'
+            ? `${pendingAction?.category.name ?? 'This category'} will no longer be available for new records. Existing records will remain accessible.`
+            : `${pendingAction?.category.name ?? 'This category'} will be hidden from the category list. Existing youth records keep their historical category reference.`}
+        confirmLabel={pendingAction?.action === 'publish' ? 'Publish' : pendingAction?.action === 'archive' ? 'Archive' : 'Delete'}
+        variant={pendingAction?.action === 'publish' ? 'default' : 'danger'}
         onConfirm={() => pendingAction?.action === 'publish'
           ? handlePublish(pendingAction.category.id)
-          : pendingAction ? handleArchive(pendingAction.category.id) : undefined}
+          : pendingAction?.action === 'archive'
+            ? handleArchive(pendingAction.category.id)
+            : pendingAction ? handleDelete(pendingAction.category.id) : undefined}
       />
     </DashboardLayout>
   );

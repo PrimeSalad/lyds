@@ -2,6 +2,7 @@ import type { RecordStatus } from '../entities/youth-record';
 
 export const canTransition = (from: RecordStatus, to: RecordStatus, role: 'ADMIN' | 'SK_OFFICIAL'): boolean => {
   if (role === 'ADMIN') {
+    if (from === 'DRAFT' && to === 'APPROVED') return true;
     if (from === 'SUBMITTED' && to === 'RETURNED') return true;
     if (from === 'SUBMITTED' && to === 'APPROVED') return true;
     if (to === 'ARCHIVED') return true; // DRAFT/SUBMITTED/RETURNED/APPROVED -> ARCHIVED

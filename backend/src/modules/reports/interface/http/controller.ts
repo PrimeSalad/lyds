@@ -5,12 +5,16 @@ import { getDemographics } from '../../application/use-cases/get-demographics';
 import { getByBarangay } from '../../application/use-cases/get-by-barangay';
 import { exportRecords } from '../../application/use-cases/export-records';
 import { getDashboardAnalytics } from '../../application/use-cases/get-dashboard-analytics';
-import { exportRecordsQuerySchema } from './schema';
+import { dashboardQuerySchema, exportRecordsQuerySchema } from './schema';
 
 export const reportController = {
   async dashboard(req: Request, res: Response) {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const data = await getDashboardAnalytics(ctx.role === 'ADMIN' ? null : ctx.barangayId);
+    const query = dashboardQuerySchema.parse(req.query);
+    const data = await getDashboardAnalytics({
+      barangayId: ctx.role === 'ADMIN' ? null : ctx.barangayId,
+      filingYear: query.filingYear ?? null,
+    });
     res.json({ data });
   },
 

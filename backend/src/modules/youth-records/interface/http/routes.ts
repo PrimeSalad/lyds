@@ -10,6 +10,8 @@ youthRecordRouter.use(requireAuth);
 
 youthRecordRouter.get('/', requireBarangayAccess, youthRecordController.list);
 youthRecordRouter.post('/', requireBarangayAccess, youthRecordController.create);
+youthRecordRouter.post('/approve-drafts', requireAdmin, youthRecordController.approveDrafts);
+youthRecordRouter.post('/approve-submitted-by-barangay', requireAdmin, youthRecordController.approveSubmittedByBarangay);
 youthRecordRouter.get('/:recordId', requireBarangayAccess, youthRecordController.getById);
 youthRecordRouter.patch('/:recordId', requireBarangayAccess, youthRecordController.update);
 youthRecordRouter.post('/:recordId/submit', requireBarangayAccess, youthRecordController.submit);

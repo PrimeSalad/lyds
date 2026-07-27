@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { exportRecordsQuerySchema } from './schema';
+import { dashboardQuerySchema, exportRecordsQuerySchema } from './schema';
+
+describe('dashboardQuerySchema', () => {
+  it('coerces a valid coverage filing year', () => {
+    expect(dashboardQuerySchema.parse({ filingYear: '2025' })).toEqual({ filingYear: 2025 });
+  });
+
+  it('rejects a filing year outside the supported range', () => {
+    expect(() => dashboardQuerySchema.parse({ filingYear: '1999' })).toThrow();
+  });
+});
 
 describe('exportRecordsQuerySchema', () => {
   it('coerces a filing year and defaults to XLSX', () => {

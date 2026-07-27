@@ -292,11 +292,15 @@ const YouthRecordDetailPage = () => {
                 <LuSend aria-hidden="true" /> Submit for Review
               </Button>
             )}
-            {canReview && (
+            {isAdmin && record.status === 'SUBMITTED' && (
               <>
                 <Button variant="outline" colorPalette="orange" onClick={() => setReturnDialogOpen(true)} disabled={actionLoading} width={{ base: 'full', sm: 'auto' }}>
                   <LuUndo2 aria-hidden="true" /> Return
                 </Button>
+              </>
+            )}
+            {canReview && (
+              <>
                 <Button colorPalette="green" onClick={() => setPendingAction('approve')} disabled={actionLoading} width={{ base: 'full', sm: 'auto' }}>
                   <LuCheck aria-hidden="true" /> Approve
                 </Button>

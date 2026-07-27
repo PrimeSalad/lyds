@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Field, Grid, Heading, HStack, IconButton, Input, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Card, Field, Grid, Heading, HStack, IconButton, Input, SimpleGrid, Spinner, Text, VStack } from '@chakra-ui/react';
 import { LuEye, LuEyeOff, LuKeyRound, LuSave } from 'react-icons/lu';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { PageHeader } from '../../../../shared/components/PageHeader';
@@ -88,10 +88,14 @@ const AccountSettingsPage = () => {
   if (loading) {
     return (
       <DashboardLayout>
-        <VStack py={14} gap={3} color="text.secondary" role="status">
-          <Spinner color="primary.600" />
-          <Text fontSize="sm">Loading account settings...</Text>
-        </VStack>
+        <Card.Root maxW="720px" mx="auto" borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body py={14}>
+            <VStack gap={3} color="text.secondary" role="status">
+              <Spinner color="primary.600" />
+              <Text fontSize="sm">Loading account settings...</Text>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
       </DashboardLayout>
     );
   }
@@ -103,76 +107,95 @@ const AccountSettingsPage = () => {
         description="Update your profile details and password."
       />
 
-      <Grid maxW="980px" templateColumns={{ base: '1fr', xl: 'minmax(0, 1.1fr) minmax(340px, 0.9fr)' }} gap={6} alignItems="start">
-        <Box as="form" onSubmit={handleProfileSubmit} bg="white" border="1px solid" borderColor="border" borderRadius="md" boxShadow="panel" p={{ base: 5, md: 7 }}>
-          <Heading as="h2" fontSize="lg" fontWeight="600">Profile</Heading>
-          <Text color="text.secondary" fontSize="sm" mt={1} mb={6}>Keep your account information current.</Text>
-          <VStack align="stretch" gap={5}>
-            <TextField label="Email address" value={email} onChange={() => {}} readOnly />
-            <TextField label="Account role" value={role} onChange={() => {}} readOnly />
-            <TextField label="Full name" value={fullName} onChange={setFullName} required autoComplete="name" />
-            <TextField label="Position or title" value={positionTitle} onChange={setPositionTitle} placeholder="SK Chairperson" />
-            <TextField label="Contact number" type="tel" value={contactNumber} onChange={setContactNumber} autoComplete="tel" placeholder="09XXXXXXXXX" />
-            <Button type="submit" alignSelf="flex-start" colorPalette="green" loading={profileSaving} disabled={!fullName.trim()}>
-              <LuSave />
-              Save Profile
-            </Button>
-          </VStack>
-        </Box>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} maxW="980px" mb={6}>
+        {[
+          { label: 'Account email', value: email || '—' },
+          { label: 'Role', value: role || '—' },
+          { label: 'Contact', value: contactNumber || 'No contact number' },
+        ].map((item) => (
+          <Card.Root key={item.label} borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">{item.label}</Text>
+              <Text fontWeight="700" mt={1} overflowWrap="anywhere">{item.value}</Text>
+            </Card.Body>
+          </Card.Root>
+        ))}
+      </SimpleGrid>
 
-        <Box as="form" onSubmit={handlePasswordSubmit} bg="white" border="1px solid" borderColor="border" borderRadius="md" boxShadow="panel" p={{ base: 5, md: 7 }}>
-          <HStack gap={3}>
-            <LuKeyRound aria-hidden="true" />
-            <Heading as="h2" fontSize="lg" fontWeight="600">Password</Heading>
-          </HStack>
-          <Text color="text.secondary" fontSize="sm" mt={2} mb={6}>Use at least 8 characters for your new password.</Text>
-          <VStack align="stretch" gap={5}>
-            <Field.Root invalid={!!passwordError} width="full">
-              <Field.Label fontFamily="heading" fontWeight="500">New password</Field.Label>
-              <Box position="relative" width="full">
+      <Grid maxW="980px" templateColumns={{ base: '1fr', xl: 'minmax(0, 1.1fr) minmax(340px, 0.9fr)' }} gap={6} alignItems="start">
+        <Card.Root as="form" onSubmit={handleProfileSubmit} borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body p={{ base: 5, md: 7 }}>
+            <Heading as="h2" fontSize="lg" fontWeight="600">Profile</Heading>
+            <Text color="text.secondary" fontSize="sm" mt={1} mb={6}>Keep your account information current.</Text>
+            <VStack align="stretch" gap={5}>
+              <TextField label="Email address" value={email} onChange={() => {}} readOnly />
+              <TextField label="Account role" value={role} onChange={() => {}} readOnly />
+              <TextField label="Full name" value={fullName} onChange={setFullName} required autoComplete="name" />
+              <TextField label="Position or title" value={positionTitle} onChange={setPositionTitle} placeholder="SK Chairperson" />
+              <TextField label="Contact number" type="tel" value={contactNumber} onChange={setContactNumber} autoComplete="tel" placeholder="09XXXXXXXXX" />
+              <Button type="submit" alignSelf="flex-start" colorPalette="green" loading={profileSaving} disabled={!fullName.trim()}>
+                <LuSave />
+                Save Profile
+              </Button>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
+
+        <Card.Root as="form" onSubmit={handlePasswordSubmit} borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body p={{ base: 5, md: 7 }}>
+            <HStack gap={3}>
+              <LuKeyRound aria-hidden="true" />
+              <Heading as="h2" fontSize="lg" fontWeight="600">Password</Heading>
+            </HStack>
+            <Text color="text.secondary" fontSize="sm" mt={2} mb={6}>Use at least 8 characters for your new password.</Text>
+            <VStack align="stretch" gap={5}>
+              <Field.Root invalid={!!passwordError} width="full">
+                <Field.Label fontFamily="heading" fontWeight="500">New password</Field.Label>
+                <Box position="relative" width="full">
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    autoComplete="new-password"
+                    minH="44px"
+                    width="full"
+                    pr="48px"
+                    borderColor="border.strong"
+                  />
+                  <IconButton
+                    type="button"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    variant="ghost"
+                    size="sm"
+                    position="absolute"
+                    right={1}
+                    top="50%"
+                    transform="translateY(-50%)"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                  >
+                    {showPassword ? <LuEyeOff /> : <LuEye />}
+                  </IconButton>
+                </Box>
+              </Field.Root>
+              <Field.Root invalid={!!passwordError}>
+                <Field.Label fontFamily="heading" fontWeight="500">Confirm new password</Field.Label>
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
                   autoComplete="new-password"
                   minH="44px"
-                  width="full"
-                  pr="48px"
                   borderColor="border.strong"
                 />
-                <IconButton
-                  type="button"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  variant="ghost"
-                  size="sm"
-                  position="absolute"
-                  right={1}
-                  top="50%"
-                  transform="translateY(-50%)"
-                  onClick={() => setShowPassword((visible) => !visible)}
-                >
-                  {showPassword ? <LuEyeOff /> : <LuEye />}
-                </IconButton>
-              </Box>
-            </Field.Root>
-            <Field.Root invalid={!!passwordError}>
-              <Field.Label fontFamily="heading" fontWeight="500">Confirm new password</Field.Label>
-              <Input
-                type={showPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                autoComplete="new-password"
-                minH="44px"
-                borderColor="border.strong"
-              />
-              {passwordError && <Field.ErrorText>{passwordError}</Field.ErrorText>}
-            </Field.Root>
-            <Button type="submit" alignSelf="flex-start" colorPalette="green" variant="outline" loading={passwordSaving} disabled={!newPassword || !confirmPassword}>
-              <LuKeyRound />
-              Update Password
-            </Button>
-          </VStack>
-        </Box>
+                {passwordError && <Field.ErrorText>{passwordError}</Field.ErrorText>}
+              </Field.Root>
+              <Button type="submit" alignSelf="flex-start" colorPalette="green" variant="outline" loading={passwordSaving} disabled={!newPassword || !confirmPassword}>
+                <LuKeyRound />
+                Update Password
+              </Button>
+            </VStack>
+          </Card.Body>
+        </Card.Root>
       </Grid>
     </DashboardLayout>
   );

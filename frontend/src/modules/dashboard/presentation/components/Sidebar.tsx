@@ -10,6 +10,7 @@ import { showToast } from '../../../../shared/toast';
 import {
   LuChartNoAxesCombined,
   LuClipboardList,
+  LuClipboardCheck,
   LuDatabase,
   LuFilePlus2,
   LuLayoutDashboard,
@@ -27,6 +28,7 @@ import {
 const adminLinks = [
   { label: 'Dashboard', path: '/', icon: LuLayoutDashboard },
   { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+  { label: 'Review Queue', path: '/review-queue', icon: LuClipboardCheck },
   { label: 'Imports', path: '/imports', icon: LuUpload },
   { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
   { label: 'Announcements', path: '/announcements', icon: LuMegaphone },

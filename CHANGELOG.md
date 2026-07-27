@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an admin-only Review Queue in the sidebar that groups submitted SK youth profiles by barangay and filing year, with individual review/approval and confirmed bulk barangay approval.
+- Added a redesigned annual Barangay Coverage panel with a filing-year filter, progress summary, and readable responsive records/pending columns for every active or inactive barangay.
 - Added real spreadsheet import history with status filtering, resumable validation reviews, and downloadable row correction reports.
 - Added a responsive Youth Record Details experience with full profile sections, readable values, workflow history, and clear edit, archive, restore, submit, return, and approve actions.
 - Added a filing-year Excel export to Youth Records with an official, print-ready KK Youth Profile layout and `KK Youth Profile <year>.xlsx` filenames.
@@ -22,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Allowed administrators to approve all draft youth records from the Youth Records page and from individual record details.
+- Expanded the dashboard barangay coverage view to include inactive barangays with an explicit active/inactive badge.
+- Aligned the Reports XLSX export flow with Youth Records by adding a filing-year picker, official KK workbook naming, and the same year-based Excel layout.
+- Refined Imports, Reports, SK Accounts, Barangays, Account Settings, and Reference Data with calmer responsive tables, card-based summaries, clearer action rows, and a strict Poppins/Questrial typography system.
+- Allowed archived categories to be deleted from the Categories page while keeping historical youth-record references intact via soft delete.
 - Redesigned Youth Records import into an accessible setup, review, and completion flow with a required destination barangay, filing-year context, drag-and-drop upload, responsive row results, and explicit ready/invalid/duplicate totals.
 - Allowed administrators to edit non-archived submitted and approved youth profiles while preserving their workflow status, and aligned edit-form age validation with the profile's filing year.
 - Standardized annual dataset names as `KK Youth Profile <year>` and calculate known youth ages against December 31 of the filing year.

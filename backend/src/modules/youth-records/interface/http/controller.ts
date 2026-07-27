@@ -7,6 +7,8 @@ import { updateYouthRecord } from '../../application/use-cases/update-youth-reco
 import { submitYouthRecord } from '../../application/use-cases/submit-youth-record';
 import { returnYouthRecord } from '../../application/use-cases/return-youth-record';
 import { approveYouthRecord } from '../../application/use-cases/approve-youth-record';
+import { approveDraftYouthRecords } from '../../application/use-cases/approve-draft-youth-records';
+import { approveSubmittedYouthRecordsByBarangay } from '../../application/use-cases/approve-submitted-youth-records-by-barangay';
 import { archiveYouthRecord } from '../../application/use-cases/archive-youth-record';
 import { restoreYouthRecord } from '../../application/use-cases/restore-youth-record';
 import { getRecordHistory } from '../../application/use-cases/get-record-history';
@@ -14,6 +16,7 @@ import {
   createYouthRecordSchema,
   updateYouthRecordSchema,
   returnYouthRecordSchema,
+  approveSubmittedByBarangaySchema,
   listYouthRecordsQuerySchema
 } from './schema';
 
@@ -72,6 +75,24 @@ export const youthRecordController = {
     const ctx = (req as AuthenticatedRequest).authContext!;
     const record = await approveYouthRecord(id, ctx);
     res.json({ data: record });
+  },
+
+  async approveDrafts(req: Request, res: Response) {
+    const ctx = (req as AuthenticatedRequest).authContext!;
+    const data = await approveDraftYouthRecords(ctx.profileId, ctx.role);
+    res.json({ data });
+  },
+
+  async approveSubmittedByBarangay(req: Request, res: Response) {
+    const input = approveSubmittedByBarangaySchema.parse(req.body);
+    const ctx = (req as AuthenticatedRequest).authContext!;
+    const data = await approveSubmittedYouthRecordsByBarangay({
+      actorId: ctx.profileId,
+      actorRole: ctx.role,
+      barangayId: input.barangay_id,
+      filingYear: input.filing_year,
+    });
+    res.json({ data });
   },
 
   async archive(req: Request, res: Response) {

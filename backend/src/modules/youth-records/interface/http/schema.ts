@@ -36,6 +36,11 @@ export const returnYouthRecordSchema = z.object({
   return_reason: z.string().min(1, 'Return reason is required.'),
 });
 
+export const approveSubmittedByBarangaySchema = z.object({
+  barangay_id: z.string().uuid(),
+  filing_year: z.number().int().min(2000).max(2100).optional(),
+});
+
 export const listYouthRecordsQuerySchema = z.object({
   barangayId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),

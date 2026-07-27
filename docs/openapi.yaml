@@ -107,6 +107,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/youth-records/approve-drafts:
+    post:
+      tags: [app]
+      summary: Approve all draft youth records
+      description: Admin bulk action that marks every non-deleted draft youth profile as approved.
+      responses:
+        '200':
+          description: Draft records approved
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [approved_count]
+                    properties:
+                      approved_count:
+                        type: integer
+                        minimum: 0
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/youth-records/approve-submitted-by-barangay:
+    post:
+      tags: [app]
+      summary: Approve submitted youth records for one barangay
+      description: |
+        Admin-only bulk review action. Approves every non-deleted submitted
+        youth profile in the selected barangay, optionally restricted to one
+        annual filing year.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveSubmittedByBarangayInput'
+      responses:
+        '200':
+          description: Barangay submissions approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkApprovalResponse'
+        '400':
+          description: Invalid barangay or filing year
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/youth-records/{recordId}:
     parameters:
       - in: path
@@ -199,6 +271,39 @@ paths:
                 $ref: '#/components/schemas/CategoryListResponse'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/categories/{categoryId}:
+    parameters:
+      - in: path
+        name: categoryId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [app]
+      summary: Delete an archived category
+      description: Soft-deletes an archived category so historical youth records can keep their category reference.
+      responses:
+        '204':
+          description: Category deleted
+        '400':
+          description: Only archived categories can be deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authentication required or not an administrator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Category not found
           content:
             application/json:
               schema:
@@ -398,6 +503,40 @@ paths:
               schema:
                 type: string
                 format: binary
+  /api/v1/reports/dashboard:
+    get:
+      tags: [app]
+      summary: Get dashboard analytics
+      description: |
+        Returns dashboard analytics within the authenticated account scope.
+        Pass `filingYear` to limit youth-profile metrics and barangay coverage
+        to annual Youth Profile categories for that filing year.
+      parameters:
+        - in: query
+          name: filingYear
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+      responses:
+        '200':
+          description: Dashboard analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardAnalyticsResponse'
+        '400':
+          description: Invalid filing year
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/reports/export:
     get:
       tags: [app]
@@ -977,6 +1116,87 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/CommitImportResult'
+    BarangayCoverageItem:
+      type: object
+      required: [barangayId, barangayName, isActive, totalRecords, pendingReview, approved, lastActivityAt]
+      properties:
+        barangayId:
+          type: string
+          format: uuid
+        barangayName:
+          type: string
+        isActive:
+          type: boolean
+        totalRecords:
+          type: integer
+          minimum: 0
+        pendingReview:
+          type: integer
+          minimum: 0
+        approved:
+          type: integer
+          minimum: 0
+        lastActivityAt:
+          type: [string, "null"]
+          format: date-time
+    CoverageSummary:
+      type: object
+      required: [barangaysWithRecords, totalBarangays, percentage]
+      properties:
+        barangaysWithRecords:
+          type: integer
+          minimum: 0
+        totalBarangays:
+          type: integer
+          minimum: 0
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+    DashboardAnalytics:
+      type: object
+      required: [barangayCoverage, coverage, generatedAt]
+      additionalProperties: true
+      properties:
+        barangayCoverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/BarangayCoverageItem'
+        coverage:
+          $ref: '#/components/schemas/CoverageSummary'
+        generatedAt:
+          type: string
+          format: date-time
+    DashboardAnalyticsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DashboardAnalytics'
+    ApproveSubmittedByBarangayInput:
+      type: object
+      required: [barangay_id]
+      properties:
+        barangay_id:
+          type: string
+          format: uuid
+        filing_year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+    BulkApprovalResult:
+      type: object
+      required: [approved_count]
+      properties:
+        approved_count:
+          type: integer
+          minimum: 0
+    BulkApprovalResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/BulkApprovalResult'
     ErrorResponse:
       type: object
       required: [status, code, message]

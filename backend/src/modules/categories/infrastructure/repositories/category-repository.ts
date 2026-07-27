@@ -106,6 +106,20 @@ export const categoryRepository = {
     return result;
   },
 
+  async deleteCategory(id: string, profileId: string): Promise<Category> {
+    const { data: result, error } = await supabaseAdmin
+      .from('categories')
+      .update({
+        deleted_at: new Date().toISOString(),
+        updated_by: profileId,
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return result;
+  },
+
   async listCategoryFields(categoryId: string): Promise<CategoryField[]> {
     const { data, error } = await supabaseAdmin
       .from('category_fields')

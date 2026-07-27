@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Button } from '@chakra-ui/react';
+import { Box, Button, Card, SimpleGrid, Text } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
 import { DataTable, type Column, type Action } from '../../../../shared/tables/DataTable';
@@ -17,6 +17,12 @@ const BarangayListPage = () => {
 
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const summary = useMemo(() => ({
+    total: barangays.length,
+    active: barangays.filter((barangay) => barangay.is_active).length,
+    inactive: barangays.filter((barangay) => !barangay.is_active).length,
+  }), [barangays]);
 
   const loadBarangays = async () => {
     try {
@@ -41,6 +47,7 @@ const BarangayListPage = () => {
     {
       key: 'is_active',
       header: 'Status',
+      align: 'center',
       render: (row) => (
         <StatusBadge status={row.is_active ? 'ACTIVE' : 'INACTIVE'} />
       ),
@@ -104,6 +111,28 @@ const BarangayListPage = () => {
           </Button>
         )}
       />
+
+      <SimpleGrid columns={{ base: 1, sm: 3 }} gap={4} mb={6}>
+        {[
+          { label: 'All barangays', value: summary.total, tone: 'blue' },
+          { label: 'Active', value: summary.active, tone: 'green' },
+          { label: 'Inactive', value: summary.inactive, tone: 'orange' },
+        ].map((item) => (
+          <Card.Root key={item.label} borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">{item.label}</Text>
+              <Text fontFamily="heading" fontSize="2xl" fontWeight="700" color={`${item.tone}.700`} mt={1}>
+                {item.value}
+              </Text>
+            </Card.Body>
+          </Card.Root>
+        ))}
+      </SimpleGrid>
+
+      <Box mb={3}>
+        <Text fontFamily="heading" fontWeight="600">Barangay directory</Text>
+        <Text color="text.muted" fontSize="sm" mt={1}>Active and inactive barangays remain visible in this list.</Text>
+      </Box>
 
       <DataTable
         columns={columns}

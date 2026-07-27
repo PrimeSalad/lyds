@@ -14,6 +14,7 @@ categoryRoutes.get('/:categoryId', categoryController.getById);
 categoryRoutes.patch('/:categoryId', requireAdmin, categoryController.update);
 categoryRoutes.post('/:categoryId/publish', requireAdmin, categoryController.publish);
 categoryRoutes.post('/:categoryId/archive', requireAdmin, categoryController.archive);
+categoryRoutes.delete('/:categoryId', requireAdmin, categoryController.delete);
 
 // Category field routes
 categoryRoutes.get('/:categoryId/fields', categoryController.listFields);

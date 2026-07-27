@@ -190,6 +190,139 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/youth-records/approve-drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve all draft youth records
+         * @description Admin bulk action that marks every non-deleted draft youth profile as approved.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Draft records approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                approved_count: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Administrator access required */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/youth-records/approve-submitted-by-barangay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve submitted youth records for one barangay
+         * @description Admin-only bulk review action. Approves every non-deleted submitted
+         *     youth profile in the selected barangay, optionally restricted to one
+         *     annual filing year.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveSubmittedByBarangayInput"];
+                };
+            };
+            responses: {
+                /** @description Barangay submissions approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkApprovalResponse"];
+                    };
+                };
+                /** @description Invalid barangay or filing year */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Administrator access required */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/youth-records/{recordId}": {
         parameters: {
             query?: never;
@@ -368,6 +501,74 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/{categoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categoryId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an archived category
+         * @description Soft-deletes an archived category so historical youth records can keep their category reference.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    categoryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Category deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Only archived categories can be deleted */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required or not an administrator */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Category not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -752,6 +953,67 @@ export interface paths {
                     };
                     content: {
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get dashboard analytics
+         * @description Returns dashboard analytics within the authenticated account scope.
+         *     Pass `filingYear` to limit youth-profile metrics and barangay coverage
+         *     to annual Youth Profile categories for that filing year.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    filingYear?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Dashboard analytics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DashboardAnalyticsResponse"];
+                    };
+                };
+                /** @description Invalid filing year */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -1169,6 +1431,44 @@ export interface components {
         };
         CommitImportResponse: {
             data: components["schemas"]["CommitImportResult"];
+        };
+        BarangayCoverageItem: {
+            /** Format: uuid */
+            barangayId: string;
+            barangayName: string;
+            isActive: boolean;
+            totalRecords: number;
+            pendingReview: number;
+            approved: number;
+            /** Format: date-time */
+            lastActivityAt: string | null;
+        };
+        CoverageSummary: {
+            barangaysWithRecords: number;
+            totalBarangays: number;
+            percentage: number;
+        };
+        DashboardAnalytics: {
+            barangayCoverage: components["schemas"]["BarangayCoverageItem"][];
+            coverage: components["schemas"]["CoverageSummary"];
+            /** Format: date-time */
+            generatedAt: string;
+        } & {
+            [key: string]: unknown;
+        };
+        DashboardAnalyticsResponse: {
+            data: components["schemas"]["DashboardAnalytics"];
+        };
+        ApproveSubmittedByBarangayInput: {
+            /** Format: uuid */
+            barangay_id: string;
+            filing_year?: number;
+        };
+        BulkApprovalResult: {
+            approved_count: number;
+        };
+        BulkApprovalResponse: {
+            data: components["schemas"]["BulkApprovalResult"];
         };
         ErrorResponse: {
             status: number;

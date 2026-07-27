@@ -230,7 +230,7 @@ const CategoryFieldsPage = () => {
                   <VStack align="start" gap={1}>
                     <HStack wrap="wrap">
                       <Text fontWeight="bold">{field.label}</Text>
-                      <Text fontFamily="mono" fontSize="sm" color="gray.500">({field.field_key})</Text>
+                      <Text fontSize="sm" color="gray.500">({field.field_key})</Text>
                       <Badge colorPalette="blue">{field.field_type}</Badge>
                       {field.is_required && <Badge colorPalette="red">Required</Badge>}
                     </HStack>

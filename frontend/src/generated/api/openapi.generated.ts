@@ -190,6 +190,141 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/youth-records/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a youth record profile
+         * @description Returns editable profile data with readable barangay, category, and reference-option labels.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Youth record profile */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["YouthRecordDetailResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Record is outside the account's barangay scope */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Youth record not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a youth record profile
+         * @description Updates editable profile information using optimistic version checking. Administrators may update any non-archived record without changing its workflow status.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateYouthRecordInput"];
+                };
+            };
+            responses: {
+                /** @description Youth record updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["YouthRecordResponse"];
+                    };
+                };
+                /** @description Invalid record data or status transition */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Editing is not allowed for this account or record */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Youth record not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -433,6 +568,41 @@ export interface components {
             /** @default false */
             submit_on_create: boolean;
         };
+        UpdateYouthRecordInput: {
+            version: number;
+            /** Format: uuid */
+            category_id?: string;
+            /** Format: uuid */
+            barangay_id?: string;
+            first_name?: string;
+            middle_name?: string;
+            last_name?: string;
+            suffix?: string;
+            /** Format: date */
+            birth_date?: string | null;
+            /** Format: uuid */
+            sex_assigned_at_birth_id?: string;
+            /** Format: uuid */
+            civil_status_id?: string;
+            /** Format: uuid */
+            youth_classification_id?: string;
+            /** Format: uuid */
+            educational_attainment_id?: string;
+            /** Format: uuid */
+            work_status_id?: string;
+            /** Format: email */
+            email?: string;
+            contact_number?: string;
+            is_registered_voter?: boolean;
+            voted_last_election?: boolean;
+            attended_kk_assembly?: boolean;
+            kk_assembly_count?: number;
+            custom_values?: {
+                [key: string]: unknown;
+            };
+            /** @default false */
+            submit_on_update: boolean;
+        };
         YouthRecord: {
             /** Format: uuid */
             id: string;
@@ -449,6 +619,56 @@ export interface components {
         };
         YouthRecordResponse: {
             data: components["schemas"]["YouthRecord"];
+        };
+        YouthRecordDetail: components["schemas"]["YouthRecord"] & {
+            first_name: string;
+            middle_name?: string | null;
+            last_name: string;
+            suffix?: string | null;
+            version: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at?: string;
+            /** Format: date-time */
+            submitted_at?: string | null;
+            /** Format: date-time */
+            approved_at?: string | null;
+            return_reason?: string | null;
+            /** Format: email */
+            email?: string | null;
+            contact_number?: string | null;
+            /** Format: uuid */
+            sex_assigned_at_birth_id?: string | null;
+            /** Format: uuid */
+            civil_status_id?: string | null;
+            /** Format: uuid */
+            youth_classification_id?: string | null;
+            /** Format: uuid */
+            educational_attainment_id?: string | null;
+            /** Format: uuid */
+            work_status_id?: string | null;
+            sex_label?: string | null;
+            civil_status_label?: string | null;
+            youth_classification_label?: string | null;
+            youth_age_group_label?: string | null;
+            educational_attainment_label?: string | null;
+            work_status_label?: string | null;
+            barangay_name?: string | null;
+            municipality_name?: string | null;
+            province_name?: string | null;
+            category_name?: string | null;
+            category_filing_year?: number | null;
+            is_registered_voter?: boolean;
+            voted_last_election?: boolean | null;
+            attended_kk_assembly?: boolean;
+            kk_assembly_count?: number;
+            custom_values?: {
+                [key: string]: unknown;
+            };
+        };
+        YouthRecordDetailResponse: {
+            data: components["schemas"]["YouthRecordDetail"];
         };
         CategorySummary: {
             /** Format: uuid */

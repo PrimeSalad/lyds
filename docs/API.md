@@ -33,6 +33,8 @@ Legacy compatibility endpoints (browser redirect flow):
 ### Application API
 
 - `POST /api/v1/youth-records` — creates a youth record; `birth_date` may be `null`, in which case computed age and age group are also `null`.
+- `GET /api/v1/youth-records/:recordId` — returns the full youth profile with readable barangay, category, and reference-option labels for the detail/edit experience.
+- `PATCH /api/v1/youth-records/:recordId` — updates youth information with optimistic version checking. Administrator edits to submitted/approved records preserve the current workflow status unless a separate workflow action is used.
 - `GET /api/key` — returns the local-storage encryption key (requires auth)
 - `GET /api/v1/announcements` — list visible announcements for the current user; admins receive the management list.
 - `POST /api/v1/announcements` — create a published announcement (admin only).
@@ -48,6 +50,7 @@ Legacy compatibility endpoints (browser redirect flow):
   - `POST` creates a session
   - `DELETE` ends a session
   - `GET` reads server data
+  - `PATCH` updates part of an existing resource
 - Auth/session state is cookie-backed and enforced server-side
 - Error payloads use structured JSON for API routes
 

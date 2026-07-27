@@ -15,6 +15,10 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
   const existingRecord = await youthRecordRepository.getRecordById(id);
   if (!existingRecord) throw YouthRecordErrors.NOT_FOUND;
 
+  if (existingRecord.status === 'ARCHIVED') {
+    throw API_ERRORS.forbidden('Restore the archived record before editing it.');
+  }
+
   if (authContext.role === 'SK_OFFICIAL' && existingRecord.barangay_id !== authContext.barangayId) {
     throw YouthRecordErrors.BARANGAY_MISMATCH;
   }

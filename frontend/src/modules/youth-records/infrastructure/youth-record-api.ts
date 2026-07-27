@@ -1,4 +1,5 @@
 import { apiClient } from '../../../infrastructure/api-client';
+import type { YouthRecordDetail as YouthRecordDetailContract } from '../../../generated/api/api-types';
 
 export type YouthRecordStatus = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'ARCHIVED';
 
@@ -30,25 +31,20 @@ export type YouthRecord = {
   municipality_name?: string | null;
   province_name?: string | null;
   category_name?: string | null;
+  category_filing_year?: number | null;
+  updated_at?: string;
+  submitted_at?: string | null;
+  approved_at?: string | null;
+  return_reason?: string | null;
   barangay?: { name: string; municipality: string; province: string } | null;
-  category?: { name: string } | null;
+  category?: { name: string; filing_year?: number } | null;
 };
 
-export type YouthRecordDetail = YouthRecord & {
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  suffix?: string;
-  sex_assigned_at_birth_id?: string | null;
-  civil_status_id?: string | null;
-  youth_classification_id?: string | null;
-  educational_attainment_id?: string | null;
-  work_status_id?: string | null;
+export type YouthRecordDetail = YouthRecordDetailContract & {
   is_registered_voter: boolean;
-  voted_last_election?: boolean | null;
   attended_kk_assembly: boolean;
-  kk_assembly_count?: number;
-  custom_values?: Record<string, unknown>;
+  barangay?: { name: string; municipality: string; province: string } | null;
+  category?: { name: string; filing_year?: number } | null;
 };
 
 export type AuditLog = {
@@ -140,7 +136,7 @@ export const youthRecordApi = {
   async returnRecord(id: string, reason: string): Promise<void> {
     await apiClient.request(`/youth-records/${id}/return`, {
       method: 'POST',
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ return_reason: reason }),
     });
   },
 

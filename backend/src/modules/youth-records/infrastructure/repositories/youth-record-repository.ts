@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../../../config/supabase';
 import type { YouthRecord, RecordStatus } from '../../domain/entities/youth-record';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
+import { toYouthRecordPresentation } from './youth-record-presenter';
 
 const withStatusCompatibility = (recordData: any) => (
   recordData.status
@@ -85,34 +86,9 @@ export const youthRecordRepository = {
     const { data, count, error } = await query.range(from, to);
     if (error) throw new Error(error.message);
 
-    const relationName = (relation: any) => Array.isArray(relation)
-      ? relation[0]?.name ?? null
-      : relation?.name ?? null;
-
-    const optionLabel = (relation: any) => Array.isArray(relation)
-      ? relation[0]?.label ?? null
-      : relation?.label ?? null;
-
-    const barangayField = (relation: any, field: string) => Array.isArray(relation)
-      ? relation[0]?.[field] ?? null
-      : relation?.[field] ?? null;
-
     const totalItems = count ?? 0;
     return {
-      data: (data ?? []).map((record: any, index: number) => ({
-        ...record,
-        row_number: from + index + 1,
-        barangay_name: relationName(record.barangay),
-        municipality_name: barangayField(record.barangay, 'municipality'),
-        province_name: barangayField(record.barangay, 'province'),
-        category_name: relationName(record.category),
-        sex_label: optionLabel(record.sex),
-        civil_status_label: optionLabel(record.civil),
-        youth_classification_label: optionLabel(record.classification),
-        youth_age_group_label: optionLabel(record.age_group),
-        educational_attainment_label: optionLabel(record.education),
-        work_status_label: optionLabel(record.work),
-      })),
+      data: (data ?? []).map((record: any, index: number) => toYouthRecordPresentation(record, from + index + 1)),
       meta: {
         page,
         pageSize,
@@ -125,7 +101,16 @@ export const youthRecordRepository = {
   async getRecordById(id: string) {
     const { data, error } = await supabaseAdmin
       .from('youth_profiles')
-      .select('*, barangay:barangays(name), category:categories(name)')
+      .select(
+        '*, barangay:barangays!barangay_id(name, municipality, province), '
+        + 'category:categories!category_id(name, filing_year), '
+        + 'sex:reference_options!sex_assigned_at_birth_id(label), '
+        + 'civil:reference_options!civil_status_id(label), '
+        + 'classification:reference_options!youth_classification_id(label), '
+        + 'age_group:reference_options!youth_age_group_id(label), '
+        + 'education:reference_options!educational_attainment_id(label), '
+        + 'work:reference_options!work_status_id(label)'
+      )
       .eq('id', id)
       .single();
 
@@ -133,7 +118,7 @@ export const youthRecordRepository = {
       if (error.code === 'PGRST116') return null;
       throw new Error(error.message);
     }
-    return data as any;
+    return toYouthRecordPresentation(data);
   },
 
   async createRecord(recordData: any) {

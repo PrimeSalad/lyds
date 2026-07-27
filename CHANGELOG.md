@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a responsive Youth Record Details experience with full profile sections, readable values, workflow history, and clear edit, archive, restore, submit, return, and approve actions.
 - Added a filing-year Excel export to Youth Records with an official, print-ready KK Youth Profile layout and `KK Youth Profile <year>.xlsx` filenames.
 - Added a Supabase Cron job that automatically creates the current year's KK Youth Profile every January 1 and performs duplicate-safe eligible draft copying.
 - Added live admin dashboard analytics for workflow status, six-month activity, barangay coverage, data quality, and recent record activity.
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Allowed administrators to edit non-archived submitted and approved youth profiles while preserving their workflow status, and aligned edit-form age validation with the profile's filing year.
 - Standardized annual dataset names as `KK Youth Profile <year>` and calculate known youth ages against December 31 of the filing year.
 - Replaced one-step list pagination with responsive numbered pages, first/last controls, and direct page jumping for youth records and audit logs.
 - Allowed youth records with an unknown birth date and age, while retaining data-quality visibility for incomplete profiles.
@@ -39,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed youth profile details showing reference UUIDs instead of readable labels, exposed audit actors and return reasons, and corrected the return-for-correction request payload.
 - Backfilled 2,918 unique age-eligible 2025 youth into the live 2026 annual dataset and strengthened annual rollover deduplication to one normalized name per barangay.
 - Fixed Category cards showing zero records and fields by returning live non-deleted record and active-field totals from the API.
 - Fixed yearly record copying to include only youth aged 15–30 for the target year, recompute their age group, process more than 1,000 source records, and skip duplicates on repeat runs.

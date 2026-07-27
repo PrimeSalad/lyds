@@ -19,5 +19,8 @@ export const getRecordHistory = async (id: string, authContext: any) => {
 
   if (error) throw new Error(error.message);
 
-  return data;
+  return (data ?? []).map((log: any) => ({
+    ...log,
+    actor_name: Array.isArray(log.actor) ? log.actor[0]?.full_name : log.actor?.full_name,
+  }));
 };

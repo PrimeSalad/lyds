@@ -107,6 +107,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/youth-records/{recordId}:
+    parameters:
+      - in: path
+        name: recordId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [app]
+      summary: Get a youth record profile
+      description: Returns editable profile data with readable barangay, category, and reference-option labels.
+      responses:
+        '200':
+          description: Youth record profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouthRecordDetailResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Record is outside the account's barangay scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Youth record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [app]
+      summary: Update a youth record profile
+      description: Updates editable profile information using optimistic version checking. Administrators may update any non-archived record without changing its workflow status.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateYouthRecordInput'
+      responses:
+        '200':
+          description: Youth record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YouthRecordResponse'
+        '400':
+          description: Invalid record data or status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Editing is not allowed for this account or record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Youth record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/categories:
     get:
       tags: [app]
@@ -281,6 +359,65 @@ components:
         submit_on_create:
           type: boolean
           default: false
+    UpdateYouthRecordInput:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        category_id:
+          type: string
+          format: uuid
+        barangay_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        middle_name:
+          type: string
+        last_name:
+          type: string
+        suffix:
+          type: string
+        birth_date:
+          type: [string, "null"]
+          format: date
+        sex_assigned_at_birth_id:
+          type: string
+          format: uuid
+        civil_status_id:
+          type: string
+          format: uuid
+        youth_classification_id:
+          type: string
+          format: uuid
+        educational_attainment_id:
+          type: string
+          format: uuid
+        work_status_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        contact_number:
+          type: string
+        is_registered_voter:
+          type: boolean
+        voted_last_election:
+          type: boolean
+        attended_kk_assembly:
+          type: boolean
+        kk_assembly_count:
+          type: integer
+          minimum: 0
+        custom_values:
+          type: object
+          additionalProperties: true
+        submit_on_update:
+          type: boolean
+          default: false
     YouthRecord:
       type: object
       required: [id, category_id, barangay_id, display_name, birth_date, age_at_submission, status]
@@ -310,6 +447,95 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/YouthRecord'
+    YouthRecordDetail:
+      allOf:
+        - $ref: '#/components/schemas/YouthRecord'
+        - type: object
+          required: [first_name, last_name, version, created_at]
+          properties:
+            first_name:
+              type: string
+            middle_name:
+              type: [string, "null"]
+            last_name:
+              type: string
+            suffix:
+              type: [string, "null"]
+            version:
+              type: integer
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            submitted_at:
+              type: [string, "null"]
+              format: date-time
+            approved_at:
+              type: [string, "null"]
+              format: date-time
+            return_reason:
+              type: [string, "null"]
+            email:
+              type: [string, "null"]
+              format: email
+            contact_number:
+              type: [string, "null"]
+            sex_assigned_at_birth_id:
+              type: [string, "null"]
+              format: uuid
+            civil_status_id:
+              type: [string, "null"]
+              format: uuid
+            youth_classification_id:
+              type: [string, "null"]
+              format: uuid
+            educational_attainment_id:
+              type: [string, "null"]
+              format: uuid
+            work_status_id:
+              type: [string, "null"]
+              format: uuid
+            sex_label:
+              type: [string, "null"]
+            civil_status_label:
+              type: [string, "null"]
+            youth_classification_label:
+              type: [string, "null"]
+            youth_age_group_label:
+              type: [string, "null"]
+            educational_attainment_label:
+              type: [string, "null"]
+            work_status_label:
+              type: [string, "null"]
+            barangay_name:
+              type: [string, "null"]
+            municipality_name:
+              type: [string, "null"]
+            province_name:
+              type: [string, "null"]
+            category_name:
+              type: [string, "null"]
+            category_filing_year:
+              type: [integer, "null"]
+            is_registered_voter:
+              type: boolean
+            voted_last_election:
+              type: [boolean, "null"]
+            attended_kk_assembly:
+              type: boolean
+            kk_assembly_count:
+              type: integer
+            custom_values:
+              type: object
+              additionalProperties: true
+    YouthRecordDetailResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/YouthRecordDetail'
     CategorySummary:
       type: object
       required:

@@ -24,6 +24,16 @@ Because the automated schedule was installed after January 1, 2026, migration `0
 
 When a record with a known birthday is created or its birthday/category is changed, eligibility is validated against December 31 of the selected category's filing year. Known ages outside 15–30 are rejected. A missing birthday remains allowed for incomplete legacy/source data, but that record cannot be included in an annual rollover until the birthday is supplied.
 
+## Profile Editing and Archiving
+
+The Youth Record Details page presents the full profile using readable reference labels, filing-year context, workflow history, and clear responsive actions.
+
+- Administrators can edit any non-archived record, including submitted and approved profiles. Saving these edits preserves the current status; approval or submission is changed only through its separate workflow action.
+- SK officials can edit draft and returned records within their assigned barangay, then save a draft or submit it for review.
+- Administrators can archive any active record. Archived profiles remain available with their audit history and can be restored as drafts before editing.
+- Age shown and validated in the edit form is calculated against December 31 of the selected filing year, so an older annual profile remains editable after the person ages beyond the current-year range.
+- Archive, restore, approval, submission, and return actions require confirmation or a correction reason as appropriate.
+
 ## Annual Excel Export
 
 The Youth Records page includes an **Export Excel** action. Select a filing year to download every non-deleted record in that annual dataset. The workbook:

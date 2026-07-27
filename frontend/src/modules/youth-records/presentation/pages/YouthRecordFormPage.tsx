@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, Flex, VStack, Grid, GridItem, Spinner, Text } from '@chakra-ui/react';
 import { useForm, Controller, type FieldErrors } from 'react-hook-form';
-import { LuSave, LuSend, LuX } from 'react-icons/lu';
+import { LuArrowLeft, LuSave, LuSend, LuX } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
 import { TextField, SelectField, CheckboxField, TextareaField } from '../../../../shared/forms/FormFields';
@@ -12,19 +12,10 @@ import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { categoryApi, type Category, type CategoryField } from '../../../categories/infrastructure/category-api';
 import { referenceDataApi, type ReferenceOption } from '../../../reference-data/infrastructure/reference-data-api';
-import { youthRecordApi, type CreateInput } from '../../infrastructure/youth-record-api';
+import { youthRecordApi, type CreateInput, type YouthRecordStatus } from '../../infrastructure/youth-record-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
-
-const computeAge = (birthDate: string): number => {
-  if (!birthDate) return 0;
-  const birth = new Date(birthDate);
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-};
+import { computeYouthRecordAge } from '../youth-record-age';
 
 const getYouthAgeGroup = (age: number) => {
   if (age >= 15 && age <= 17) return 'Child Youth';
@@ -182,7 +173,9 @@ const YouthRecordFormPage = () => {
   const [educationalAttainmentOptions, setEducationalAttainmentOptions] = useState<{ value: string; label: string }[]>([]);
   const [workStatusOptions, setWorkStatusOptions] = useState<{ value: string; label: string }[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
+  const [categoryFilingYear, setCategoryFilingYear] = useState<number | undefined>();
   const [recordVersion, setRecordVersion] = useState<number | null>(null);
+  const [recordStatus, setRecordStatus] = useState<YouthRecordStatus | null>(null);
   const submissionAlertRef = useRef<HTMLDivElement | null>(null);
   
   const { control, handleSubmit, watch, reset, setValue, formState: { isDirty } } = useForm<YouthRecordFormValues>({
@@ -202,7 +195,7 @@ const YouthRecordFormPage = () => {
 
   const selectedCategoryId = watch('category_id');
   const birthDate = watch('birth_date');
-  const age = useMemo(() => computeAge(birthDate), [birthDate]);
+  const age = useMemo(() => computeYouthRecordAge(birthDate, categoryFilingYear), [birthDate, categoryFilingYear]);
   const ageGroup = useMemo(() => getYouthAgeGroup(age), [age]);
 
   const isRegisteredVoter = watch('is_registered_voter');
@@ -224,14 +217,17 @@ const YouthRecordFormPage = () => {
     const loadCategoryFields = async () => {
       if (!selectedCategoryId) {
         setCategoryFields([]);
+        setCategoryFilingYear(undefined);
         return;
       }
 
       try {
         const res = await categoryApi.getById(selectedCategoryId);
         setCategoryFields([...res.data.fields].sort((a, b) => a.sort_order - b.sort_order));
+        setCategoryFilingYear(res.data.filing_year);
       } catch {
         setCategoryFields([]);
+        setCategoryFilingYear(undefined);
         showToast.error('Failed to load category fields');
       }
     };
@@ -286,6 +282,7 @@ const YouthRecordFormPage = () => {
       youthRecordApi.getById(recordId)
         .then((res) => {
           setRecordVersion(res.data.version);
+          setRecordStatus(res.data.status);
           reset({
             category_id: res.data.category_id,
             barangay_id: res.data.barangay_id,
@@ -434,12 +431,12 @@ const YouthRecordFormPage = () => {
           version: recordVersion,
           submit_on_update: !isDraft,
         });
-        showToast.success(isDraft ? 'Draft updated' : 'Record updated and submitted');
+        showToast.success(isDraft ? 'Changes saved' : 'Record updated and submitted');
       } else {
         await youthRecordApi.create({ ...payload, submit_on_create: !isDraft });
         showToast.success(isDraft ? 'Draft saved' : 'Record saved and submitted');
       }
-      navigate('/youth-records');
+      navigate(isEditing && recordId ? `/youth-records/${recordId}` : '/youth-records');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save record';
       setSubmissionError(message);
@@ -467,12 +464,15 @@ const YouthRecordFormPage = () => {
     handleInvalid,
   );
 
+  const canSubmitForReview = !isEditing || recordStatus === 'DRAFT' || recordStatus === 'RETURNED';
+  const recordDestination = isEditing && recordId ? `/youth-records/${recordId}` : '/youth-records';
+
   const handleCancel = () => {
     if (isDirty) {
       setDiscardDialogOpen(true);
       return;
     }
-    navigate('/youth-records');
+    navigate(recordDestination);
   };
 
   if (fetching) {
@@ -489,18 +489,30 @@ const YouthRecordFormPage = () => {
     <DashboardLayout>
       <PageHeader
         title={isEditing ? 'Edit Youth Record' : 'Add Youth Record'}
-        description="Capture required KK profile details before submission."
+        description={isEditing
+          ? `Update the person's information${recordStatus ? ` while keeping this record ${recordStatus.toLowerCase()}` : ''}.`
+          : 'Capture required KK profile details before submission.'}
         actions={(
-          <Button type="button" variant="outline" colorPalette="gray" onClick={handleSubmit((d) => onSubmit(d, true), handleInvalid)} loading={loading} disabled={formOptionsLoading}>
-            <LuSave />
-            Save Draft
-          </Button>
+          <Flex gap={2} wrap="wrap">
+            <Button type="button" variant="ghost" colorPalette="gray" onClick={handleCancel} disabled={loading} minH="44px">
+              <LuArrowLeft />
+              {isEditing ? 'Back to Profile' : 'Back to Records'}
+            </Button>
+            {canSubmitForReview && (
+              <Button type="button" variant="outline" colorPalette="gray" onClick={handleSubmit((d) => onSubmit(d, true), handleInvalid)} loading={loading} disabled={formOptionsLoading} minH="44px">
+                <LuSave />
+                Save Draft
+              </Button>
+            )}
+          </Flex>
         )}
       />
 
       <Box
         as="form"
-        onSubmit={requestSubmit}
+        onSubmit={canSubmitForReview
+          ? requestSubmit
+          : handleSubmit((data) => onSubmit(data, true), handleInvalid)}
         maxW="960px"
         bg="white"
         p={{ base: 4, md: 6, lg: 8 }}
@@ -590,15 +602,16 @@ const YouthRecordFormPage = () => {
             <Controller name="birth_date" control={control} rules={{
               validate: (value) => {
                 if (!value) return true;
-                const recordAge = computeAge(value);
-                return (recordAge >= 15 && recordAge <= 30) || 'Youth records must be for ages 15 to 30';
+                const recordAge = computeYouthRecordAge(value, categoryFilingYear);
+                return (recordAge >= 15 && recordAge <= 30)
+                  || `Youth records must be for ages 15 to 30${categoryFilingYear ? ` on December 31, ${categoryFilingYear}` : ''}`;
               },
             }} render={({ field, fieldState }) => (
               <TextField type="date" label="Birth Date" error={fieldState.error?.message} {...field} />
             )} />
           </GridItem>
           <GridItem>
-            <TextField label="Age" value={birthDate ? String(age) : ''} onChange={() => {}} readOnly helpText="Calculated when a birth date is available" />
+            <TextField label={categoryFilingYear ? `Age for ${categoryFilingYear} Profile` : 'Age'} value={birthDate ? String(age) : ''} onChange={() => {}} readOnly helpText={categoryFilingYear ? `Calculated as of December 31, ${categoryFilingYear}` : 'Calculated when a birth date is available'} />
           </GridItem>
         </Grid>
 
@@ -712,8 +725,8 @@ const YouthRecordFormPage = () => {
           align={{ base: 'stretch', sm: 'center' }}
         >
           <Button type="submit" colorPalette="green" loading={loading} disabled={formOptionsLoading || !!formOptionsError} minH="48px">
-            <LuSend />
-            Save & Submit
+            {canSubmitForReview ? <LuSend /> : <LuSave />}
+            {canSubmitForReview ? 'Save & Submit' : 'Save Changes'}
           </Button>
           <Button type="button" variant="outline" onClick={handleCancel} disabled={loading} minH="48px">
             <LuX />
@@ -741,7 +754,7 @@ const YouthRecordFormPage = () => {
         description="Changes made on this page have not been saved and cannot be recovered."
         confirmLabel="Discard Changes"
         variant="danger"
-        onConfirm={() => navigate('/youth-records')}
+        onConfirm={() => navigate(recordDestination)}
       />
     </DashboardLayout>
   );

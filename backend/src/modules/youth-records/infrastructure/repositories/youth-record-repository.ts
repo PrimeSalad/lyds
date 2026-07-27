@@ -2,6 +2,10 @@ import { supabaseAdmin } from '../../../../config/supabase';
 import type { YouthRecord, RecordStatus } from '../../domain/entities/youth-record';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
 import { toYouthRecordPresentation } from './youth-record-presenter';
+import {
+  getYouthRecordOrderClauses,
+  YOUTH_RECORD_LIST_SELECT,
+} from './youth-record-list-query';
 
 const withStatusCompatibility = (recordData: any) => (
   recordData.status
@@ -37,16 +41,7 @@ export const youthRecordRepository = {
 
     let query = supabaseAdmin
       .from('youth_profiles')
-      .select(
-        '*, barangay:barangays!barangay_id(name, municipality, province), category:categories!category_id(name), '
-        + 'sex:reference_options!sex_assigned_at_birth_id(label), '
-        + 'civil:reference_options!civil_status_id(label), '
-        + 'classification:reference_options!youth_classification_id(label), '
-        + 'age_group:reference_options!youth_age_group_id(label), '
-        + 'education:reference_options!educational_attainment_id(label), '
-        + 'work:reference_options!work_status_id(label)',
-        { count: 'exact' }
-      )
+      .select(YOUTH_RECORD_LIST_SELECT, { count: 'exact' })
       .is('deleted_at', null);
 
     if (filters.barangayId) {
@@ -73,14 +68,8 @@ export const youthRecordRepository = {
       }
       query = query.in('category_id', categoryIds);
     }
-    if (filters.sort?.field === 'barangay_name') {
-      query = query
-        .order('name', { ascending: filters.sort.direction === 'asc', referencedTable: 'barangays' })
-        .order('display_name', { ascending: true });
-    } else if (filters.sort) {
-      query = query.order(filters.sort.field, { ascending: filters.sort.direction === 'asc' });
-    } else {
-      query = query.order('created_at', { ascending: false });
+    for (const clause of getYouthRecordOrderClauses(filters.sort)) {
+      query = query.order(clause.column, { ascending: clause.ascending });
     }
 
     const { data, count, error } = await query.range(from, to);

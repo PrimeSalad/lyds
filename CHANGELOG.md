@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Youth Records barangay sorting so the parent records are grouped alphabetically by barangay across all pages, with youth names ordered consistently inside each barangay.
 - Fixed youth profile details showing reference UUIDs instead of readable labels, exposed audit actors and return reasons, and corrected the return-for-correction request payload.
 - Backfilled 2,918 unique age-eligible 2025 youth into the live 2026 annual dataset and strengthened annual rollover deduplication to one normalized name per barangay.
 - Fixed Category cards showing zero records and fields by returning live non-deleted record and active-field totals from the API.

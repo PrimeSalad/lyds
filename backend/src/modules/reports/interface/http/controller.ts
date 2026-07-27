@@ -5,6 +5,7 @@ import { getDemographics } from '../../application/use-cases/get-demographics';
 import { getByBarangay } from '../../application/use-cases/get-by-barangay';
 import { exportRecords } from '../../application/use-cases/export-records';
 import { getDashboardAnalytics } from '../../application/use-cases/get-dashboard-analytics';
+import { exportRecordsQuerySchema } from './schema';
 
 export const reportController = {
   async dashboard(req: Request, res: Response) {
@@ -38,17 +39,20 @@ export const reportController = {
     res.json({ data });
   },
 
-  async export(req: Request, res: Response) {
+  export: async (req: Request, res: Response) => {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const requestedBarangayId = typeof req.query.barangayId === 'string' ? req.query.barangayId : null;
-    const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : null;
-    const status = typeof req.query.status === 'string' ? req.query.status : null;
-    const format = req.query.format === 'csv' ? 'csv' : 'xlsx';
+    const query = exportRecordsQuerySchema.parse(req.query);
+    const requestedBarangayId = query.barangayId ?? null;
+    const categoryId = query.categoryId ?? null;
+    const status = query.status ?? null;
+    const filingYear = query.filingYear ?? null;
+    const format = query.format;
     const barangayId = ctx.role === 'ADMIN' ? requestedBarangayId : ctx.barangayId;
     const buffer = await exportRecords({
       barangayId,
       categoryId,
       status,
+      filingYear,
       actorId: ctx.profileId,
       actorRole: ctx.role,
       format,
@@ -56,12 +60,14 @@ export const reportController = {
     
     const dateStr = new Date().toISOString().split('T')[0];
     const scope = barangayId ? 'Barangay' : 'All';
-    const filename = `Youth_Profiles_${scope}_${dateStr}.${format}`;
+    const filename = format === 'xlsx' && filingYear
+      ? `KK Youth Profile ${filingYear}.xlsx`
+      : `Youth_Profiles_${scope}_${dateStr}.${format}`;
     
     res.setHeader('Content-Type', format === 'csv'
       ? 'text/csv; charset=utf-8'
       : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(buffer);
-  }
+  },
 };

@@ -95,11 +95,12 @@ export const reportApi = {
     return apiClient.request<{ data: { sex: DemographicBreakdown[]; civilStatus: DemographicBreakdown[]; youthClassification: DemographicBreakdown[]; youthAgeGroup: DemographicBreakdown[]; educationalAttainment: DemographicBreakdown[]; workStatus: DemographicBreakdown[]; } }>(`/reports/demographics${qs ? `?${qs}` : ''}`);
   },
   getByBarangay: () => apiClient.request<{ data: BarangaySummary[] }>('/reports/by-barangay'),
-  exportRecords: (params: { format: 'csv' | 'xlsx'; barangayId?: string; categoryId?: string; status?: string }) => {
+  exportRecords: (params: { format: 'csv' | 'xlsx'; barangayId?: string; categoryId?: string; status?: string; filingYear?: number }) => {
     const searchParams = new URLSearchParams({ format: params.format });
     if (params.barangayId) searchParams.set('barangayId', params.barangayId);
     if (params.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params.status) searchParams.set('status', params.status);
+    if (params.filingYear) searchParams.set('filingYear', params.filingYear.toString());
     return apiClient.request<Blob>(`/reports/export?${searchParams.toString()}`);
   },
 };

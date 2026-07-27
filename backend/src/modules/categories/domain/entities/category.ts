@@ -27,6 +27,8 @@ export interface Category {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  record_count?: number;
+  field_count?: number;
 }
 
 export interface CategoryField {

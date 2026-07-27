@@ -2,7 +2,7 @@ import { supabaseAdmin } from '../../../../config/supabase';
 import type { Category, CategoryField, CategoryWithFields } from '../../domain/entities/category';
 
 export const categoryRepository = {
-  async listCategories(options?: { status?: string; permission_mode?: string }): Promise<Category[]> {
+  async listCategories(options?: { status?: string; permission_mode?: string; recordBarangayId?: string | null }): Promise<Category[]> {
     let query = supabaseAdmin
       .from('categories')
       .select('*')
@@ -19,7 +19,37 @@ export const categoryRepository = {
     
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    return await Promise.all((data ?? []).map(async (category) => {
+      let recordCountQuery = supabaseAdmin
+        .from('youth_profiles')
+        .select('id', { count: 'exact', head: true })
+        .eq('category_id', category.id)
+        .is('deleted_at', null);
+      if (options?.recordBarangayId) {
+        recordCountQuery = recordCountQuery.eq('barangay_id', options.recordBarangayId);
+      }
+
+      const [recordResult, fieldResult] = await Promise.all([
+        options?.recordBarangayId === null
+          ? Promise.resolve({ count: 0, error: null })
+          : recordCountQuery,
+        supabaseAdmin
+          .from('category_fields')
+          .select('id', { count: 'exact', head: true })
+          .eq('category_id', category.id)
+          .eq('is_active', true),
+      ]);
+
+      if (recordResult.error) throw recordResult.error;
+      if (fieldResult.error) throw fieldResult.error;
+
+      return {
+        ...category,
+        record_count: recordResult.count ?? 0,
+        field_count: fieldResult.count ?? 0,
+      };
+    }));
   },
 
   async getCategoryById(id: string): Promise<CategoryWithFields | null> {

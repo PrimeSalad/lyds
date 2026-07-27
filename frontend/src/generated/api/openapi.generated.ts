@@ -190,6 +190,122 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List categories with live totals
+         * @description Returns visible categories with access-scoped non-deleted record counts and active field counts.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Category list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategoryListResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export youth records
+         * @description Exports all non-deleted youth records in scope. When `filingYear` is
+         *     supplied with XLSX format, the workbook uses the official KK Youth
+         *     Profile layout and filename `KK Youth Profile <year>.xlsx`. SK
+         *     officials are always restricted to their assigned barangay.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "csv" | "xlsx";
+                    filingYear?: number;
+                    barangayId?: string;
+                    categoryId?: string;
+                    status?: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Spreadsheet or CSV export */
+                200: {
+                    headers: {
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                        "text/csv": string;
+                    };
+                };
+                /** @description Invalid export filters */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/login/password": {
         parameters: {
             query?: never;
@@ -333,6 +449,25 @@ export interface components {
         };
         YouthRecordResponse: {
             data: components["schemas"]["YouthRecord"];
+        };
+        CategorySummary: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description?: string | null;
+            record_type: string;
+            filing_year: number;
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            /** @enum {string} */
+            permission_mode: "SK_FILLABLE" | "SK_VIEW_ONLY" | "ADMIN_ONLY" | "PUBLIC" | "RESTRICTED" | "PRIVATE";
+            allow_sk_export: boolean;
+            record_count: number;
+            field_count: number;
+        };
+        CategoryListResponse: {
+            data: components["schemas"]["CategorySummary"][];
         };
         ErrorResponse: {
             status: number;

@@ -1,8 +1,13 @@
 import { youthRecordRepository } from '../../infrastructure/repositories/youth-record-repository';
 import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
-import { computeAge, computeAgeGroup } from '../../domain/rules/age-computation';
+import {
+  computeAgeForFilingYear,
+  computeAgeGroup,
+  isEligibleYouthAge,
+} from '../../domain/rules/age-computation';
 import { validateAssemblyRules } from '../../domain/rules/assembly-rules';
 import { referenceDataRepository } from '../../../reference-data/infrastructure/repositories/reference-data-repository';
+import { categoryRepository } from '../../../categories/infrastructure/repositories/category-repository';
 import { API_ERRORS } from '../../../../config/api-error';
 import { canTransition } from '../../domain/rules/status-transitions';
 
@@ -30,9 +35,19 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
     }
   }
 
-  if ('birth_date' in updateData) {
-    if (updateData.birth_date) {
-      updateData.age_at_submission = computeAge(updateData.birth_date);
+  if ('birth_date' in updateData || 'category_id' in updateData) {
+    const categoryId = updateData.category_id ?? existingRecord.category_id;
+    const category = await categoryRepository.getCategoryById(categoryId);
+    if (!category) throw API_ERRORS.notFound('Category');
+    const birthDate = 'birth_date' in updateData ? updateData.birth_date : existingRecord.birth_date;
+
+    if (birthDate) {
+      updateData.age_at_submission = computeAgeForFilingYear(birthDate, category.filing_year);
+      if (!isEligibleYouthAge(updateData.age_at_submission)) {
+        throw API_ERRORS.validation(
+          `Birth date must make the person 15 to 30 years old on December 31, ${category.filing_year}.`,
+        );
+      }
       const ageGroupCode = computeAgeGroup(updateData.age_at_submission);
       const ageGroup = ageGroupCode
         ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)

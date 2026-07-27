@@ -107,6 +107,88 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/categories:
+    get:
+      tags: [app]
+      summary: List categories with live totals
+      description: Returns visible categories with access-scoped non-deleted record counts and active field counts.
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reports/export:
+    get:
+      tags: [app]
+      summary: Export youth records
+      description: |
+        Exports all non-deleted youth records in scope. When `filingYear` is
+        supplied with XLSX format, the workbook uses the official KK Youth
+        Profile layout and filename `KK Youth Profile <year>.xlsx`. SK
+        officials are always restricted to their assigned barangay.
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [csv, xlsx]
+            default: xlsx
+        - in: query
+          name: filingYear
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
+      responses:
+        '200':
+          description: Spreadsheet or CSV export
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+        '400':
+          description: Invalid export filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /login/password:
     post:
       tags: [legacy]
@@ -228,6 +310,55 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/YouthRecord'
+    CategorySummary:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - record_type
+        - filing_year
+        - status
+        - permission_mode
+        - allow_sk_export
+        - record_count
+        - field_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+        record_type:
+          type: string
+        filing_year:
+          type: integer
+        status:
+          type: string
+          enum: [DRAFT, PUBLISHED, ARCHIVED]
+        permission_mode:
+          type: string
+          enum: [SK_FILLABLE, SK_VIEW_ONLY, ADMIN_ONLY, PUBLIC, RESTRICTED, PRIVATE]
+        allow_sk_export:
+          type: boolean
+        record_count:
+          type: integer
+          minimum: 0
+        field_count:
+          type: integer
+          minimum: 0
+    CategoryListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategorySummary'
     ErrorResponse:
       type: object
       required: [status, code, message]

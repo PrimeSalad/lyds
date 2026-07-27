@@ -1,19 +1,10 @@
 import { apiClient } from '../../../infrastructure/api-client';
+import type { CategoryListResponse, CategorySummary } from '../../../generated/api/api-types';
 
-export interface Category {
-  id: string;
-  code: string;
-  name: string;
-  description: string;
-  record_type: string;
-  filing_year: number;
-  permission_mode: 'SK_FILLABLE' | 'SK_VIEW_ONLY' | 'ADMIN_ONLY';
-  allow_sk_export: boolean;
-  is_active: boolean;
-  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type Category = Omit<CategorySummary, 'record_count' | 'field_count'> & {
   record_count?: number;
   field_count?: number;
-}
+};
 
 export type CategoryWithFields = Category & { fields: CategoryField[] };
 
@@ -55,7 +46,7 @@ export interface CreateFieldInput {
 export type UpdateFieldInput = Partial<CreateFieldInput>;
 
 export const categoryApi = {
-  list: () => apiClient.request<{ data: Category[] }>('/categories'),
+  list: () => apiClient.request<CategoryListResponse>('/categories'),
   getById: (id: string) => apiClient.request<{ data: CategoryWithFields }>(`/categories/${id}`),
   create: (data: CreateCategoryInput) => apiClient.request<{ data: Category }>('/categories', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: UpdateCategoryInput) => apiClient.request<{ data: Category }>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

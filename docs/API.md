@@ -38,7 +38,8 @@ Legacy compatibility endpoints (browser redirect flow):
 - `POST /api/v1/announcements` — create a published announcement (admin only).
 - `PATCH /api/v1/announcements/:announcementId` — update announcement content, audience, scope, expiry, or status (admin only).
 - `POST /api/v1/announcements/:announcementId/archive` — archive an announcement without destructive deletion (admin only).
-- `GET /api/v1/reports/export` — export youth records as XLSX; SK officials are forced to their assigned barangay, while admins may pass `barangayId`, `categoryId`, and `status` filters.
+- `GET /api/v1/categories` — lists visible categories with live non-deleted record totals scoped to the current account and active field totals.
+- `GET /api/v1/reports/export` — exports youth records as CSV or XLSX; pass `filingYear` for the print-ready annual `KK Youth Profile <year>.xlsx` workbook. SK officials are forced to their assigned barangay, while admins may also pass `barangayId`, `categoryId`, and `status` filters.
 
 ## REST Conventions Used
 

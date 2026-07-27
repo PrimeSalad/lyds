@@ -5,6 +5,7 @@ type ReportFilters = {
   barangayId?: string | null;
   categoryId?: string | null;
   status?: string | null;
+  filingYear?: number | null;
 };
 
 const pageSize = 1000;
@@ -41,6 +42,17 @@ const applyFilters = (query: any, filters: ReportFilters) => {
   if (filters.categoryId) filtered = filtered.eq('category_id', filters.categoryId);
   if (filters.status) filtered = filtered.eq('status', filters.status);
   return filtered;
+};
+
+const getAnnualCategoryIds = async (filingYear: number) => {
+  const { data, error } = await supabaseAdmin
+    .from('categories')
+    .select('id')
+    .eq('filing_year', filingYear)
+    .eq('record_type', 'YOUTH_PROFILE')
+    .is('deleted_at', null);
+  if (error) throw error;
+  return (data ?? []).map((category) => category.id);
 };
 
 export const reportRepository = {
@@ -219,8 +231,15 @@ export const reportRepository = {
   },
 
   async getExportData(filters: ReportFilters = {}) {
-    return fetchAllPages((from, to) => applyFilters(
-      supabaseAdmin.from('youth_profiles').select(`
+    const annualCategoryIds = filters.filingYear
+      ? await getAnnualCategoryIds(filters.filingYear)
+      : null;
+    if (annualCategoryIds?.length === 0) return [];
+    if (filters.categoryId && annualCategoryIds && !annualCategoryIds.includes(filters.categoryId)) return [];
+
+    const records = await fetchAllPages((from, to) => {
+      let query = applyFilters(
+        supabaseAdmin.from('youth_profiles').select(`
         *,
         sex:reference_options!sex_assigned_at_birth_id(label),
         civil_status:reference_options!civil_status_id(label),
@@ -228,9 +247,21 @@ export const reportRepository = {
         youth_age_group:reference_options!youth_age_group_id(label),
         educational_attainment:reference_options!educational_attainment_id(label),
         work_status:reference_options!work_status_id(label),
-        barangay:barangays(name)
+        barangay:barangays(name, municipality, province)
       `),
-      filters,
-    ).range(from, to));
+        filters,
+      );
+      if (annualCategoryIds) query = query.in('category_id', annualCategoryIds);
+      return query
+        .order('barangay_id', { ascending: true })
+        .order('display_name', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to);
+    });
+
+    return records.sort((left, right) => (
+      relationName(left.barangay).localeCompare(relationName(right.barangay), 'en-PH')
+      || String(left.display_name ?? '').localeCompare(String(right.display_name ?? ''), 'en-PH')
+    ));
   },
 };

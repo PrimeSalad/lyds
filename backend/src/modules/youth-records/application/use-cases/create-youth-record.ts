@@ -1,7 +1,12 @@
 import { youthRecordRepository } from '../../infrastructure/repositories/youth-record-repository';
-import { computeAge, computeAgeGroup } from '../../domain/rules/age-computation';
+import {
+  computeAgeForFilingYear,
+  computeAgeGroup,
+  isEligibleYouthAge,
+} from '../../domain/rules/age-computation';
 import { validateAssemblyRules } from '../../domain/rules/assembly-rules';
 import { referenceDataRepository } from '../../../reference-data/infrastructure/repositories/reference-data-repository';
+import { categoryRepository } from '../../../categories/infrastructure/repositories/category-repository';
 import { API_ERRORS } from '../../../../config/api-error';
 
 export const createYouthRecord = async (input: any, authContext: any) => {
@@ -19,8 +24,16 @@ export const createYouthRecord = async (input: any, authContext: any) => {
     throw API_ERRORS.validation('Barangay ID is required.');
   }
 
+  const category = await categoryRepository.getCategoryById(profileInput.category_id);
+  if (!category) throw API_ERRORS.notFound('Category');
+
   const birthDate = profileInput.birth_date || null;
-  const age = birthDate ? computeAge(birthDate) : null;
+  const age = birthDate ? computeAgeForFilingYear(birthDate, category.filing_year) : null;
+  if (age !== null && !isEligibleYouthAge(age)) {
+    throw API_ERRORS.validation(
+      `Birth date must make the person 15 to 30 years old on December 31, ${category.filing_year}.`,
+    );
+  }
   const ageGroupCode = age === null ? null : computeAgeGroup(age);
   const ageGroup = ageGroupCode
     ? await referenceDataRepository.getOptionByCode('YOUTH_AGE_GROUP', ageGroupCode)

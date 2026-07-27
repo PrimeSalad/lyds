@@ -10,13 +10,11 @@ import { approveYouthRecord } from '../../application/use-cases/approve-youth-re
 import { archiveYouthRecord } from '../../application/use-cases/archive-youth-record';
 import { restoreYouthRecord } from '../../application/use-cases/restore-youth-record';
 import { getRecordHistory } from '../../application/use-cases/get-record-history';
-import { copyYouthRecords } from '../../application/use-cases/copy-youth-records';
 import {
   createYouthRecordSchema,
   updateYouthRecordSchema,
   returnYouthRecordSchema,
-  listYouthRecordsQuerySchema,
-  copyYouthRecordsSchema
+  listYouthRecordsQuerySchema
 } from './schema';
 
 export const youthRecordController = {
@@ -97,10 +95,4 @@ export const youthRecordController = {
     res.json({ data: logs });
   },
 
-  async copy(req: Request, res: Response) {
-    const input = copyYouthRecordsSchema.parse(req.body);
-    const ctx = (req as AuthenticatedRequest).authContext!;
-    const result = await copyYouthRecords(input.source_category_id, input.target_category_id, ctx);
-    res.json({ data: result });
-  },
 };

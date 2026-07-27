@@ -126,6 +126,7 @@ CREATE TABLE public.categories (
   name TEXT NOT NULL,
   description TEXT,
   record_type TEXT NOT NULL DEFAULT 'YOUTH_PROFILE',
+  filing_year INTEGER NOT NULL DEFAULT EXTRACT(YEAR FROM NOW())::INTEGER,
   status public.category_status NOT NULL DEFAULT 'DRAFT',
   permission_mode public.category_permission_mode NOT NULL DEFAULT 'SK_FILLABLE',
   allow_sk_export BOOLEAN NOT NULL DEFAULT TRUE,
@@ -331,14 +332,16 @@ INSERT INTO public.categories (
   name,
   description,
   record_type,
+  filing_year,
   status,
   permission_mode,
   allow_sk_export
 ) VALUES (
   'KK_PROFILE',
-  'KK Youth Profile',
+  'KK Youth Profile ' || EXTRACT(YEAR FROM NOW())::INTEGER::text,
   'Default youth profiling category for SK and LYDO records.',
   'YOUTH_PROFILE',
+  EXTRACT(YEAR FROM NOW())::INTEGER,
   'PUBLISHED',
   'SK_FILLABLE',
   TRUE
@@ -347,6 +350,7 @@ ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   record_type = EXCLUDED.record_type,
+  filing_year = EXCLUDED.filing_year,
   status = EXCLUDED.status,
   permission_mode = EXCLUDED.permission_mode,
   allow_sk_export = EXCLUDED.allow_sk_export,
@@ -359,8 +363,10 @@ STABLE
 AS $$
   SELECT id
   FROM public.categories
-  WHERE code = 'KK_PROFILE'
+  WHERE record_type = 'YOUTH_PROFILE'
+    AND status = 'PUBLISHED'
     AND deleted_at IS NULL
+  ORDER BY filing_year DESC, created_at DESC
   LIMIT 1;
 $$;
 

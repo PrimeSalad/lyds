@@ -33,7 +33,7 @@ const ImportPage = () => {
 
   useEffect(() => {
     categoryApi.list()
-      .then((response) => setCategories(response.data.filter((category) => category.status === 'PUBLISHED' && category.is_active)))
+      .then((response) => setCategories(response.data.filter((category) => category.status === 'PUBLISHED')))
       .catch((error) => showToast.error({
         title: 'Could not load import categories',
         description: error instanceof Error ? error.message : 'Refresh the page and try again.',

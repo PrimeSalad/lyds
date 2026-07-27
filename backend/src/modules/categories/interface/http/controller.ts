@@ -19,7 +19,7 @@ import {
 export const categoryController = {
   async list(req: Request, res: Response) {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const categories = await listCategories(ctx.role);
+    const categories = await listCategories(ctx.role, ctx.barangayId);
     res.json({ data: categories });
   },
 

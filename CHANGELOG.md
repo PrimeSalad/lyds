@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a filing-year Excel export to Youth Records with an official, print-ready KK Youth Profile layout and `KK Youth Profile <year>.xlsx` filenames.
+- Added a Supabase Cron job that automatically creates the current year's KK Youth Profile every January 1 and performs duplicate-safe eligible draft copying.
 - Added live admin dashboard analytics for workflow status, six-month activity, barangay coverage, data quality, and recent record activity.
 - Added guarded Supabase CLI migration verification, baseline/sync commands, and an automated production migration workflow.
 - Added self-service Account Settings for all authenticated users, including profile details and password updates.
@@ -18,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Standardized annual dataset names as `KK Youth Profile <year>` and calculate known youth ages against December 31 of the filing year.
 - Replaced one-step list pagination with responsive numbered pages, first/last controls, and direct page jumping for youth records and audit logs.
 - Allowed youth records with an unknown birth date and age, while retaining data-quality visibility for incomplete profiles.
 - Removed the role label from the dashboard top bar and placed Account Settings and Sign Out together in the sidebar footer.
@@ -31,8 +34,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed the manual future-year rollover control so annual datasets cannot be created early from the UI.
+- Soft-removed the empty `CertifiCat` test category from the active system.
+
 ### Fixed
 
+- Fixed Category cards showing zero records and fields by returning live non-deleted record and active-field totals from the API.
+- Fixed yearly record copying to include only youth aged 15–30 for the target year, recompute their age group, process more than 1,000 source records, and skip duplicates on repeat runs.
+- Replaced the default star favicon and installable-app icons with the Boac LYDS logo.
 - Fixed report queries and exports to use canonical youth profile status and sex fields, exclude deleted records, and paginate beyond Supabase's default 1,000-row response limit.
 - Fixed CSV exports so the CSV action returns actual CSV content instead of an XLSX binary with the wrong extension.
 - Removed the destructive reset SQL from the deployable migration chain and added an idempotent runtime-schema alignment migration.

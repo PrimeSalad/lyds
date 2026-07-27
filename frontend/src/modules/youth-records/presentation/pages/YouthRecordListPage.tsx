@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, Dialog, HStack, IconButton, Input, NativeSelect, Portal, Text } from '@chakra-ui/react';
+import { Box, Button, Dialog, Field, HStack, IconButton, Input, NativeSelect, Portal, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
-import { LuCopy, LuPlus, LuX } from 'react-icons/lu';
+import { LuDownload, LuFileSpreadsheet, LuPlus, LuX } from 'react-icons/lu';
 import { type RootState } from '../../../../redux/store';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { PageHeader } from '../../../../shared/components/PageHeader';
@@ -41,12 +41,12 @@ const YouthRecordListPage = () => {
   const [categoryId, setCategoryId] = useState('');
   const [barangayId, setBarangayId] = useState('');
   const [filingYear, setFilingYear] = useState('');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportYear, setExportYear] = useState('');
+  const [exporting, setExporting] = useState(false);
   const [sort, setSort] = useState<SortValue>(isAdmin ? 'barangay-asc' : 'newest');
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
-  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
-  const [copyTargetYear, setCopyTargetYear] = useState('');
-  const [copying, setCopying] = useState(false);
 
   const uniqueYears = useMemo(() => {
     const years = categories
@@ -54,6 +54,23 @@ const YouthRecordListPage = () => {
       .filter((y): y is number => y != null);
     return [...new Set(years)].sort((a, b) => b - a);
   }, [categories]);
+
+  const exportYears = useMemo(() => uniqueYears.map((year) => ({
+    year,
+    recordCount: categories
+      .filter((category) => category.filing_year === year)
+      .reduce((total, category) => total + (category.record_count ?? 0), 0),
+  })), [categories, uniqueYears]);
+
+  useEffect(() => {
+    if (exportYears.length === 0) {
+      setExportYear('');
+      return;
+    }
+    if (!exportYears.some(({ year }) => String(year) === exportYear)) {
+      setExportYear(String(exportYears[0].year));
+    }
+  }, [exportYear, exportYears]);
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -250,31 +267,39 @@ const YouthRecordListPage = () => {
 
   const resetPage = () => setPage(1);
 
-  const handleCopy = async () => {
-    if (!filingYear || !copyTargetYear) return;
-    const sourceCategories = categories.filter((c) => c.filing_year === Number(filingYear));
-    const targetCategories = categories.filter((c) => c.filing_year === Number(copyTargetYear));
-    if (sourceCategories.length === 0 || targetCategories.length === 0) {
-      showToast.error({ title: 'Source or target year has no category' });
-      return;
-    }
-    setCopying(true);
+  const openExportDialog = () => {
+    const preferredYear = filingYear && uniqueYears.includes(Number(filingYear))
+      ? filingYear
+      : String(uniqueYears[0] ?? '');
+    setExportYear(preferredYear);
+    setExportDialogOpen(true);
+  };
+
+  const handleExport = async () => {
+    const selectedYear = Number(exportYear);
+    if (!Number.isInteger(selectedYear)) return;
+
+    setExporting(true);
     try {
-      let totalCopied = 0;
-      for (const sourceCat of sourceCategories) {
-        const targetCat = targetCategories.find((c) => c.name === sourceCat.name && c.filing_year === Number(copyTargetYear));
-        if (targetCat) {
-          const res = await youthRecordApi.copyRecords(sourceCat.id, targetCat.id);
-          totalCopied += res.data.copied;
-        }
-      }
-      showToast.success({ title: `${totalCopied} record${totalCopied === 1 ? '' : 's'} copied to ${copyTargetYear}` });
-      setCopyDialogOpen(false);
-      setCopyTargetYear('');
+      const blob = await youthRecordApi.exportFilingYear(selectedYear);
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `KK Youth Profile ${selectedYear}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+      setExportDialogOpen(false);
+      showToast.success({
+        title: 'Excel export downloaded',
+        description: `KK Youth Profile ${selectedYear}.xlsx contains the complete ${selectedYear} dataset available to your account.`,
+      });
     } catch (error) {
-      showToast.error({ title: 'Copy failed', description: error instanceof Error ? error.message : 'Try again.' });
+      showToast.error({
+        title: 'Excel export failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
-      setCopying(false);
+      setExporting(false);
     }
   };
 
@@ -286,14 +311,12 @@ const YouthRecordListPage = () => {
           ? 'Review and compare youth records by barangay, status, and category.'
           : 'Create drafts, submit records, and monitor returned items.'}
         actions={(
-          <HStack gap={2}>
-            {isAdmin && filingYear && (
-              <Button variant="outline" colorPalette="blue" onClick={() => setCopyDialogOpen(true)}>
-                <LuCopy /> Copy to Year
-              </Button>
-            )}
+          <HStack gap={2} wrap="wrap">
+            <Button variant="outline" colorPalette="green" onClick={openExportDialog} disabled={exportYears.length === 0}>
+              <LuDownload aria-hidden="true" /> Export Excel
+            </Button>
             <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
-              <LuPlus /> Add Record
+              <LuPlus aria-hidden="true" /> Add Record
             </Button>
           </HStack>
         )}
@@ -375,48 +398,73 @@ const YouthRecordListPage = () => {
         }}
       />
 
-      <Dialog.Root open={copyDialogOpen} onOpenChange={(details) => setCopyDialogOpen(details.open)}>
+      <Dialog.Root open={exportDialogOpen} onOpenChange={({ open }) => { if (!exporting) setExportDialogOpen(open); }}>
         <Portal>
-          <Dialog.Backdrop bg="rgba(0, 0, 0, 0.58)" />
-          <Dialog.Positioner>
-            <Dialog.Content maxW="440px">
+          <Dialog.Backdrop bg="rgba(0, 0, 0, 0.58)" backdropFilter="blur(2px)" zIndex={1400} />
+          <Dialog.Positioner zIndex={1500} p={{ base: 4, sm: 6 }}>
+            <Dialog.Content width="full" maxW="480px" maxH="calc(100dvh - 32px)" overflowY="auto" bg="white" color="text.primary" borderRadius="md" borderWidth="1px" borderColor="border.strong" boxShadow="0 24px 64px rgba(0, 0, 0, 0.24)">
               <Dialog.Header>
-                <Dialog.Title>Copy records from {filingYear}</Dialog.Title>
+                <HStack gap={3} pr={10} align="center">
+                  <Box display="grid" placeItems="center" boxSize="44px" flexShrink={0} borderRadius="md" bg="primary.50" color="primary.700">
+                    <LuFileSpreadsheet size={22} aria-hidden="true" />
+                  </Box>
+                  <Box>
+                    <Dialog.Title fontFamily="heading" fontWeight="650">Export Youth Records</Dialog.Title>
+                    <Text color="text.muted" fontSize="sm" mt={1}>Download one complete filing year.</Text>
+                  </Box>
+                </HStack>
               </Dialog.Header>
               <Dialog.Body>
-                <Text color="text.secondary" mb={4}>
-                  All records from the current year's categories will be copied as DRAFT to the target year's matching categories.
-                </Text>
-                <NativeSelect.Root>
-                  <NativeSelect.Field aria-label="Target year" value={copyTargetYear} onChange={(e) => setCopyTargetYear(e.target.value)} minH="44px">
-                    <option value="">Select target year</option>
-                    {uniqueYears.filter((y) => y !== Number(filingYear)).map((year) => (
-                      <option key={year} value={year}>{year}</option>
-                    ))}
-                  </NativeSelect.Field>
-                  <NativeSelect.Indicator />
-                </NativeSelect.Root>
+                <VStack align="stretch" gap={4}>
+                  <Field.Root>
+                    <Field.Label htmlFor="export-filing-year" fontWeight="600" fontSize="sm">
+                      Filing year
+                    </Field.Label>
+                    <NativeSelect.Root width="full" disabled={exporting}>
+                      <NativeSelect.Field
+                        id="export-filing-year"
+                        value={exportYear}
+                        onChange={(event) => setExportYear(event.target.value)}
+                        minH="44px"
+                      >
+                        {exportYears.map(({ year, recordCount }) => (
+                          <option key={year} value={year}>
+                            {`KK Youth Profile ${year} — ${recordCount.toLocaleString()} record${recordCount === 1 ? '' : 's'}`}
+                          </option>
+                        ))}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Field.Root>
+                  <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
+                    <Text fontWeight="700" fontSize="sm">Official KK youth profile layout</Text>
+                    <Text color="text.secondary" fontSize="sm" lineHeight="1.6" mt={1}>
+                      Includes all non-deleted records for the selected year, grouped by barangay with formatted headers, birthdays, and print-ready columns. Barangay access is enforced automatically.
+                    </Text>
+                  </Box>
+                  <Text color="text.muted" fontSize="sm">
+                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {exportYear || 'Year'}.xlsx</Text>
+                  </Text>
+                </VStack>
               </Dialog.Body>
-              <Dialog.Footer>
-                <Button variant="outline" onClick={() => setCopyDialogOpen(false)} disabled={copying}>Cancel</Button>
-                <Button
-                  colorPalette="blue"
-                  onClick={handleCopy}
-                  loading={copying}
-                  disabled={!copyTargetYear}
-                >
-                  Copy to {copyTargetYear || '...'}
+              <Dialog.Footer flexDirection={{ base: 'column-reverse', sm: 'row' }} gap={3}>
+                <Button width={{ base: 'full', sm: 'auto' }} variant="outline" onClick={() => setExportDialogOpen(false)} disabled={exporting}>
+                  Cancel
+                </Button>
+                <Button width={{ base: 'full', sm: 'auto' }} colorPalette="green" onClick={handleExport} loading={exporting} disabled={!exportYear}>
+                  <LuDownload aria-hidden="true" /> Download Excel
                 </Button>
               </Dialog.Footer>
               <Dialog.CloseTrigger asChild>
-                <IconButton aria-label="Close" variant="ghost" size="sm" position="absolute" top={3} right={3}>
-                  <LuX />
+                <IconButton aria-label="Close export dialog" variant="ghost" size="sm" position="absolute" top={3} right={3} disabled={exporting}>
+                  <LuX aria-hidden="true" />
                 </IconButton>
               </Dialog.CloseTrigger>
             </Dialog.Content>
           </Dialog.Positioner>
         </Portal>
       </Dialog.Root>
+
     </DashboardLayout>
   );
 };

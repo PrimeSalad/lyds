@@ -47,8 +47,3 @@ export const listYouthRecordsQuerySchema = z.object({
   sortField: z.enum(['created_at', 'display_name', 'birth_date', 'status', 'barangay_name']).optional(),
   sortDir: z.enum(['asc', 'desc']).optional(),
 });
-
-export const copyYouthRecordsSchema = z.object({
-  source_category_id: z.string().uuid(),
-  target_category_id: z.string().uuid(),
-});

@@ -160,10 +160,9 @@ export const youthRecordApi = {
     return await apiClient.request<{ data: AuditLog[] }>(`/youth-records/${id}/history`);
   },
 
-  async copyRecords(sourceCategoryId: string, targetCategoryId: string): Promise<{ data: { copied: number } }> {
-    return await apiClient.request<{ data: { copied: number } }>('/youth-records/copy', {
-      method: 'POST',
-      body: JSON.stringify({ source_category_id: sourceCategoryId, target_category_id: targetCategoryId }),
-    });
+  async exportFilingYear(filingYear: number): Promise<Blob> {
+    const query = new URLSearchParams({ format: 'xlsx', filingYear: filingYear.toString() });
+    return await apiClient.request<Blob>(`/reports/export?${query.toString()}`);
   },
+
 };

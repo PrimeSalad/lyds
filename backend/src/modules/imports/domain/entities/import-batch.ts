@@ -10,9 +10,14 @@ export interface ImportBatch {
   total_rows: number;
   valid_rows: number;
   invalid_rows: number;
-  error_message?: string;
+  duplicate_rows: number;
+  error_message?: string | null;
   created_at: string;
   updated_at: string;
+  barangay_name?: string | null;
+  category_name?: string | null;
+  filing_year?: number | null;
+  uploaded_by_name?: string | null;
 }
 
 export interface ImportRowResult {
@@ -25,5 +30,14 @@ export interface ImportRowResult {
   validation_errors: string[];
   validation_warnings: string[];
   duplicate_match_id?: string;
+  is_duplicate: boolean;
   created_at: string;
+}
+
+export interface CommitImportResult {
+  batch_id: string;
+  imported_count: number;
+  invalid_rows: number;
+  duplicate_rows: number;
+  status: 'COMMITTED';
 }

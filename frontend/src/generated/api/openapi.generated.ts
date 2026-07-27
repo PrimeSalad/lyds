@@ -373,6 +373,397 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List spreadsheet import batches
+         * @description Returns paginated import history. SK officials are restricted to their assigned barangay.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                    status?: components["schemas"]["ImportBatchStatus"];
+                    /** @description Administrator-only barangay filter. */
+                    barangayId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import batch page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportBatchListResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload and validate a youth spreadsheet
+         * @description Detects the spreadsheet header row, normalizes supported KK Youth Profile
+         *     columns, checks ages against December 31 of the selected filing year,
+         *     and marks duplicate names within that barangay and annual category.
+         *     This step does not create youth records.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ValidateImportInput"];
+                };
+            };
+            responses: {
+                /** @description Spreadsheet validated */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportBatchResponse"];
+                    };
+                };
+                /** @description Category or barangay is outside the account scope */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unsupported or invalid spreadsheet */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the youth spreadsheet template */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description XLSX import template */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{batchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: components["parameters"]["ImportBatchId"];
+            };
+            cookie?: never;
+        };
+        /** Get an import batch */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: components["parameters"]["ImportBatchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import batch details */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportBatchResponse"];
+                    };
+                };
+                /** @description Import batch is outside the account scope */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Import batch not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{batchId}/rows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: components["parameters"]["ImportBatchId"];
+            };
+            cookie?: never;
+        };
+        /** List row validation results */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path: {
+                    batchId: components["parameters"]["ImportBatchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated spreadsheet row results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportRowListResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{batchId}/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: components["parameters"]["ImportBatchId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit a validated import atomically
+         * @description Creates submitted youth profiles for valid rows and rechecks duplicates under a transaction lock.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: components["parameters"]["ImportBatchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import committed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CommitImportResponse"];
+                    };
+                };
+                /** @description Batch has no valid rows or is no longer committable */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{batchId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: components["parameters"]["ImportBatchId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel an uncommitted import batch */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: components["parameters"]["ImportBatchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                success: boolean;
+                            };
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/imports/{batchId}/error-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: components["parameters"]["ImportBatchId"];
+            };
+            cookie?: never;
+        };
+        /** Download invalid and duplicate row details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    batchId: components["parameters"]["ImportBatchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description XLSX correction report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/export": {
         parameters: {
             query?: never;
@@ -689,6 +1080,96 @@ export interface components {
         CategoryListResponse: {
             data: components["schemas"]["CategorySummary"][];
         };
+        /** @enum {string} */
+        ImportBatchStatus: "UPLOADING" | "VALIDATING" | "VALIDATED" | "COMMITTING" | "COMMITTED" | "FAILED" | "CANCELLED";
+        ValidateImportInput: {
+            /** Format: uuid */
+            categoryId: string;
+            /**
+             * Format: uuid
+             * @description Required for administrators; ignored in favor of the assigned barangay for SK officials.
+             */
+            barangayId?: string;
+            /**
+             * Format: byte
+             * @description Base64-encoded XLSX or CSV content, up to 10 MB before encoding.
+             */
+            fileData: string;
+            fileName: string;
+            fileType: string;
+        };
+        ImportBatch: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            barangay_id: string;
+            /** Format: uuid */
+            uploaded_by: string;
+            file_name: string;
+            status: components["schemas"]["ImportBatchStatus"];
+            total_rows: number;
+            valid_rows: number;
+            invalid_rows: number;
+            duplicate_rows: number;
+            error_message?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            barangay_name?: string | null;
+            category_name?: string | null;
+            filing_year?: number | null;
+            uploaded_by_name?: string | null;
+        };
+        ImportRow: {
+            /** Format: uuid */
+            id: string;
+            row_number: number;
+            raw_data: {
+                [key: string]: unknown;
+            };
+            normalized_data: {
+                [key: string]: unknown;
+            } | null;
+            is_valid: boolean;
+            is_duplicate: boolean;
+            /** Format: uuid */
+            duplicate_match_id?: string | null;
+            validation_errors: string[];
+            validation_warnings: string[];
+        };
+        PaginationMeta: {
+            page: number;
+            pageSize: number;
+            totalItems: number;
+            totalPages: number;
+        };
+        ImportBatchResponse: {
+            data: components["schemas"]["ImportBatch"];
+        };
+        ImportBatchListResponse: {
+            data: components["schemas"]["ImportBatch"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        ImportRowListResponse: {
+            data: components["schemas"]["ImportRow"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        CommitImportResult: {
+            batch: components["schemas"]["ImportBatch"];
+            /** Format: uuid */
+            batch_id: string;
+            imported_count: number;
+            invalid_rows: number;
+            duplicate_rows: number;
+            /** @constant */
+            status: "COMMITTED";
+        };
+        CommitImportResponse: {
+            data: components["schemas"]["CommitImportResult"];
+        };
         ErrorResponse: {
             status: number;
             code: string;
@@ -696,7 +1177,9 @@ export interface components {
         };
     };
     responses: never;
-    parameters: never;
+    parameters: {
+        ImportBatchId: string;
+    };
     requestBodies: never;
     headers: never;
     pathItems: never;

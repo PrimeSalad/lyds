@@ -41,6 +41,12 @@ Legacy compatibility endpoints (browser redirect flow):
 - `PATCH /api/v1/announcements/:announcementId` — update announcement content, audience, scope, expiry, or status (admin only).
 - `POST /api/v1/announcements/:announcementId/archive` — archive an announcement without destructive deletion (admin only).
 - `GET /api/v1/categories` — lists visible categories with live non-deleted record totals scoped to the current account and active field totals.
+- `GET /api/v1/imports` — lists paginated spreadsheet-import history, scoped to the assigned barangay for SK officials.
+- `POST /api/v1/imports/validate` — parses an XLSX/CSV file, detects official KK title/header rows, applies annual age rules, and reports invalid or duplicate rows without creating youth records.
+- `GET /api/v1/imports/:batchId` and `GET /api/v1/imports/:batchId/rows` — return one import and its paginated row-by-row validation results.
+- `POST /api/v1/imports/:batchId/commit` — atomically creates submitted youth records from valid rows after a final duplicate recheck.
+- `POST /api/v1/imports/:batchId/cancel` — cancels an uncommitted import.
+- `GET /api/v1/imports/template` and `GET /api/v1/imports/:batchId/error-file` — download the template and row correction report.
 - `GET /api/v1/reports/export` — exports youth records as CSV or XLSX; pass `filingYear` for the print-ready annual `KK Youth Profile <year>.xlsx` workbook. SK officials are forced to their assigned barangay, while admins may also pass `barangayId`, `categoryId`, and `status` filters.
 
 ## REST Conventions Used

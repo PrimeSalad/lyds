@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added real spreadsheet import history with status filtering, resumable validation reviews, and downloadable row correction reports.
 - Added a responsive Youth Record Details experience with full profile sections, readable values, workflow history, and clear edit, archive, restore, submit, return, and approve actions.
 - Added a filing-year Excel export to Youth Records with an official, print-ready KK Youth Profile layout and `KK Youth Profile <year>.xlsx` filenames.
 - Added a Supabase Cron job that automatically creates the current year's KK Youth Profile every January 1 and performs duplicate-safe eligible draft copying.
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Redesigned Youth Records import into an accessible setup, review, and completion flow with a required destination barangay, filing-year context, drag-and-drop upload, responsive row results, and explicit ready/invalid/duplicate totals.
 - Allowed administrators to edit non-archived submitted and approved youth profiles while preserving their workflow status, and aligned edit-form age validation with the profile's filing year.
 - Standardized annual dataset names as `KK Youth Profile <year>` and calculate known youth ages against December 31 of the filing year.
 - Replaced one-step list pagination with responsive numbered pages, first/last controls, and direct page jumping for youth records and audit logs.
@@ -41,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed bulk imports that could not start because the UI never supplied the required barangay, and now accept official KK workbooks whose headings begin after title rows.
+- Fixed import duplicate detection using the wrong normalized-data property and an all-year scope; duplicates are now checked within the selected barangay and filing year, including repeated names inside one upload.
+- Fixed import commits omitting the selected annual category and allowing partial multi-chunk writes; commits now recheck duplicates and create all valid rows atomically with their batch/category metadata.
+- Fixed imported age eligibility to use December 31 of the selected filing year and increased the request limit to support a full 10 MB spreadsheet after base64 encoding.
 - Fixed Youth Records barangay sorting so the parent records are grouped alphabetically by barangay across all pages, with youth names ordered consistently inside each barangay.
 - Fixed youth profile details showing reference UUIDs instead of readable labels, exposed audit actors and return reasons, and corrected the return-for-correction request payload.
 - Backfilled 2,918 unique age-eligible 2025 youth into the live 2026 annual dataset and strengthened annual rollover deduplication to one normalized name per barangay.

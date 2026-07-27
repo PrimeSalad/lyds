@@ -1,60 +1,179 @@
 import ExcelJS from 'exceljs';
-import { IMPORT_ERRORS } from '../../domain/errors/import-errors';
 import stream from 'stream';
+import { IMPORT_ERRORS } from '../../domain/errors/import-errors';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_ROWS = 5000;
+const HEADER_SCAN_LIMIT = 50;
+
+const knownHeaders = new Set([
+  'name',
+  'first name',
+  'last name',
+  'birthday',
+  'birthday mm dd yy',
+  'birth date',
+  'dob',
+  'month',
+  'day',
+  'year',
+  'barangay',
+  'sex',
+  'sex assigned at birth',
+  'civil status',
+  'youth classification',
+  'youth age group',
+  'work status',
+  'educational attainment',
+  'highest educational attainment',
+  'email address',
+  'contact number',
+  'contact no',
+]);
+
+const youthDataHeaders = new Set([
+  'name',
+  'full name',
+  'first name',
+  'last name',
+  'birthday',
+  'birthday mm dd yy',
+  'birth date',
+  'dob',
+  'month',
+  'day',
+  'year',
+  'age',
+  'sex',
+  'sex assigned at birth',
+  'civil status',
+  'youth classification',
+  'youth age group',
+  'work status',
+  'educational attainment',
+  'highest educational attainment',
+  'email',
+  'email address',
+  'e mail address',
+  'contact',
+  'contact number',
+  'contact no',
+  'registered voter',
+  'voted last election',
+  'attended kk assembly',
+]);
+
+export const normalizeSpreadsheetHeader = (value: string) => value
+  .replace(/^\uFEFF/, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ');
+
+const cellText = (cell: ExcelJS.Cell) => {
+  try {
+    return String(cell.text ?? '');
+  } catch {
+    // Some official workbooks contain merged placeholder cells whose master
+    // value is null; ExcelJS throws while reading their computed text.
+    return '';
+  }
+};
+
+const headerScore = (row: ExcelJS.Row) => {
+  const matches = new Set<string>();
+  row.eachCell({ includeEmpty: false }, (cell) => {
+    const header = normalizeSpreadsheetHeader(cellText(cell));
+    if (knownHeaders.has(header)) matches.add(header);
+  });
+  return matches.size;
+};
+
+const findHeader = (workbook: ExcelJS.Workbook) => {
+  let best: { worksheet: ExcelJS.Worksheet; rowNumber: number; score: number } | null = null;
+
+  for (const worksheet of workbook.worksheets) {
+    const lastRow = Math.min(Math.max(worksheet.actualRowCount, worksheet.rowCount), HEADER_SCAN_LIMIT);
+    for (let rowNumber = 1; rowNumber <= lastRow; rowNumber++) {
+      const score = headerScore(worksheet.getRow(rowNumber));
+      if (!best || score > best.score) best = { worksheet, rowNumber, score };
+    }
+  }
+
+  if (!best || best.score < 2) throw IMPORT_ERRORS.missingHeaders();
+  return best;
+};
+
+const isXlsx = (fileType: string, fileName: string) => (
+  fileType.toLowerCase().includes('spreadsheetml') || fileName.toLowerCase().endsWith('.xlsx')
+);
+
+const isCsv = (fileType: string, fileName: string) => (
+  fileType.toLowerCase().includes('csv') || fileName.toLowerCase().endsWith('.csv')
+);
+
+const hasYouthData = (data: Record<string, string>) => Object.entries(data).some(([header, value]) => (
+  value !== '' && youthDataHeaders.has(normalizeSpreadsheetHeader(header))
+));
+
+export type ParsedSpreadsheetRow = {
+  rowNumber: number;
+  data: Record<string, string>;
+};
+
+export type ParsedSpreadsheet = {
+  headers: string[];
+  rows: ParsedSpreadsheetRow[];
+  sheetName: string;
+  headerRowNumber: number;
+};
 
 export const spreadsheetParser = {
-  async parse(fileBuffer: Buffer, fileType: string): Promise<{ headers: string[], rows: Record<string, string>[] }> {
-    if (fileBuffer.length > MAX_FILE_SIZE) {
-      throw IMPORT_ERRORS.fileTooLarge();
-    }
+  parse: async (fileBuffer: Buffer, fileType: string, fileName: string): Promise<ParsedSpreadsheet> => {
+    if (fileBuffer.length > MAX_FILE_SIZE) throw IMPORT_ERRORS.fileTooLarge();
 
     const workbook = new ExcelJS.Workbook();
-    let worksheet: ExcelJS.Worksheet | undefined;
-
-    if (fileType.includes('spreadsheetml') || fileType.includes('xlsx')) {
+    if (isXlsx(fileType, fileName)) {
       await workbook.xlsx.load(fileBuffer as any);
-      worksheet = workbook.worksheets[0];
-    } else if (fileType.includes('csv')) {
+    } else if (isCsv(fileType, fileName)) {
       const bufferStream = new stream.PassThrough();
       bufferStream.end(fileBuffer);
-      worksheet = await workbook.csv.read(bufferStream);
+      await workbook.csv.read(bufferStream);
     } else {
       throw IMPORT_ERRORS.invalidFileType();
     }
 
-    if (!worksheet) {
-      throw IMPORT_ERRORS.invalidFileType();
-    }
-
+    const { worksheet, rowNumber: headerRowNumber } = findHeader(workbook);
     const headers: string[] = [];
-    const rows: Record<string, string>[] = [];
-    let rowCount = 0;
-
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) {
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          headers[colNumber - 1] = cell.text.trim();
-        });
-      } else {
-        rowCount++;
-        if (rowCount > MAX_ROWS) {
-          throw IMPORT_ERRORS.tooManyRows();
-        }
-
-        const rowData: Record<string, string> = {};
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          const header = headers[colNumber - 1];
-          if (header) {
-            rowData[header] = cell.text.trim();
-          }
-        });
-        rows.push(rowData);
-      }
+    worksheet.getRow(headerRowNumber).eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+      headers[columnNumber - 1] = cellText(cell).replace(/\s+/g, ' ').trim();
     });
 
-    return { headers: headers.filter(Boolean), rows };
-  }
+    const rows: ParsedSpreadsheetRow[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= headerRowNumber) return;
+
+      const data: Record<string, string> = {};
+      row.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+        const header = headers[columnNumber - 1];
+        if (header) data[header] = cellText(cell).trim();
+      });
+
+      if (!Object.values(data).some((value) => value !== '')) return;
+      // Official templates often pre-number hundreds of unused rows. Structural
+      // values such as No./region/barangay alone are not youth records.
+      if (!hasYouthData(data)) return;
+      if (rows.length >= MAX_ROWS) throw IMPORT_ERRORS.tooManyRows();
+      rows.push({ rowNumber, data });
+    });
+
+    if (rows.length === 0) throw IMPORT_ERRORS.noDataRows();
+
+    return {
+      headers: headers.filter(Boolean),
+      rows,
+      sheetName: worksheet.name,
+      headerRowNumber,
+    };
+  },
 };

@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Backfilled 2,918 unique age-eligible 2025 youth into the live 2026 annual dataset and strengthened annual rollover deduplication to one normalized name per barangay.
 - Fixed Category cards showing zero records and fields by returning live non-deleted record and active-field totals from the API.
 - Fixed yearly record copying to include only youth aged 15–30 for the target year, recompute their age group, process more than 1,000 source records, and skip duplicates on repeat runs.
 - Replaced the default star favicon and installable-app icons with the Boac LYDS logo.

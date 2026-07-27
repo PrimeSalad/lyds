@@ -13,9 +13,12 @@ At 12:05 AM Asia/Manila every January 1, the Supabase Cron job `annual-kk-youth-
 5. Copies active custom-field definitions from the source category.
 6. Recomputes `age_at_submission` and the youth age group for the target filing year.
 7. Resets copied records to `DRAFT` and clears submission/approval history.
-8. Skips matching target-year records, so a retried Cron run does not duplicate them.
+8. Keeps one source row per barangay and normalized youth name, even when repeated source names have different birthdays.
+9. Skips a name already present in the same target-year barangay, so a retried Cron run does not duplicate it.
 
 The database rejects attempts to prepare a year later than the current Asia/Manila year. The schedule runs at 16:05 UTC on December 31, which is 12:05 AM in the Philippines on January 1.
+
+Because the automated schedule was installed after January 1, 2026, migration `019_backfill_2026_youth_profiles.sql` performs the same guarded rollover once for 2026. The live backfill copied 2,918 unique eligible names from 2025, excluded 427 rows without birthdays and 268 rows outside the target age range, and skipped two repeated source rows from one same-barangay name collision. Re-running the function copies zero additional rows.
 
 ## Manual Records
 

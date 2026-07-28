@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Heading, Badge, Text, VStack } from '@chakra-ui/react';
+import { Badge, Text, VStack } from '@chakra-ui/react';
 import { DataTable, type Column } from '../../../../shared/tables/DataTable';
+import { PageHeader } from '../../../../shared/components/PageHeader';
 import { auditLogApi, type AuditLog } from '../../infrastructure/audit-log-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 
@@ -84,7 +85,10 @@ const AuditLogListPage = () => {
 
   return (
     <DashboardLayout>
-      <Heading size="lg" mb={6}>Audit Logs</Heading>
+      <PageHeader
+        title="Audit Logs"
+        description="Review recorded administrative and youth-profile activity."
+      />
 
       <DataTable
         columns={columns}

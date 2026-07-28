@@ -113,6 +113,8 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         <IconButton
           aria-label="Close navigation"
           variant="ghost"
+          minW="44px"
+          minH="44px"
           display={{ base: 'inline-flex', lg: 'none' }}
           onClick={onClose}
         >

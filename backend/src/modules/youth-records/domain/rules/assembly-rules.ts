@@ -1,4 +1,4 @@
-export const validateAssemblyRules = (attended: boolean, count: number): string | null => {
+export const validateAssemblyRules = (attended: boolean | null, count: number): string | null => {
   if (!attended && count !== 0) {
     return 'Assembly count must be 0 if not attended.';
   }

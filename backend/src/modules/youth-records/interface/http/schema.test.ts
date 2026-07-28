@@ -25,6 +25,17 @@ describe('createYouthRecordSchema', () => {
       birth_date: 'October-O5-2000',
     }).success).toBe(false);
   });
+
+  it('accepts unanswered participation fields as null', () => {
+    const result = createYouthRecordSchema.safeParse({
+      ...validBaseInput,
+      is_registered_voter: null,
+      voted_last_election: null,
+      attended_kk_assembly: null,
+    });
+
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('approveSubmittedByBarangaySchema', () => {

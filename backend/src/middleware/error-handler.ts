@@ -16,9 +16,11 @@ export const globalErrorHandler = (
   console.error(`[${req.method}] ${req.path} — ${message}`);
 
   if (req.path.startsWith(`${API_PREFIX}/`)) {
-    const response = err.code
-      ? { status, code: err.code, message }
-      : API_ERRORS.internal(message);
+    const response = status >= 500
+      ? API_ERRORS.internal()
+      : err.code
+        ? { status, code: err.code, message }
+        : { status, code: 'REQUEST_FAILED', message };
 
     res.status(response.status).json(response);
     return;

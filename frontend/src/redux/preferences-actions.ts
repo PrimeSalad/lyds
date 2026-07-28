@@ -1,9 +1,7 @@
 import { createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { decrypt, encrypt } from '@/utilities/encryption';
-import { LOCAL_STORAGE_ID } from '@/utilities/constants';
+import { encrypt } from '@/utilities/encryption';
 import { DEFAULT_LOCALE, type SupportedLocale } from '@/utilities/i18n';
 import { reportError } from '@/utilities/error-reporting';
-import type { EncryptionKeyResponse } from '@/generated/api/api-types';
 
 const SCHEMA_VERSION = '1.0.0';
 
@@ -34,63 +32,12 @@ export const serializePreferencesForStorage = async (preferences: PreferencesSta
   return encryptedState;
 };
 
-// After authentication, the `initPreferences` action requests
-// the encryption key from the server and decrypts the stored state.
+// Encrypted boilerplate persistence is disabled because the current API does
+// not expose an encryption key. Keep deterministic defaults until this slice
+// is either removed or migrated to an application-owned preference store.
 export const initPreferences = createAsyncThunk(
   'preferences/initPreferences',
-  async () => {
-    let key: string | null = null;
-
-    // Try to get encryption key from server
-    try {
-      const response = await fetch('/api/v1/auth/me');
-      if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        // Only try to parse JSON if the response is actually JSON
-        if (contentType?.includes('application/json')) {
-          try {
-            const { key: responseKey } = await response.json() as EncryptionKeyResponse;
-            if (responseKey) {
-              key = responseKey;
-            }
-          } catch (parseError) {
-            reportError(parseError, { context: 'initPreferences', step: 'parseKeyResponse' });
-            // Continue without key - will use defaultState
-          }
-        }
-      }
-    } catch (error) {
-      reportError(error, { context: 'initPreferences', step: 'fetchEncryptionKey' });
-      // Continue without key - will use defaultState
-    }
-
-    // Try to read from localStorage if we have a key
-    if (key) {
-      try {
-        const storedState = localStorage.getItem(LOCAL_STORAGE_ID);
-        if (storedState) {
-          const decrypted = await decrypt(storedState, key);
-          if (decrypted) {
-            try {
-              const result = JSON.parse(decrypted) as PreferencesState;
-              return { ...result, encryptionKey: key };
-            } catch (parseError) {
-              reportError(parseError, { context: 'initPreferences', step: 'parseDecryptedData' });
-              // Clear corrupted localStorage and continue with defaultState
-              localStorage.removeItem(LOCAL_STORAGE_ID);
-            }
-          }
-        }
-      } catch (error) {
-        reportError(error, { context: 'initPreferences', step: 'readLocalStorage' });
-        // Continue with defaultState
-      }
-    }
-
-    // Return default state (with key if we got one, otherwise null)
-    // The middleware will save it to localStorage if we have a key
-    return { ...defaultState, encryptionKey: key };
-  }
+  async () => defaultState,
 );
 
 

@@ -16,6 +16,11 @@ import { youthRecordApi, type CreateInput, type YouthRecordStatus } from '../../
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { computeYouthRecordAge } from '../youth-record-age';
+import {
+  answerToBoolean,
+  booleanToAnswer,
+  type YesNoAnswer,
+} from '../youth-record-responses';
 
 const getYouthAgeGroup = (age: number) => {
   if (age >= 15 && age <= 17) return 'Child Youth';
@@ -39,9 +44,9 @@ type YouthRecordFormValues = {
   contact_number: string;
   educational_attainment_id: string;
   work_status_id: string;
-  is_registered_voter: boolean;
-  voted_last_election: 'YES' | 'NO' | '';
-  attended_kk_assembly: boolean;
+  is_registered_voter: YesNoAnswer;
+  voted_last_election: YesNoAnswer;
+  attended_kk_assembly: YesNoAnswer;
   kk_assembly_count: number;
   custom_values: Record<string, unknown>;
 };
@@ -187,8 +192,8 @@ const YouthRecordFormPage = () => {
       sex_assigned_at_birth_id: '', civil_status_id: '', youth_classification_id: '',
       email: '', contact_number: '',
       educational_attainment_id: '', work_status_id: '',
-      is_registered_voter: false, voted_last_election: 'NO',
-      attended_kk_assembly: false, kk_assembly_count: 0,
+      is_registered_voter: 'NO', voted_last_election: 'NO',
+      attended_kk_assembly: 'NO', kk_assembly_count: 0,
       custom_values: {},
     }
   });
@@ -298,9 +303,9 @@ const YouthRecordFormPage = () => {
             contact_number: res.data.contact_number ?? '',
             educational_attainment_id: res.data.educational_attainment_id ?? '',
             work_status_id: res.data.work_status_id ?? '',
-            is_registered_voter: !!res.data.is_registered_voter,
-            voted_last_election: res.data.voted_last_election ? 'YES' : 'NO',
-            attended_kk_assembly: !!res.data.attended_kk_assembly,
+            is_registered_voter: booleanToAnswer(res.data.is_registered_voter),
+            voted_last_election: booleanToAnswer(res.data.voted_last_election),
+            attended_kk_assembly: booleanToAnswer(res.data.attended_kk_assembly),
             kk_assembly_count: res.data.kk_assembly_count ?? 0,
             custom_values: res.data.custom_values ?? {},
           });
@@ -328,10 +333,10 @@ const YouthRecordFormPage = () => {
     contact_number: data.contact_number.trim() || undefined,
     educational_attainment_id: data.educational_attainment_id,
     work_status_id: data.work_status_id,
-    is_registered_voter: data.is_registered_voter,
-    voted_last_election: data.voted_last_election === 'YES',
-    attended_kk_assembly: data.attended_kk_assembly,
-    kk_assembly_count: data.attended_kk_assembly ? Number(data.kk_assembly_count) || 0 : 0,
+    is_registered_voter: answerToBoolean(data.is_registered_voter),
+    voted_last_election: answerToBoolean(data.voted_last_election),
+    attended_kk_assembly: answerToBoolean(data.attended_kk_assembly),
+    kk_assembly_count: data.attended_kk_assembly === 'YES' ? Number(data.kk_assembly_count) || 0 : 0,
     custom_values: cleanCustomValues(data.custom_values),
   });
 
@@ -685,30 +690,59 @@ const YouthRecordFormPage = () => {
         <SectionHeader>Voter Participation</SectionHeader>
         <VStack align="start" gap={4}>
           <Controller name="is_registered_voter" control={control} render={({ field }) => (
-            <CheckboxField label="Registered Voter?" checked={!!field.value} onChange={(checked) => { field.onChange(checked); if (!checked) setValue('voted_last_election', 'NO'); }} />
+            <SelectField
+              label="Registered Voter?"
+              placeholder="No response"
+              options={[
+                { value: 'YES', label: 'Yes' },
+                { value: 'NO', label: 'No' },
+              ]}
+              {...field}
+              onChange={(value) => {
+                field.onChange(value);
+                if (value !== 'YES') setValue('voted_last_election', value === 'NO' ? 'NO' : '');
+              }}
+            />
           )} />
           
-          <Controller name="voted_last_election" control={control} rules={{ required: 'Required' }} render={({ field, fieldState }) => (
+          <Controller
+            name="voted_last_election"
+            control={control}
+            rules={isRegisteredVoter === 'YES' ? { required: 'Required' } : undefined}
+            render={({ field, fieldState }) => (
             <SelectField 
-              label="Voted Last Election?*" 
-              placeholder="Select answer"
+              label={`Voted Last Election?${isRegisteredVoter === 'YES' ? '*' : ''}`}
+              placeholder="No response"
               options={[
                 { value: 'YES', label: 'Yes' },
                 { value: 'NO', label: 'No' },
               ]} 
               error={fieldState.error?.message} 
-              disabled={!isRegisteredVoter}
+              disabled={isRegisteredVoter !== 'YES'}
               {...field} 
             />
-          )} />
+            )}
+          />
         </VStack>
 
         <SectionHeader>KK Assembly Attendance</SectionHeader>
         <VStack align="start" gap={4}>
           <Controller name="attended_kk_assembly" control={control} render={({ field }) => (
-            <CheckboxField label="Attended KK Assembly?" checked={!!field.value} onChange={(checked) => { field.onChange(checked); if (!checked) setValue('kk_assembly_count', 0); }} />
+            <SelectField
+              label="Attended KK Assembly?"
+              placeholder="No response"
+              options={[
+                { value: 'YES', label: 'Yes' },
+                { value: 'NO', label: 'No' },
+              ]}
+              {...field}
+              onChange={(value) => {
+                field.onChange(value);
+                if (value !== 'YES') setValue('kk_assembly_count', 0);
+              }}
+            />
           )} />
-          {attendedKkAssembly && (
+          {attendedKkAssembly === 'YES' && (
             <Controller name="kk_assembly_count" control={control} rules={{ min: 1 }} render={({ field, fieldState }) => (
               <TextField type="number" min={1} label="How Many Times?*" error={fieldState.error?.message} value={String(field.value)} onChange={(val) => field.onChange(Number(val))} />
             )} />

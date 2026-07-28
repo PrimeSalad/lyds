@@ -57,6 +57,7 @@ jobs:
             frontend/package-lock.json
             backend/package-lock.json
       - run: npm run install:all
+      - run: npm exec --prefix frontend -- playwright install --with-deps chromium
       - run: npm test
       - run: npm run build
 

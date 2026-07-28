@@ -1,83 +1,55 @@
-# API Guide
+# API guide
 
-This project exposes a compact HTTP API designed for:
+The Express API is served from `http://localhost:4000/api/v1` in development. The frontend authenticates directly with Supabase Auth, then sends the Supabase access token to the API as `Authorization: Bearer <token>`.
 
-- predictable REST-style resource handling
-- compatibility with browser form workflows
-- easy migration to TanStack Query or GraphQL clients
+There are no application-owned `/api/session`, `/login/password`, `/logout`, or `/api/key` endpoints.
 
-## OpenAPI source of truth
+## Contract workflow
 
-- Contract file: `docs/openapi.yaml`
-- Generated types: `src/generated/api/openapi.generated.ts` (do not edit by hand)
-- Shared type aliases: `src/generated/api/api-types.ts`
+- Source contract: `docs/openapi.yaml`
+- Generated client definitions: `frontend/src/generated/api/openapi.generated.ts`
+- Generation command: `npm run gen:api-types`
 
-Generate types after changing the contract:
+Edit the YAML first, regenerate the TypeScript definitions, and commit both files with the implementation. Never hand-edit the generated file. See `skills/api-first/SKILL.md` for the required workflow.
 
-- `npm run gen:api-types`
+## Route groups
 
-For the full generation layout and CI ideas, see `skills/api-first/SKILL.md`.
+All groups except process health require a valid bearer token.
 
-## Endpoint Inventory
+| Prefix | Purpose | Access |
+|---|---|---|
+| `/health` | Process and database readiness | Public |
+| `/auth` | Current authorization context and account settings | Signed-in user |
+| `/youth-records` | Profiles, workflow actions, history | Barangay-scoped; admin-only review actions |
+| `/imports` | Template, validation, batches, commit, error files | Barangay-scoped |
+| `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
+| `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
+| `/categories` | Filing categories and custom fields | Reads scoped; writes admin-only |
+| `/reference-data` | Reference groups and options | Reads signed-in; writes admin-only |
+| `/barangays` | Barangay directory and status | Admin-only |
+| `/accounts` | Account creation, temporary password reset, status, assignment, deletion | Admin-only |
+| `/audit-logs` | Audit history | Admin-only |
 
-### Session/Auth
+The router files under `backend/src/routes/` and `backend/src/modules/*/interface/http/routes.ts` compose these groups. Backend middleware is authoritative even when the frontend also hides inaccessible navigation.
 
-- `POST /api/session` — create an authenticated session (JSON response)
-- `DELETE /api/session` — clear the authenticated session (`204 No Content`)
+## Request and response conventions
 
-Legacy compatibility endpoints (browser redirect flow):
+- JSON response bodies wrap successful resources in `data`; paginated lists also include `meta`.
+- Validation errors use HTTP 400 with a structured `error` body.
+- Authentication failures use 401; authorization/scope failures use 403.
+- Creates generally return 201, updates 200, and successful deletes without a body 204.
+- Internal provider/database errors return a generic 500 response; raw provider details are not sent to clients.
+- CSV/XLSX endpoints return a binary body and a `Content-Disposition` filename.
 
-- `POST /login/password` — form login, redirects to `/product` or `/login`
-- `GET /logout` — clears cookie, redirects to `/`
+## Youth-record null semantics
 
-### Application API
+Imported source files can omit demographic and civic answers. Nullable fields remain `null` through detail, edit, update, export, and report flows. Reports label those values **No response** rather than treating them as “No.”
 
-- `POST /api/v1/youth-records` — creates a youth record; `birth_date` may be `null`, in which case computed age and age group are also `null`.
-- `GET /api/v1/youth-records/:recordId` — returns the full youth profile with readable barangay, category, and reference-option labels for the detail/edit experience.
-- `PATCH /api/v1/youth-records/:recordId` — updates youth information with optimistic version checking. Administrator edits to submitted/approved records preserve the current workflow status unless a separate workflow action is used.
-- `POST /api/v1/youth-records/approve-drafts` — admin bulk action that approves every non-deleted draft youth profile.
-- `POST /api/v1/youth-records/approve-submitted-by-barangay` — admin review-queue action that approves submitted profiles for one barangay, optionally restricted by `filing_year`.
-- `GET /api/key` — returns the local-storage encryption key (requires auth)
-- `GET /api/v1/announcements` — list visible announcements for the current user; admins receive the management list.
-- `POST /api/v1/announcements` — create a published announcement (admin only).
-- `PATCH /api/v1/announcements/:announcementId` — update announcement content, audience, scope, expiry, or status (admin only).
-- `POST /api/v1/announcements/:announcementId/archive` — archive an announcement without destructive deletion (admin only).
-- `GET /api/v1/categories` — lists visible categories with live non-deleted record totals scoped to the current account and active field totals.
-- `DELETE /api/v1/categories/:categoryId` — soft-deletes an archived category so it disappears from the active category list without breaking historical youth-record references.
-- `GET /api/v1/imports` — lists paginated spreadsheet-import history, scoped to the assigned barangay for SK officials.
-- `POST /api/v1/imports/validate` — parses an XLSX/CSV file, detects official KK title/header rows, applies annual age rules, and reports invalid or duplicate rows without creating youth records.
-- `GET /api/v1/imports/:batchId` and `GET /api/v1/imports/:batchId/rows` — return one import and its paginated row-by-row validation results.
-- `POST /api/v1/imports/:batchId/commit` — atomically creates submitted youth records from valid rows after a final duplicate recheck.
-- `POST /api/v1/imports/:batchId/cancel` — cancels an uncommitted import.
-- `GET /api/v1/imports/template` and `GET /api/v1/imports/:batchId/error-file` — download the template and row correction report.
-- `GET /api/v1/reports/dashboard` — returns dashboard analytics; pass `filingYear` to scope Barangay Coverage and annual youth-profile metrics to that filing year.
-- `GET /api/v1/reports/export` — exports youth records as CSV or XLSX; pass `filingYear` for the print-ready annual `KK Youth Profile <year>.xlsx` workbook. SK officials are forced to their assigned barangay, while admins may also pass `barangayId`, `categoryId`, and `status` filters.
+## Adding or changing an endpoint
 
-## REST Conventions Used
-
-- Resource-oriented paths for API clients (`/api/session`, `/api/key`)
-- HTTP methods map to intent:
-  - `POST` creates a session
-  - `DELETE` ends a session
-  - `GET` reads server data
-  - `PATCH` updates part of an existing resource
-- Auth/session state is cookie-backed and enforced server-side
-- Error payloads use structured JSON for API routes
-
-## Migration-Ready Contract Rules
-
-When adding or changing endpoints:
-
-1. Prefer `/api/*` resource paths over action verbs in URLs.
-2. Keep response shapes stable and typed.
-3. Use standard status codes (`200`, `201`, `204`, `400`, `401`, `403`, `429`, `500`).
-4. Keep legacy endpoints only as temporary compatibility shims.
-5. Update `src/server/config/constants.ts` and `src/client/utilities/constants.ts` together.
-6. Regenerate shared API types with `npm run gen:api-types`.
-7. Add or update tests at the right layer (E2E for route contracts, unit/integration where practical).
-
-## Why this helps TanStack Query and GraphQL migrations
-
-- TanStack Query works best with stable, resource-oriented HTTP contracts; `/api/session` and `/api/key` are query/mutation friendly.
-- GraphQL migration is easier when REST behavior is already consistent and typed, making resolver mapping straightforward.
-- Keeping client endpoint constants centralized reduces transport-coupling and drift during staged migrations.
+1. Update `docs/openapi.yaml`.
+2. Run `npm run gen:api-types`.
+3. Implement route → controller → use case → repository layers as needed.
+4. Apply `requireAuth`, `requireAdmin`, and barangay-scope middleware explicitly.
+5. Add schema, use-case, HTTP-boundary, and/or Playwright tests proportional to the change.
+6. Run `npm test` and `npm run build`.

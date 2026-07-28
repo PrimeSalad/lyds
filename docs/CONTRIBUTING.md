@@ -1,31 +1,38 @@
 # Contributing
 
-We welcome contributions! Here's how to get started:
+## Before coding
 
-1. **Select an issue**: Browse the [Github issues page](https://github.com/bishopZ/2026-Boilerplate/issues) and select an issue you'd like to work on.
-2. **Create a branch**: Create a new branch named after the issue number, such as `issue-17` (replace `17` with the actual issue number).
-3. **Make your changes**: Implement the changes needed to address the issue.
-4. **Create a pull request**: Submit a pull request with your changes, referencing the issue number in the description.
+- Use Node.js 24+.
+- Install root tools with `npm install`, then both applications with `npm run install:all`.
+- Copy `frontend/.env.example` and `backend/.env.example` to each application's `.env` file.
+- Never commit environment files, Supabase secret keys, access tokens, or account passwords.
 
-Before submitting your pull request, make sure to:
+## Project conventions
 
-- Run `npm run test` to ensure code quality, verify TypeScript types, and run the E2E tests (the same checks run in GitHub Actions on PRs and pushes to `main`; see **GitHub Actions CI** in the root `README.md`).
-- Run `npm run check:i18n` when your change adds/updates message ids and you are keeping locale files fully in sync.
-- Test your changes locally with `npm run dev`
+- Use TypeScript and arrow functions; do not introduce classes.
+- Use Chakra UI for application components.
+- Keep backend changes in route → controller → use case → repository layers.
+- Treat `docs/openapi.yaml` as the API contract source; regenerate client types after changes.
+- Enforce permissions on the backend even when the frontend also hides a route or action.
+- Preserve unanswered imported values as `null`, not false or an empty categorical value.
 
-## Testing guidance for contributors and agents
+## Tests and documentation
 
-- Add at least one automated test for each feature change at the right level:
-  - unit/integration for local logic
-  - E2E for cross-page, user-critical journeys
-- Keep the Playwright suite small and representative — prefer updating existing contract specs (`auth`, `accessibility`, `i18n`, `seo`) before adding many new spec files.
+- Add Vitest coverage for schemas, rules, use cases, and isolated UI logic.
+- Add Playwright coverage for cross-page or user-critical behavior.
+- Update `CHANGELOG.md`, affected docs, and UI text with the implementation.
+- Run the full local gate before committing:
 
-## React 19 boundary guidance (loading + failures)
+  ```powershell
+  npm test
+  npm run build
+  ```
 
-Use boundary placement by latency domain (`Suspense`) and failure domain (`ErrorBoundary`):
+- For database-related work, also run the read-only checks:
 
-- Route-level loading boundaries
-- Feature-level loading/failure boundaries where sections are independent
-- App-level catastrophic error boundary
+  ```powershell
+  npm run db:verify
+  npm run db:sync:dry
+  ```
 
-Canonical guidance lives in `docs/ARCHITECTURE.md` (UI failure/latency boundaries section).
+Do not apply a live database synchronization merely to validate a code change; review the dry-run output first.

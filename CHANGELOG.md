@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated React Router and vulnerable transitive archive/glob dependencies, upgraded the backend TypeScript runner and Supabase CLI, removed the obsolete Vite tsconfig-path plugin, and reduced Playwright concurrency for stable local/CI browser startup.
+- Replaced stale boilerplate setup, authentication, architecture, API, script, security, technology, contribution, and Playwright documentation with the current split frontend/API and Supabase workflows; removed guides for features no longer present.
 - Redesigned the Review Queue with a searchable desktop worklist, compact mobile barangay selector, explicit loading/error/retry states, richer submission context, and clearer individual and bulk approval actions.
 - Allowed administrators to approve all draft youth records from the Youth Records page and from individual record details.
 - Expanded the dashboard barangay coverage view to include inactive barangays with an explicit active/inactive badge.
@@ -52,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Made Playwright self-contained in CI by supplying non-secret browser-test environment values, and expanded smoke coverage to current list, detail, create, mobile-landscape, and reduced-motion routes.
+- Corrected the Youth Record Details heading hierarchy so each page exposes one unambiguous primary heading to assistive technology.
+- Prevented database readiness failures from exposing provider details to unauthenticated health-check clients.
+- Replaced obsolete boilerplate browser tests with current email-auth and protected-route coverage, added real Playwright execution to the test/CI workflow, blocked SK officials from administrator-only screens, and corrected Audit Logs heading semantics plus the mobile navigation close target.
+- Preserved unanswered voter and KK assembly values while editing imported youth records instead of silently converting them to explicit "No" answers.
+- Prevented raw database/provider details from leaking through HTTP 500 responses and added an integration check for API authentication and security headers.
 - Fixed Reports excluding blank imported answers from demographic percentages; all filtered records now contribute to every breakdown through explicit No response rows, including safely restored voter and KK assembly blanks from exact historical import-row matches.
 - Fixed SK Account creation failing on emails left behind by an earlier partial invite, added rollback for incomplete account creation, preserved contact/title fields, surfaced backend errors, and added explicit temporary-password creation/reset controls.
 - Fixed bulk imports that could not start because the UI never supplied the required barangay, and now accept official KK workbooks whose headings begin after title rows.

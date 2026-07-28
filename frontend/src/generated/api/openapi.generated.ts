@@ -4,102 +4,14 @@
  */
 
 export interface paths {
-    "/api/session": {
+    "/api/v1/health": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /**
-         * Create authenticated session
-         * @description Authenticates credentials and sets the `token` cookie.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SessionCredentials"];
-                    "application/x-www-form-urlencoded": components["schemas"]["SessionCredentials"];
-                };
-            };
-            responses: {
-                /** @description Session created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CreateSessionResponse"];
-                    };
-                };
-                /** @description Invalid credentials */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Too many attempts */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": string;
-                    };
-                };
-            };
-        };
-        /**
-         * Delete authenticated session
-         * @description Clears the `token` cookie.
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CsrfOnly"];
-                    "application/x-www-form-urlencoded": components["schemas"]["CsrfOnly"];
-                };
-            };
-            responses: {
-                /** @description Session deleted */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/key": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get local-storage encryption key */
+        /** Check API process health */
         get: {
             parameters: {
                 query?: never;
@@ -109,13 +21,49 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Encryption key payload */
+                /** @description API process is running */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["EncryptionKeyResponse"];
+                        "application/json": components["schemas"]["HealthResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the authenticated user's authorization context */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Current authorization context */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthContextResponse"];
                     };
                 };
                 /** @description Authentication required */
@@ -135,6 +83,84 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the authenticated user's account settings */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Account profile and login email */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountSettingsResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update the authenticated user's profile details */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOwnProfileInput"];
+                };
+            };
+            responses: {
+                /** @description Updated account profile */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProfileResponse"];
+                    };
+                };
+                /** @description Invalid profile data */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/youth-records": {
@@ -1094,115 +1120,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/login/password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Legacy form login
-         * @description Browser form endpoint preserved for compatibility.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/x-www-form-urlencoded": components["schemas"]["SessionCredentials"];
-                };
-            };
-            responses: {
-                /** @description Redirects to `/product` or `/login` */
-                302: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Too many attempts */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": string;
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Legacy logout route
-         * @description Browser redirect endpoint preserved for compatibility.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Redirects to `/` */
-                302: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        CsrfOnly: {
-            _csrf: string;
+        HealthResponse: {
+            /** @constant */
+            status: "ok";
+            /** Format: date-time */
+            timestamp: string;
         };
-        SessionCredentials: {
-            _csrf: string;
-            username: string;
-            password: string;
+        AuthContext: {
+            /** Format: uuid */
+            profileId: string;
+            /** @enum {string} */
+            role: "ADMIN" | "SK_OFFICIAL";
+            /** Format: uuid */
+            barangayId: string | null;
+            /** @enum {string} */
+            accountStatus: "ACTIVE" | "INACTIVE";
         };
-        SessionUser: {
-            /** Format: email */
-            email: string;
-            name: string;
+        AuthContextResponse: {
+            data: components["schemas"]["AuthContext"];
         };
-        CreateSessionResponse: {
-            user: components["schemas"]["SessionUser"];
+        Profile: {
+            /** Format: uuid */
+            id: string;
+            full_name: string;
+            /** @enum {string} */
+            role: "ADMIN" | "SK_OFFICIAL";
+            /** @enum {string} */
+            account_status: "ACTIVE" | "INACTIVE";
+            position_title?: string | null;
+            contact_number?: string | null;
+            must_change_password: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
-        EncryptionKeyResponse: {
-            key: string | null;
+        ProfileResponse: {
+            data: components["schemas"]["Profile"];
+        };
+        AccountSettingsResponse: {
+            data: {
+                profile: components["schemas"]["Profile"];
+                /** Format: email */
+                email: string;
+            };
+        };
+        UpdateOwnProfileInput: {
+            full_name: string;
+            contact_number?: string;
+            position_title?: string;
         };
         CreateYouthRecordInput: {
             /** Format: uuid */
@@ -1246,9 +1216,9 @@ export interface components {
             /** Format: email */
             email?: string;
             contact_number?: string;
-            is_registered_voter?: boolean;
-            voted_last_election?: boolean;
-            attended_kk_assembly?: boolean;
+            is_registered_voter?: boolean | null;
+            voted_last_election?: boolean | null;
+            attended_kk_assembly?: boolean | null;
             kk_assembly_count?: number;
             custom_values?: {
                 [key: string]: unknown;
@@ -1312,9 +1282,9 @@ export interface components {
             province_name?: string | null;
             category_name?: string | null;
             category_filing_year?: number | null;
-            is_registered_voter?: boolean;
+            is_registered_voter?: boolean | null;
             voted_last_election?: boolean | null;
-            attended_kk_assembly?: boolean;
+            attended_kk_assembly?: boolean | null;
             kk_assembly_count?: number;
             custom_values?: {
                 [key: string]: unknown;

@@ -2,114 +2,85 @@
 
 ## Overview
 
-2026 Boilerplate is a full-stack TypeScript web application with a React frontend and Express backend served together via `vite-express`. There is no database by default — authentication uses a local starter account (`AUTH_PROFILE=local`) and state persists to encrypted `localStorage`.
+The SK Youth Information Management System is split into a React single-page application and an Express API. Supabase provides email/password authentication and PostgreSQL storage.
 
-## System Diagram
-
-```
-Browser
-  │
-  ├── React SPA (Vite HMR in dev)
-  │     ├── Pages (lazy-loaded via React Router)
-  │     ├── Redux Store (preferences, app slices)
-  │     │     └── Persistence Middleware → Encrypted localStorage
-  │     ├── Feature Flags (env defaults + runtime overrides via hook)
-  │     └── Chakra UI Components
-  │
-  └── HTTP requests
-        │
-        ▼
-Express Server (vite-express)
-  ├── Auth Routes (/api/session + legacy /login/password, /logout) → Passport.js LocalStrategy
-  ├── API Routes (/api/key) → Returns encryption key
-  ├── OpenAPI Contract (docs/openapi.yaml) → Generates shared TS types
-  ├── Redirect Rules (legacy paths) → Config-driven HTTP redirects
-  ├── Page Routes (/, /login, /product, etc.) → Served by Vite
-  └── Static Routes (/sitemap.xml)
+```text
+Browser (React/Vite, port 5173)
+  ├─ Supabase Auth: login, logout, password update
+  └─ Bearer-token API requests
+             │
+             ▼
+Express API (port 4000, /api/v1)
+  ├─ Auth middleware: verifies Supabase token and active profile
+  ├─ Role/scope checks: ADMIN or barangay-scoped SK_OFFICIAL
+  ├─ Modules: accounts, barangays, categories, youth records,
+  │           imports, reports, announcements, and audit logs
+  └─ Supabase service client
+             │
+             ▼
+Supabase Auth + PostgreSQL
 ```
 
-## Directory Structure
+The API does not serve the frontend bundle. They are separate processes connected through `VITE_API_BASE_URL` and backend CORS settings.
 
+## Repository layout
+
+```text
+frontend/
+  src/
+    modules/                 Feature modules and pages
+    infrastructure/          Supabase and HTTP clients
+    redux/                   Global application state
+    shared/                  Reusable UI, forms, tables, and toast helpers
+    generated/api/           Generated OpenAPI TypeScript definitions
+  playwright/e2e/            Browser tests
+
+backend/
+  src/
+    routes/                  /api/v1 router composition
+    middleware/              Authentication, authorization, CORS, errors, security
+    modules/<feature>/
+      interface/http/        Routes, controllers, and request schemas
+      application/use-cases/ Business workflows
+      domain/                Entities, rules, and errors
+      infrastructure/        Supabase repositories
+  scripts/                   Database verification and synchronization
+
+supabase/migrations/         Ordered database migrations
+docs/openapi.yaml             API contract source of truth
 ```
-src/
-├── generated/                # Machine-generated artifacts (do not hand-edit)
-│   └── api/                  # OpenAPI → TypeScript (`npm run gen:api-types`; see skills/api-first/SKILL.md)
-│       ├── openapi.generated.ts
-│       └── api-types.ts      # Shared client/server API type aliases
-│
-├── client/                   # Frontend (React SPA)
-│   ├── main.tsx              # Entry: providers (Chakra, Redux, I18n, ErrorBoundary)
-│   ├── App.tsx               # Route definitions, preferences initialization
-│   ├── hooks/                # Custom React hooks
-│   ├── locales/              # Language translation files
-│   ├── pages/                # Route page components
-│   ├── redux/                # Redux slices, store, persistence middleware
-│   ├── ui/                   # Reusable UI components
-│   └── utilities/            # Client-only utilities (encryption, constants)
-│
-└── server/                   # Backend (Express)
-    ├── main.ts               # Entry: Express app, middleware, routes, vite-express
-    ├── config/               # Constants and API error helpers
-    ├── controllers/          # Request handlers
-    ├── middleware/           # Auth middleware
-    ├── routes/               # Route definitions
-    └── services/             # Business logic (auth verification)
-```
 
-## Key Patterns
+## Authentication and authorization
 
-### Authentication Flow
+1. The browser signs in with Supabase email/password authentication.
+2. The API client attaches the current Supabase access token as `Authorization: Bearer …`.
+3. `requireAuth` verifies the token, loads the matching active profile, and resolves the active barangay assignment for an SK official.
+4. Admin endpoints also use `requireAdmin`; resource queries apply role and barangay scope on the server.
+5. The frontend mirrors these permissions with `AuthGuard`, `AdminGuard`, and role-aware navigation. Server checks remain authoritative.
 
-1. API clients submit credentials to `POST /api/session` (preferred REST path); browser forms can still use `POST /login/password`
-2. Passport.js `LocalStrategy` verifies credentials using the selected `AUTH_PROFILE`
-3. On success: JWT cookie (`token`) is set (`201` for REST, redirect for legacy browser form flow)
-4. On failure: REST endpoint returns `401`; legacy form endpoint redirects to `/login`
-5. Protected routes use `ensureAuthenticated` middleware (`401` for `/api/*`, redirect for page routes)
+## Youth record and reporting flow
 
-### Auth backing profiles
+- Records move through draft, submitted, returned, approved, and archived states.
+- Spreadsheet imports preserve missing answers as `null`; they are not converted to “No.”
+- Reports include every in-scope record and expose missing source answers as **No response**.
+- SK officials are constrained to their assigned barangay. Administrators can review and report across barangays.
+- CSV/XLSX generation is performed by the API.
 
-`AUTH_PROFILE` supports starter modes for:
+## API contract
 
-- `local` (default)
-- `supabase` (starter integration path)
-- `postgres` (starter integration path)
+`docs/openapi.yaml` is the source of truth. After a contract change, run `npm run gen:api-types` and commit the generated `frontend/src/generated/api/openapi.generated.ts` update with the implementation.
 
-### State Persistence Flow
+## Validation boundaries
 
-1. On app load, `initPreferences` async thunk fetches encryption key from `/api/key`
-2. If authenticated, the key is returned and used to decrypt `localStorage`
-3. On every Redux action, the persistence middleware encrypts and saves specified slices
-4. The persistence middleware in `store.ts` is reusable — add persistence registrations for slices, don't create new middleware
+- Zod validates request payloads at the HTTP boundary.
+- Application use cases enforce workflow rules.
+- Repositories isolate Supabase queries.
+- The global error handler returns stable client errors and hides internal provider/database messages for server failures.
+- Helmet, CORS, JSON size limits, and bearer authentication are configured in the Express application.
 
-### Feature Flag Flow
+## Testing
 
-1. Env defaults are parsed from `VITE_FEATURE_FLAGS`
-2. Runtime overrides are stored in `app.featureFlagOverrides`
-3. `useFeatureFlag(flagName)` resolves runtime override first, env default second
-
-### UI failure/latency boundaries
-
-- App-level catastrophic failure handling is managed by `ErrorBoundary` in `src/client/main.tsx`.
-- Route-level latency is managed by `Suspense` around lazy routes in `src/client/App.tsx`.
-- Feature-level failures should use local boundaries when one section can fail independently (example: product counter actions).
-- Feature-level latency should use local `Suspense` only for independently-loading sections, not whole-page wrappers.
-- Use React 19 `Activity` around loading fallback UI when representing active pending work.
-
-### Client/Server Code Separation
-
-The client uses `src/client/utilities/` for browser-specific helpers. Server helpers live in `src/server/services/` and `src/server/config/`. Keep client-only and server-only modules separated to avoid accidental cross-runtime imports.
-
-## Technology Choices
-
-| Layer | Choice | Why |
-|---|---|---|
-| Build | Vite | Fast HMR, ESM-native, simple config |
-| Frontend | React 19 | Document metadata, hooks, Suspense |
-| State | Redux Toolkit | DevTools, middleware, battle-tested at scale |
-| Routing | React Router | Lazy loading, client-side navigation |
-| UI | Chakra UI | Accessible, composable, good TypeScript support |
-| Backend | Express 5 | Flexible, mature, large ecosystem |
-| Auth | Passport.js | Strategy-based, extensible |
-| Encryption | Native Web Crypto API | AES-GCM encryption for localStorage |
-| Testing | Playwright + Vitest | E2E testing (Playwright) and unit tests (Vitest) |
-| Linting | ESLint | Custom config with TypeScript + React rules |
+- Frontend Vitest tests run in `happy-dom`.
+- Backend Vitest tests cover rules, use cases, middleware, and the Express boundary.
+- Playwright mocks external data providers while exercising the real UI, routing, role guards, keyboard behavior, responsive layouts, and critical edit/report journeys.
+- `npm test` runs lint, type-checking, all unit/integration tests, and Playwright. CI also builds both applications.

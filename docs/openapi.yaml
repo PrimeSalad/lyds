@@ -1,82 +1,84 @@
 openapi: 3.1.0
 info:
-  title: 2026 Boilerplate API
-  version: 1.2.0
+  title: SK Youth Information Management System API
+  version: 1.3.0
   description: |
-    Contract-first API definition for the 2026 boilerplate.
-    `/api/*` endpoints are the preferred integration path for API clients.
+    Contract-first definition for the SK Youth Information Management System.
+    Authentication is handled by Supabase Auth; protected endpoints accept its access token.
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:4000
 tags:
-  - name: session
-    description: Session lifecycle endpoints
+  - name: auth
+    description: Current application profile endpoints
   - name: app
     description: Application API endpoints
-  - name: legacy
-    description: Legacy browser form endpoints kept for compatibility
+security:
+  - bearerAuth: []
 paths:
-  /api/session:
-    post:
-      tags: [session]
-      summary: Create authenticated session
-      description: Authenticates credentials and sets the `token` cookie.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SessionCredentials'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SessionCredentials'
+  /api/v1/health:
+    get:
+      tags: [app]
+      summary: Check API process health
+      security: []
       responses:
-        '201':
-          description: Session created
+        '200':
+          description: API process is running
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateSessionResponse'
+                $ref: '#/components/schemas/HealthResponse'
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      summary: Get the authenticated user's authorization context
+      responses:
+        '200':
+          description: Current authorization context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthContextResponse'
         '401':
-          description: Invalid credentials
+          description: Authentication required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '429':
-          description: Too many attempts
+  /api/v1/auth/profile:
+    get:
+      tags: [auth]
+      summary: Get the authenticated user's account settings
+      responses:
+        '200':
+          description: Account profile and login email
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-    delete:
-      tags: [session]
-      summary: Delete authenticated session
-      description: Clears the `token` cookie.
+                $ref: '#/components/schemas/AccountSettingsResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [auth]
+      summary: Update the authenticated user's profile details
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CsrfOnly'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CsrfOnly'
-      responses:
-        '204':
-          description: Session deleted
-  /api/key:
-    get:
-      tags: [app]
-      summary: Get local-storage encryption key
+              $ref: '#/components/schemas/UpdateOwnProfileInput'
       responses:
         '200':
-          description: Encryption key payload
+          description: Updated account profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EncryptionKeyResponse'
-        '401':
-          description: Authentication required
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          description: Invalid profile data
           content:
             application/json:
               schema:
@@ -601,35 +603,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /login/password:
-    post:
-      tags: [legacy]
-      summary: Legacy form login
-      description: Browser form endpoint preserved for compatibility.
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SessionCredentials'
-      responses:
-        '302':
-          description: Redirects to `/product` or `/login`
-        '429':
-          description: Too many attempts
-          content:
-            text/plain:
-              schema:
-                type: string
-  /logout:
-    get:
-      tags: [legacy]
-      summary: Legacy logout route
-      description: Browser redirect endpoint preserved for compatibility.
-      responses:
-        '302':
-          description: Redirects to `/`
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Supabase access token
   parameters:
     ImportBatchId:
       in: path
@@ -639,43 +618,98 @@ components:
         type: string
         format: uuid
   schemas:
-    CsrfOnly:
+    HealthResponse:
       type: object
-      required: [_csrf]
+      required: [status, timestamp]
       properties:
-        _csrf:
+        status:
           type: string
-    SessionCredentials:
+          const: ok
+        timestamp:
+          type: string
+          format: date-time
+    AuthContext:
       type: object
-      required: [_csrf, username, password]
+      required: [profileId, role, barangayId, accountStatus]
       properties:
-        _csrf:
+        profileId:
           type: string
-        username:
+          format: uuid
+        role:
           type: string
-        password:
-          type: string
-    SessionUser:
-      type: object
-      required: [email, name]
-      properties:
-        email:
-          type: string
-          format: email
-        name:
-          type: string
-    CreateSessionResponse:
-      type: object
-      required: [user]
-      properties:
-        user:
-          $ref: '#/components/schemas/SessionUser'
-    EncryptionKeyResponse:
-      type: object
-      required: [key]
-      properties:
-        key:
+          enum: [ADMIN, SK_OFFICIAL]
+        barangayId:
           type: [string, "null"]
+          format: uuid
+        accountStatus:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+    AuthContextResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AuthContext'
+    Profile:
+      type: object
+      required: [id, full_name, role, account_status, must_change_password, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, SK_OFFICIAL]
+        account_status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        position_title:
+          type: [string, "null"]
+        contact_number:
+          type: [string, "null"]
+        must_change_password:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ProfileResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Profile'
+    AccountSettingsResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [profile, email]
+          properties:
+            profile:
+              $ref: '#/components/schemas/Profile'
+            email:
+              type: string
+              format: email
+    UpdateOwnProfileInput:
+      type: object
+      required: [full_name]
+      properties:
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        contact_number:
+          type: string
+          maxLength: 50
+        position_title:
+          type: string
+          maxLength: 200
     CreateYouthRecordInput:
       type: object
       required: [category_id, first_name, last_name]
@@ -746,11 +780,11 @@ components:
         contact_number:
           type: string
         is_registered_voter:
-          type: boolean
+          type: [boolean, "null"]
         voted_last_election:
-          type: boolean
+          type: [boolean, "null"]
         attended_kk_assembly:
-          type: boolean
+          type: [boolean, "null"]
         kk_assembly_count:
           type: integer
           minimum: 0
@@ -862,11 +896,11 @@ components:
             category_filing_year:
               type: [integer, "null"]
             is_registered_voter:
-              type: boolean
+              type: [boolean, "null"]
             voted_last_election:
               type: [boolean, "null"]
             attended_kk_assembly:
-              type: boolean
+              type: [boolean, "null"]
             kk_assembly_count:
               type: integer
             custom_values:

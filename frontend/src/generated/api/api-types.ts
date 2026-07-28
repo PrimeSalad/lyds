@@ -1,9 +1,11 @@
 import type { components } from './openapi.generated';
 
-export type SessionCredentials = components['schemas']['SessionCredentials'];
-export type SessionUser = components['schemas']['SessionUser'];
-export type CreateSessionResponse = components['schemas']['CreateSessionResponse'];
-export type EncryptionKeyResponse = components['schemas']['EncryptionKeyResponse'];
+export type HealthResponse = components['schemas']['HealthResponse'];
+export type AuthContext = components['schemas']['AuthContext'];
+export type AuthContextResponse = components['schemas']['AuthContextResponse'];
+export type Profile = components['schemas']['Profile'];
+export type AccountSettingsResponse = components['schemas']['AccountSettingsResponse'];
+export type UpdateOwnProfileInput = components['schemas']['UpdateOwnProfileInput'];
 export type CreateYouthRecordInput = components['schemas']['CreateYouthRecordInput'];
 export type UpdateYouthRecordInput = components['schemas']['UpdateYouthRecordInput'];
 export type YouthRecord = components['schemas']['YouthRecord'];

@@ -68,7 +68,29 @@ describe('globalErrorHandler', () => {
       globalErrorHandler(err, req as Request, res as unknown as Response, makeNext());
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status: 500 }));
+      expect(res.json).toHaveBeenCalledWith({
+        status: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      });
+    });
+
+    it('does not expose internal provider messages', () => {
+      const err = makeErr({
+        status: 500,
+        code: 'DATABASE_ERROR',
+        message: 'relation profiles_internal does not exist',
+      });
+      const req = makeReq('/api/v1/accounts');
+      const res = makeRes();
+
+      globalErrorHandler(err, req as Request, res as unknown as Response, makeNext());
+
+      expect(res.json).toHaveBeenCalledWith({
+        status: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      });
     });
   });
 

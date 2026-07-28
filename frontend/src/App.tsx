@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, BrowserRouter, Link as RouterLink } from 'react-router';
 import { AuthGuard } from './modules/auth/presentation/components/AuthGuard';
+import { AdminGuard } from './modules/auth/presentation/components/AdminGuard';
 import LoginPage from './modules/auth/presentation/pages/LoginPage';
 import DashboardPage from './modules/dashboard/presentation/pages/DashboardPage';
 import { Spinner, Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
@@ -54,28 +55,12 @@ const App = () => (
       <Route path="/login" element={<LoginPage />} />
       <Route element={<AuthGuard />}>
         <Route path="/" element={<DashboardPage />} />
-        {/* Barangays */}
-        <Route path="/barangays" element={<Lazy><BarangayListPage /></Lazy>} />
-        <Route path="/barangays/new" element={<Lazy><BarangayFormPage /></Lazy>} />
-        <Route path="/barangays/:barangayId/edit" element={<Lazy><BarangayFormPage /></Lazy>} />
-        {/* Accounts */}
-        <Route path="/accounts" element={<Lazy><AccountListPage /></Lazy>} />
-        <Route path="/accounts/new" element={<Lazy><AccountFormPage /></Lazy>} />
-        <Route path="/accounts/:accountId/edit" element={<Lazy><AccountFormPage /></Lazy>} />
         <Route path="/account-settings" element={<Lazy><AccountSettingsPage /></Lazy>} />
         {/* Youth Records */}
         <Route path="/youth-records" element={<Lazy><YouthRecordListPage /></Lazy>} />
         <Route path="/youth-records/new" element={<Lazy><YouthRecordFormPage /></Lazy>} />
         <Route path="/youth-records/:recordId" element={<Lazy><YouthRecordDetailPage /></Lazy>} />
         <Route path="/youth-records/:recordId/edit" element={<Lazy><YouthRecordFormPage /></Lazy>} />
-        <Route path="/review-queue" element={<Lazy><ReviewQueuePage /></Lazy>} />
-        {/* Categories */}
-        <Route path="/categories" element={<Lazy><CategoryListPage /></Lazy>} />
-        <Route path="/categories/new" element={<Lazy><CategoryFormPage /></Lazy>} />
-        <Route path="/categories/:categoryId/edit" element={<Lazy><CategoryFormPage /></Lazy>} />
-        <Route path="/categories/:categoryId/fields" element={<Lazy><CategoryFieldsPage /></Lazy>} />
-        {/* Reference Data */}
-        <Route path="/reference-data" element={<Lazy><ReferenceDataPage /></Lazy>} />
         {/* Imports */}
         <Route path="/imports" element={<Lazy><ImportHistoryPage /></Lazy>} />
         <Route path="/imports/new" element={<Lazy><ImportPage /></Lazy>} />
@@ -83,8 +68,26 @@ const App = () => (
         <Route path="/reports" element={<Lazy><ReportsPage /></Lazy>} />
         {/* Announcements */}
         <Route path="/announcements" element={<Lazy><AnnouncementListPage /></Lazy>} />
-        {/* Audit Logs */}
-        <Route path="/audit-logs" element={<Lazy><AuditLogListPage /></Lazy>} />
+        <Route element={<AdminGuard />}>
+          {/* Barangays */}
+          <Route path="/barangays" element={<Lazy><BarangayListPage /></Lazy>} />
+          <Route path="/barangays/new" element={<Lazy><BarangayFormPage /></Lazy>} />
+          <Route path="/barangays/:barangayId/edit" element={<Lazy><BarangayFormPage /></Lazy>} />
+          {/* Accounts */}
+          <Route path="/accounts" element={<Lazy><AccountListPage /></Lazy>} />
+          <Route path="/accounts/new" element={<Lazy><AccountFormPage /></Lazy>} />
+          <Route path="/accounts/:accountId/edit" element={<Lazy><AccountFormPage /></Lazy>} />
+          <Route path="/review-queue" element={<Lazy><ReviewQueuePage /></Lazy>} />
+          {/* Categories */}
+          <Route path="/categories" element={<Lazy><CategoryListPage /></Lazy>} />
+          <Route path="/categories/new" element={<Lazy><CategoryFormPage /></Lazy>} />
+          <Route path="/categories/:categoryId/edit" element={<Lazy><CategoryFormPage /></Lazy>} />
+          <Route path="/categories/:categoryId/fields" element={<Lazy><CategoryFieldsPage /></Lazy>} />
+          {/* Reference Data */}
+          <Route path="/reference-data" element={<Lazy><ReferenceDataPage /></Lazy>} />
+          {/* Audit Logs */}
+          <Route path="/audit-logs" element={<Lazy><AuditLogListPage /></Lazy>} />
+        </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

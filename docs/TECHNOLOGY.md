@@ -1,47 +1,20 @@
-# Technology Choices
+# Technology choices
 
-The reasoning for each technology in the 2026 stack.
+| Area | Choice | Role in this system |
+|---|---|---|
+| Language | TypeScript | Shared static checking across the browser and API. |
+| Frontend | React 19 + Vite | Client-side application, fast development server, and production bundle. |
+| UI | Chakra UI | Accessible primitives and the application design system. |
+| Routing | React Router | Lazy-loaded protected and administrator routes. |
+| State | Redux Toolkit | Authentication context and cross-page application state. |
+| Forms | React Hook Form + Zod where applicable | Typed input handling and reusable validation. |
+| Backend | Express 5 | API routing and middleware composition. |
+| Validation | Zod | Request-boundary validation and stable error handling. |
+| Auth/data | Supabase | Email/password authentication, PostgreSQL, and administrative user operations. |
+| Spreadsheet I/O | ExcelJS | KK templates, import parsing, validation reports, and XLSX exports. |
+| Unit/integration testing | Vitest | Frontend logic, backend domains/use cases, middleware, and HTTP integration. |
+| Browser testing | Playwright | Login, routing, authorization, accessibility, responsive UI, reports, and edit journeys. |
+| API contract | OpenAPI | Contract-first documentation and generated frontend TypeScript definitions. |
+| Security | Helmet + CORS | API response hardening and explicit browser-origin policy. |
 
-## Vite
-
-We're thrilled to have finally moved on from the complexities of Webpack. With Vite, we can focus on building modern web applications without worrying about tedious configuration and optimization. As Webpack's popularity waned, Rollup paved the way for Vite's arrival, making it easier than ever to switch to a more streamlined build tool.
-
-## TypeScript, React
-
-TypeScript (TSX) offers numerous benefits over JavaScript (JSX), including better code completion, reduced runtime errors, and improved maintainability. In our experience, writing TSX files is *better* and *faster* than writing JSX file.
-
-## vite-express, Node, express
-
-Vite's ability to run client and server-side components simultaneously is a game-changer for web development. With vite-express, we can enjoy the flexibility of choosing between Server-Side Rendering (SSR) or Client-Side Rendering (CSR), giving us more freedom in designing our API.
-
-## Redux Toolkit
-
-After years of Reddit posts proclaiming the death of Redux, we remain strong advocates for its benefits. By providing a cleaner syntax for state management, Redux simplifies code complexity and makes it easier to manage global state in complex applications.
-
-## Native Web Crypto API
-
-To ensure data persistence across browser refreshes and sessions, we use the native Web Crypto API for local storage encryption. This avoids dependency risk from discontinued wrappers while keeping strong built-in browser cryptography.
-
-## Helmet
-
-Helmet sets security-focused HTTP response headers on every request: Content-Security-Policy, Strict-Transport-Security, Referrer-Policy, Permissions-Policy, Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy, X-Content-Type-Options, and more. This follows the [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/) recommendations. See `docs/SECURITY_HEADERS.md` for the full header inventory and customization guide.
-
-## Passport.js
-
-By integrating Passport.js as an example login process, we can demonstrate authentication without compromising security or scalability. The boilerplate already includes CSRF protection (double-submit cookie) and IP-based login rate limiting — see `docs/AUTHENTICATION.md` for details.
-
-## React Router
-
-React Router enables seamless client-side navigation in single-page applications without full page reloads. By handling routing on the client side, the application feels faster and more responsive while maintaining clean, bookmarkable URLs. The boilerplate includes lazy loading of routes to optimize initial bundle size and improve performance.
-
-## Chakra UI
-
-Chakra UI provides a comprehensive design system with accessible, composable components that follow WAI-ARIA standards out of the box. Unlike heavier frameworks, Chakra offers excellent TypeScript support, a thoughtful API design, and powerful theming capabilities that make it easy to create consistent, professional interfaces without sacrificing flexibility. The component library strikes an ideal balance between providing enough structure to be productive while remaining customizable for unique design requirements.
-
-## Playwright
-
-Playwright provides reliable cross-browser end-to-end testing with first-class TypeScript support, parallel test execution, and powerful debugging tools (traces, screenshots, step-through UI). The `webServer` integration automatically starts and stops the dev server for E2E runs, removing the need to manage server lifecycle manually. AI agents are familiar with Playwright's API, making it the natural choice for an AI-first boilerplate. E2E tests give confidence that authentication, navigation, and key features function correctly across the entire stack.
-
-## ESLint
-
-We added a very through custom config file for ESLint. It's battle-tested and aims to speed development, ignore problems that aren't real, and maximize the rules that can be automatically fixed by ESLint.
+The Vite frontend and Express backend are independent processes. Authentication is Supabase bearer-token based; Passport, local hardcoded users, cookie sessions, and `vite-express` are not part of this application.

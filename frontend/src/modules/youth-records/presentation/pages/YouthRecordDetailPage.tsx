@@ -351,7 +351,7 @@ const YouthRecordDetailPage = () => {
               </Circle>
               <Box minW={0}>
                 <HStack gap={3} wrap="wrap" mb={2}>
-                  <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} lineHeight="1.25" overflowWrap="anywhere">
+                  <Heading as="h2" fontSize={{ base: 'xl', md: '2xl' }} lineHeight="1.25" overflowWrap="anywhere">
                     {record.display_name}
                   </Heading>
                   <StatusBadge status={record.status} />

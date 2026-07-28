@@ -84,9 +84,9 @@ export type CreateInput = {
   work_status_id?: string;
   email?: string;
   contact_number?: string;
-  is_registered_voter: boolean;
-  voted_last_election: boolean;
-  attended_kk_assembly: boolean;
+  is_registered_voter: boolean | null;
+  voted_last_election: boolean | null;
+  attended_kk_assembly: boolean | null;
   kk_assembly_count: number;
   custom_values?: Record<string, unknown>;
   submit_on_create?: boolean;

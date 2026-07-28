@@ -14,7 +14,7 @@ healthRouter.get('/ready', async (_req, res) => {
     );
 
     if (error) {
-      res.status(503).json({ status: 'not ready', error: error.message });
+      res.status(503).json({ status: 'not ready', error: 'Database connection failed' });
       return;
     }
 

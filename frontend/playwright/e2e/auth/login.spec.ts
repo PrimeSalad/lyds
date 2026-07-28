@@ -1,15 +1,29 @@
 import { test, expect } from '@playwright/test';
-import { login, getCredentials } from '../helpers/auth';
+import { installApiMocks, installSupabaseLoginMock } from '../helpers/mock-app';
 
 test.describe('Login', () => {
-  test('redirects to the product route on successful login', async ({ page }) => {
-    const { username, password } = getCredentials();
-    await login(page, username, password);
-    await expect(page).toHaveURL('/product');
+  test('signs in with email and opens the dashboard', async ({ page }) => {
+    await installApiMocks(page);
+    await installSupabaseLoginMock(page, true);
+
+    await page.goto('/login');
+    await page.getByLabel('Email address').fill('admin@example.com');
+    await page.getByLabel('Password', { exact: true }).fill('correct-password');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    await expect(page).toHaveURL('/');
+    await expect(page.locator('main h1')).toBeVisible();
   });
 
-  test('redirects back to /login on failed login', async ({ page }) => {
-    await login(page, 'invalid-user', 'wrong-password');
+  test('keeps the user on login and explains invalid credentials', async ({ page }) => {
+    await installSupabaseLoginMock(page, false);
+
+    await page.goto('/login');
+    await page.getByLabel('Email address').fill('wrong@example.com');
+    await page.getByLabel('Password', { exact: true }).fill('wrong-password');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
     await expect(page).toHaveURL('/login');
+    await expect(page.getByRole('alert')).toContainText('Invalid login credentials');
   });
 });

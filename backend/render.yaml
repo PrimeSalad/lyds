@@ -2,7 +2,33 @@ services:
   - type: web
     name: sk-youth-backend
     runtime: node
+    region: singapore
+    plan: free
     rootDir: backend
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.1
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: MAX_IMPORT_FILE_MB
+        value: 10
+      - key: MAX_IMPORT_ROWS
+        value: 5000
+      - key: IMPORT_RAW_DATA_RETENTION_DAYS
+        value: 30

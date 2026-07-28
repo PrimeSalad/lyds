@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Prepared production hosting with a bounded Node.js 24 runtime, Render-safe environment loading, Singapore deployment settings, health checks, automatic deploys, and secret placeholders that never commit credential values.
 - Updated React Router and vulnerable transitive archive/glob dependencies, upgraded the backend TypeScript runner and Supabase CLI, removed the obsolete Vite tsconfig-path plugin, and reduced Playwright concurrency for stable local/CI browser startup.
 - Replaced stale boilerplate setup, authentication, architecture, API, script, security, technology, contribution, and Playwright documentation with the current split frontend/API and Supabase workflows; removed guides for features no longer present.
 - Redesigned the Review Queue with a searchable desktop worklist, compact mobile barangay selector, explicit loading/error/retry states, richer submission context, and clearer individual and bulk approval actions.

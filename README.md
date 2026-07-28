@@ -2,6 +2,11 @@
 
 Web application for administering barangays, SK accounts, annual youth records, spreadsheet imports, review workflows, announcements, audit logs, and aggregate reports.
 
+## Production
+
+- Frontend: [lyds-boac-2026.vercel.app](https://lyds-boac-2026.vercel.app)
+- API health: [lyds-boac-api-2026.onrender.com/api/v1/health](https://lyds-boac-api-2026.onrender.com/api/v1/health)
+
 ## Stack
 
 - React 19, TypeScript, Vite, Chakra UI, Redux Toolkit, and React Router

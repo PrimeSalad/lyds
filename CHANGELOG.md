@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Published the production frontend on Vercel and API on Render, with the Vite output directory, SPA rewrites, production API endpoint, health checks, and allowed frontend origin configured for repeatable deployments.
 - Prepared production hosting with a bounded Node.js 24 runtime, Render-safe environment loading, Singapore deployment settings, health checks, automatic deploys, and secret placeholders that never commit credential values.
 - Kept TypeScript and type definitions available during production compilation, then pruned development-only packages before the Render runtime starts.
 - Replaced the backend's no-output TypeScript build command with a real Node 24 ESM production bundle so Render can start `dist/server.js`.

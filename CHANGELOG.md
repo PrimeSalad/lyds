@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Prepared production hosting with a bounded Node.js 24 runtime, Render-safe environment loading, Singapore deployment settings, health checks, automatic deploys, and secret placeholders that never commit credential values.
 - Kept TypeScript and type definitions available during production compilation, then pruned development-only packages before the Render runtime starts.
+- Replaced the backend's no-output TypeScript build command with a real Node 24 ESM production bundle so Render can start `dist/server.js`.
+- Added graceful SIGTERM/SIGINT server shutdown for Render's zero-downtime deploy lifecycle.
 - Updated React Router and vulnerable transitive archive/glob dependencies, upgraded the backend TypeScript runner and Supabase CLI, removed the obsolete Vite tsconfig-path plugin, and reduced Playwright concurrency for stable local/CI browser startup.
 - Replaced stale boilerplate setup, authentication, architecture, API, script, security, technology, contribution, and Playwright documentation with the current split frontend/API and Supabase workflows; removed guides for features no longer present.
 - Redesigned the Review Queue with a searchable desktop worklist, compact mobile barangay selector, explicit loading/error/retry states, richer submission context, and clearer individual and bulk approval actions.

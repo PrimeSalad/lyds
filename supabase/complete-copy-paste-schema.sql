@@ -396,8 +396,8 @@ CREATE TABLE public.youth_profiles (
   is_registered_voter BOOLEAN,
   is_registered_sk_voter BOOLEAN,
   is_registered_national_voter BOOLEAN,
-  voted_last_election BOOLEAN NOT NULL DEFAULT FALSE,
-  attended_kk_assembly BOOLEAN NOT NULL DEFAULT FALSE,
+  voted_last_election BOOLEAN,
+  attended_kk_assembly BOOLEAN,
   kk_assembly_count INTEGER NOT NULL DEFAULT 0 CHECK (kk_assembly_count >= 0),
   custom_values JSONB NOT NULL DEFAULT '{}'::jsonb,
   status public.record_status,
@@ -462,17 +462,14 @@ BEGIN
     END IF;
   END IF;
 
-  IF NEW.is_registered_voter IS NULL AND NEW.is_registered_sk_voter IS NULL THEN
-    NEW.is_registered_voter = FALSE;
-    NEW.is_registered_sk_voter = FALSE;
-  ELSIF NEW.is_registered_voter IS NULL THEN
+  IF NEW.is_registered_voter IS NULL AND NEW.is_registered_sk_voter IS NOT NULL THEN
     NEW.is_registered_voter = NEW.is_registered_sk_voter;
-  ELSIF NEW.is_registered_sk_voter IS NULL THEN
+  ELSIF NEW.is_registered_sk_voter IS NULL AND NEW.is_registered_voter IS NOT NULL THEN
     NEW.is_registered_sk_voter = NEW.is_registered_voter;
   END IF;
 
-  IF NEW.is_registered_national_voter IS NULL THEN
-    NEW.is_registered_national_voter = FALSE;
+  IF NEW.is_registered_national_voter IS NULL AND NEW.voted_last_election IS NOT NULL THEN
+    NEW.is_registered_national_voter = NEW.voted_last_election;
   END IF;
 
   IF NEW.age_at_submission IS NULL AND NEW.birth_date IS NOT NULL THEN

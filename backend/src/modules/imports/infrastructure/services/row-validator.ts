@@ -383,16 +383,16 @@ export const rowValidator = {
     const generalVoter = booleanValue(getValue(lookup, ['REGISTERED VOTER?', 'REGISTERED VOTER? Y/N']));
     const skVoter = booleanValue(getValue(lookup, ['REGISTERED SK VOTER?']));
     const nationalVoter = booleanValue(getValue(lookup, ['REGISTERED NATIONAL VOTER?']));
-    normalizedData.is_registered_voter = generalVoter ?? skVoter ?? false;
-    normalizedData.is_registered_sk_voter = skVoter ?? generalVoter ?? false;
-    normalizedData.is_registered_national_voter = nationalVoter ?? generalVoter ?? false;
-    normalizedData.voted_last_election = booleanValue(getValue(lookup, ['VOTED LAST ELECTION', 'VOTED LAST ELECTION? Y/N', 'VOTED LAST ELECTION?'])) ?? false;
+    normalizedData.is_registered_voter = generalVoter ?? skVoter;
+    normalizedData.is_registered_sk_voter = skVoter ?? generalVoter;
+    normalizedData.is_registered_national_voter = nationalVoter ?? generalVoter;
+    normalizedData.voted_last_election = booleanValue(getValue(lookup, ['VOTED LAST ELECTION', 'VOTED LAST ELECTION? Y/N', 'VOTED LAST ELECTION?']));
 
     const assemblyRaw = getValue(lookup, ['ATTENDED KK ASSEMBLY?', 'ATTENDED KK ASSEMBLY', 'ATTENDED KK ASSEMBLY - IF YES, HOW MANY TIMES?']);
-    const attendedAssembly = booleanValue(assemblyRaw) ?? false;
+    const attendedAssembly = booleanValue(assemblyRaw);
     const countRaw = getValue(lookup, ['IF YES, HOW MANY TIMES?', 'IF YES, HOW MANY TIMES', 'ASSEMBLY COUNT', 'TIMES ATTENDED']);
     const countNumbers = `${assemblyRaw} ${countRaw}`.match(/\d+/g)?.map(Number) ?? [];
-    const assemblyCount = attendedAssembly ? Math.max(1, ...countNumbers) : 0;
+    const assemblyCount = attendedAssembly === true ? Math.max(1, ...countNumbers) : 0;
     normalizedData.attended_kk_assembly = attendedAssembly;
     normalizedData.kk_assembly_count = assemblyCount;
 

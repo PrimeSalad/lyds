@@ -1,4 +1,5 @@
 import type { RecordStatus } from '../../youth-records/domain/entities/youth-record';
+import { buildCategoricalBreakdown } from './demographic-breakdown';
 
 export type AnalyticsProfile = {
   id: string;
@@ -42,21 +43,6 @@ const statusLabels: Record<RecordStatus, string> = {
 };
 
 const monthKey = (date: Date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-
-const buildBreakdown = (values: Array<string | null>) => {
-  const counts = new Map<string, number>();
-  values.forEach((value) => {
-    if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
-  });
-  const total = Array.from(counts.values()).reduce((sum, count) => sum + count, 0);
-  return Array.from(counts.entries())
-    .map(([label, count]) => ({
-      label,
-      count,
-      percentage: total === 0 ? 0 : Number(((count / total) * 100).toFixed(1)),
-    }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-};
 
 export const buildDashboardAnalytics = (
   profiles: AnalyticsProfile[],
@@ -175,8 +161,8 @@ export const buildDashboardAnalytics = (
       staleDrafts,
     },
     demographics: {
-      ageGroups: buildBreakdown(profiles.map((profile) => profile.ageGroupLabel)),
-      youthClassifications: buildBreakdown(profiles.map((profile) => profile.classificationLabel)),
+      ageGroups: buildCategoricalBreakdown(profiles.map((profile) => profile.ageGroupLabel)),
+      youthClassifications: buildCategoricalBreakdown(profiles.map((profile) => profile.classificationLabel)),
     },
     recentRecords: [...profiles]
       .sort((a, b) => b.updated_at.localeCompare(a.updated_at))

@@ -7,5 +7,13 @@ export const updateAccount = async (id: string, input: UpdateAccountInput): Prom
   if (!existing) {
     throw AccountErrors.NOT_FOUND;
   }
-  return accountRepository.update(id, input);
+  const { temporary_password: temporaryPassword, ...profileInput } = input;
+  if (temporaryPassword) {
+    await accountRepository.setAuthUserPassword(id, temporaryPassword);
+  }
+
+  return accountRepository.update(id, {
+    ...profileInput,
+    ...(temporaryPassword ? { must_change_password: true } : {}),
+  });
 };

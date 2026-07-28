@@ -22,9 +22,9 @@ export type YouthRecord = {
   work_status_label?: string;
   email?: string;
   contact_number?: string;
-  is_registered_voter?: boolean;
-  voted_last_election?: boolean;
-  attended_kk_assembly?: boolean;
+  is_registered_voter?: boolean | null;
+  voted_last_election?: boolean | null;
+  attended_kk_assembly?: boolean | null;
   kk_assembly_count?: number;
   custom_values?: Record<string, unknown>;
   barangay_name?: string | null;
@@ -41,8 +41,8 @@ export type YouthRecord = {
 };
 
 export type YouthRecordDetail = YouthRecordDetailContract & {
-  is_registered_voter: boolean;
-  attended_kk_assembly: boolean;
+  is_registered_voter: boolean | null;
+  attended_kk_assembly: boolean | null;
   barangay?: { name: string; municipality: string; province: string } | null;
   category?: { name: string; filing_year?: number } | null;
 };

@@ -7,9 +7,11 @@ import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { showToast } from '../../../../shared/toast';
 import { accountApi, type ProfileWithAssignment } from '../../infrastructure/account-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { useAppSelector } from '../../../../redux/hooks';
 
 const AccountListPage = () => {
   const navigate = useNavigate();
+  const currentProfileId = useAppSelector((state) => state.auth.profile?.profileId);
 
   const [accounts, setAccounts] = useState<ProfileWithAssignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +99,22 @@ const AccountListPage = () => {
         confirmLabel: 'Activate',
       },
       show: (row) => row.account_status === 'INACTIVE',
+    },
+    {
+      label: 'Delete',
+      onClick: async (row) => {
+        await accountApi.delete(row.id);
+        showToast.success('Account permanently deleted');
+        await loadAccounts();
+      },
+      variant: 'danger',
+      confirm: {
+        title: (row) => `Permanently delete ${row.full_name}?`,
+        description: 'This permanently removes the login and account profile and cannot be undone. Accounts with linked historical activity must be deactivated instead.',
+        confirmLabel: 'Delete permanently',
+        variant: 'danger',
+      },
+      show: (row) => row.id !== currentProfileId,
     },
   ];
 

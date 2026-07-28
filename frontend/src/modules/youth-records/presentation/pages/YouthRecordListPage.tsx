@@ -255,7 +255,9 @@ const YouthRecordListPage = () => {
         key: 'attended_kk_assembly',
         header: 'KK Assembly',
         width: '100px',
-        render: (row) => row.attended_kk_assembly ? `${row.kk_assembly_count ?? 0}x` : 'No',
+        render: (row) => row.attended_kk_assembly === true
+          ? `${row.kk_assembly_count ?? 0}x`
+          : boolLabel(row.attended_kk_assembly),
       },
     );
 

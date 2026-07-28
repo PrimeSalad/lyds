@@ -29,6 +29,7 @@ export interface ProfileWithAssignment extends Profile {
 
 export interface CreateAccountInput {
   email: string;
+  temporary_password: string;
   full_name: string;
   role: 'ADMIN' | 'SK_OFFICIAL';
   barangay_id?: string;
@@ -40,6 +41,7 @@ export interface UpdateAccountInput {
   full_name?: string;
   contact_number?: string;
   position_title?: string;
+  temporary_password?: string;
 }
 
 export interface AssignBarangayInput {

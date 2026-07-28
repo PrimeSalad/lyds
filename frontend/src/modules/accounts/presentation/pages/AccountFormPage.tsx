@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Box, Button, Card, Grid, Heading, HStack, SimpleGrid, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Card, Field, Grid, Heading, HStack, IconButton, Input, SimpleGrid, Text, VStack } from '@chakra-ui/react';
+import { LuEye, LuEyeOff } from 'react-icons/lu';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { TextField, SelectField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
@@ -19,6 +20,10 @@ const AccountFormPage = () => {
   const [barangayId, setBarangayId] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [positionTitle, setPositionTitle] = useState('');
+  const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
@@ -48,6 +53,19 @@ const AccountFormPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordError(null);
+    if (temporaryPassword && temporaryPassword.length < 8) {
+      setPasswordError('Temporary password must contain at least 8 characters.');
+      return;
+    }
+    if (!isEditing && !temporaryPassword) {
+      setPasswordError('Set a temporary password for the new account.');
+      return;
+    }
+    if (temporaryPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -56,22 +74,27 @@ const AccountFormPage = () => {
           full_name: fullName,
           contact_number: contactNumber || undefined,
           position_title: positionTitle || undefined,
+          temporary_password: temporaryPassword || undefined,
         });
-        showToast.success('Account updated');
+        showToast.success(temporaryPassword ? 'Account and temporary password updated' : 'Account updated');
       } else {
         await accountApi.create({
           email,
+          temporary_password: temporaryPassword,
           full_name: fullName,
           role,
           barangay_id: role === 'SK_OFFICIAL' ? barangayId : undefined,
           contact_number: contactNumber || undefined,
           position_title: positionTitle || undefined,
         });
-        showToast.success('Account created. Invitation sent.');
+        showToast.success('Account created');
       }
       navigate('/accounts');
-    } catch {
-      showToast.error('Failed to save account');
+    } catch (error) {
+      showToast.error({
+        title: 'Failed to save account',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -120,6 +143,74 @@ const AccountFormPage = () => {
                   placeholder="Juan Dela Cruz"
                 />
               </SimpleGrid>
+
+              <Box>
+                <Heading as="h3" fontSize="md" fontWeight="600">
+                  {isEditing ? 'Reset temporary password' : 'Temporary password'}
+                </Heading>
+                <Text color="text.secondary" fontSize="sm" mt={1} mb={4}>
+                  {isEditing
+                    ? 'Leave both fields blank to keep the current password.'
+                    : 'Share this password securely. The account holder should change it after signing in.'}
+                </Text>
+                <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
+                  <Field.Root invalid={!!passwordError} required={!isEditing}>
+                    <Field.Label fontWeight="600" color="text.primary">
+                      {isEditing ? 'New temporary password' : 'Temporary password'}
+                    </Field.Label>
+                    <Box position="relative">
+                      <Input
+                        name="temporary_password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={temporaryPassword}
+                        onChange={(event) => {
+                          setTemporaryPassword(event.target.value);
+                          setPasswordError(null);
+                        }}
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={72}
+                        minH="44px"
+                        pr="52px"
+                        borderColor="border.strong"
+                      />
+                      <IconButton
+                        type="button"
+                        aria-label={showPassword ? 'Hide passwords' : 'Show passwords'}
+                        variant="ghost"
+                        position="absolute"
+                        right={0}
+                        top="50%"
+                        transform="translateY(-50%)"
+                        minW="44px"
+                        minH="44px"
+                        onClick={() => setShowPassword((visible) => !visible)}
+                      >
+                        {showPassword ? <LuEyeOff /> : <LuEye />}
+                      </IconButton>
+                    </Box>
+                    {!passwordError && <Field.HelperText>Use 8–72 characters.</Field.HelperText>}
+                  </Field.Root>
+                  <Field.Root invalid={!!passwordError} required={!isEditing}>
+                    <Field.Label fontWeight="600" color="text.primary">Confirm temporary password</Field.Label>
+                    <Input
+                      name="confirm_temporary_password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(event) => {
+                        setConfirmPassword(event.target.value);
+                        setPasswordError(null);
+                      }}
+                      autoComplete="new-password"
+                      minLength={8}
+                      maxLength={72}
+                      minH="44px"
+                      borderColor="border.strong"
+                    />
+                    {passwordError && <Field.ErrorText>{passwordError}</Field.ErrorText>}
+                  </Field.Root>
+                </SimpleGrid>
+              </Box>
 
               <SimpleGrid columns={{ base: 1, md: 2 }} gap={5}>
                 <SelectField
@@ -202,6 +293,12 @@ const AccountFormPage = () => {
                 <Text fontWeight="600">Editing limits</Text>
                 <Text color="text.secondary" fontSize="sm" mt={1}>
                   Role and barangay assignment stay locked after creation to protect account integrity.
+                </Text>
+              </Box>
+              <Box p={4} borderRadius="md" bg="surface.muted" borderWidth="1px" borderColor="border">
+                <Text fontWeight="600">Password handoff</Text>
+                <Text color="text.secondary" fontSize="sm" mt={1}>
+                  Share temporary passwords privately. Account holders can replace them from Account Settings after signing in.
                 </Text>
               </Box>
             </VStack>

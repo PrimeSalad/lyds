@@ -112,4 +112,33 @@ describe('rowValidator', () => {
       'Email address "no email account" was skipped because it is not valid.',
     );
   });
+
+  it('preserves unanswered yes-or-no fields instead of converting them to no', () => {
+    const result = rowValidator.validate({ NAME: 'No Answers Yet' }, context);
+
+    expect(result.isValid).toBe(true);
+    expect(result.normalizedData).toMatchObject({
+      is_registered_voter: null,
+      is_registered_sk_voter: null,
+      is_registered_national_voter: null,
+      voted_last_election: null,
+      attended_kk_assembly: null,
+      kk_assembly_count: 0,
+    });
+  });
+
+  it('keeps explicit no answers as false', () => {
+    const result = rowValidator.validate({
+      NAME: 'Answered No',
+      'REGISTERED VOTER?': 'No',
+      'VOTED LAST ELECTION?': 'No',
+      'ATTENDED KK ASSEMBLY?': 'No',
+    }, context);
+
+    expect(result.normalizedData).toMatchObject({
+      is_registered_voter: false,
+      voted_last_election: false,
+      attended_kk_assembly: false,
+    });
+  });
 });

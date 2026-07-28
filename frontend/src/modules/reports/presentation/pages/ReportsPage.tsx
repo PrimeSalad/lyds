@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Box, Button, Card, Dialog, Heading, HStack, IconButton, NativeSelect, Portal, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react';
-import { LuDownload, LuFileSpreadsheet, LuX } from 'react-icons/lu';
+import { Badge, Box, Button, Card, Dialog, Heading, HStack, IconButton, NativeSelect, Portal, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react';
+import { LuCircleAlert, LuDatabase, LuDownload, LuFileSpreadsheet, LuX } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
@@ -11,12 +11,16 @@ import { DashboardLayout } from '../../../dashboard/presentation/pages/Dashboard
 import { reportApi, type DemographicBreakdown, type SummaryData } from '../../infrastructure/report-api';
 
 type Demographics = {
+  totalRecords: number;
   sex: DemographicBreakdown[];
   civilStatus: DemographicBreakdown[];
   youthClassification: DemographicBreakdown[];
   youthAgeGroup: DemographicBreakdown[];
   educationalAttainment: DemographicBreakdown[];
   workStatus: DemographicBreakdown[];
+  registeredVoter: DemographicBreakdown[];
+  votedLastElection: DemographicBreakdown[];
+  attendedAssembly: DemographicBreakdown[];
 };
 
 const ReportsPage = () => {
@@ -32,6 +36,21 @@ const ReportsPage = () => {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportYear, setExportYear] = useState('');
   const [exporting, setExporting] = useState(false);
+
+  const demographicSections = useMemo(() => demographics ? [
+    { title: 'Sex', data: demographics.sex, group: 'profile' },
+    { title: 'Civil Status', data: demographics.civilStatus, group: 'profile' },
+    { title: 'Youth Classification', data: demographics.youthClassification, group: 'profile' },
+    { title: 'Age Group', data: demographics.youthAgeGroup, group: 'profile' },
+    { title: 'Educational Attainment', data: demographics.educationalAttainment, group: 'profile' },
+    { title: 'Work Status', data: demographics.workStatus, group: 'profile' },
+    { title: 'Registered Voter', data: demographics.registeredVoter, group: 'participation' },
+    { title: 'Voted in the Last Election', data: demographics.votedLastElection, group: 'participation' },
+    { title: 'Attended a KK Assembly', data: demographics.attendedAssembly, group: 'participation' },
+  ] : [], [demographics]);
+  const unansweredFields = useMemo(() => demographicSections.reduce((total, section) => (
+    total + (section.data.find((item) => item.label === 'No response')?.count ?? 0)
+  ), 0), [demographicSections]);
 
   const exportYears = useMemo(() => {
     const years = categories
@@ -105,12 +124,12 @@ const ReportsPage = () => {
   };
 
   const DemographicTable = ({ title, data }: { title: string, data: DemographicBreakdown[] }) => (
-    <Card.Root mb={6} borderColor="border" borderRadius="lg" boxShadow="panel" overflow="hidden">
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" overflow="hidden">
       <Card.Header px={{ base: 4, md: 5 }} py={4} borderBottomWidth="1px" borderColor="border">
         <Box>
           <Heading size="sm">{title}</Heading>
           <Text fontSize="sm" color="text.muted" mt={1}>
-            Distribution within the current report filters.
+            All {demographics?.totalRecords.toLocaleString() ?? 0} filtered records are counted.
           </Text>
         </Box>
       </Card.Header>
@@ -125,18 +144,23 @@ const ReportsPage = () => {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {data?.map((item, i) => (
-              <Table.Row key={i}>
-                <Table.Cell>{item.label}</Table.Cell>
-                <Table.Cell textAlign="right">{item.count}</Table.Cell>
+            {data?.map((item) => {
+              const isUnanswered = item.label === 'No response';
+              return (
+              <Table.Row key={item.label} bg={isUnanswered ? 'orange.50' : undefined}>
+                <Table.Cell>
+                  {isUnanswered ? <Badge colorPalette="orange" variant="subtle">No response</Badge> : item.label}
+                </Table.Cell>
+                <Table.Cell textAlign="right">{item.count.toLocaleString()}</Table.Cell>
                 <Table.Cell textAlign="right">{item.percentage.toFixed(1)}%</Table.Cell>
                 <Table.Cell>
                   <Box w="100%" bg="surface.muted" h="8px" borderRadius="full">
-                    <Box w={`${item.percentage}%`} bg="green.500" h="100%" borderRadius="full" />
+                    <Box w={`${item.percentage}%`} bg={isUnanswered ? 'orange.500' : 'green.500'} h="100%" borderRadius="full" />
                   </Box>
                 </Table.Cell>
               </Table.Row>
-            ))}
+              );
+            })}
             {(!data || data.length === 0) && (
               <Table.Row>
                 <Table.Cell colSpan={4} textAlign="center" color="gray.500" py={8}>No data available</Table.Cell>
@@ -266,18 +290,55 @@ const ReportsPage = () => {
       </SimpleGrid>
 
       {demographics && (
-        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={8}>
+        <VStack align="stretch" gap={8}>
+          <Card.Root borderColor="orange.200" borderRadius="lg" bg="orange.50">
+            <Card.Body p={{ base: 4, md: 5 }}>
+              <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} alignItems="center">
+                <HStack gap={3}>
+                  <Box display="grid" placeItems="center" boxSize="44px" flexShrink={0} borderRadius="md" bg="white" color="orange.700">
+                    <LuDatabase size={22} aria-hidden="true" />
+                  </Box>
+                  <Box>
+                    <Text fontSize="sm" color="text.muted">Records represented</Text>
+                    <Text fontFamily="heading" fontSize="2xl" fontWeight="700">{demographics.totalRecords.toLocaleString()}</Text>
+                  </Box>
+                </HStack>
+                <HStack gap={3}>
+                  <Box display="grid" placeItems="center" boxSize="44px" flexShrink={0} borderRadius="md" bg="white" color="orange.700">
+                    <LuCircleAlert size={22} aria-hidden="true" />
+                  </Box>
+                  <Box>
+                    <Text fontSize="sm" color="text.muted">Unanswered fields</Text>
+                    <Text fontFamily="heading" fontSize="2xl" fontWeight="700">{unansweredFields.toLocaleString()}</Text>
+                  </Box>
+                </HStack>
+                <Text fontSize="sm" color="text.secondary" lineHeight="1.6">
+                  Imported blanks and unanswered questions remain visible as <Text as="span" fontWeight="700">No response</Text>. One record may contribute to multiple unanswered fields.
+                </Text>
+              </SimpleGrid>
+            </Card.Body>
+          </Card.Root>
+
           <Box>
-            <DemographicTable title="Sex" data={demographics.sex} />
-            <DemographicTable title="Civil Status" data={demographics.civilStatus} />
-            <DemographicTable title="Youth Classification" data={demographics.youthClassification} />
+            <Heading size="md">Profile and demographic responses</Heading>
+            <Text mt={1} mb={4} color="text.muted" fontSize="sm">Percentages use every record in the current filters, including records with missing answers.</Text>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} gap={5}>
+              {demographicSections.filter((section) => section.group === 'profile').map((section) => (
+                <DemographicTable key={section.title} title={section.title} data={section.data} />
+              ))}
+            </SimpleGrid>
           </Box>
+
           <Box>
-            <DemographicTable title="Age Group" data={demographics.youthAgeGroup} />
-            <DemographicTable title="Educational Attainment" data={demographics.educationalAttainment} />
-            <DemographicTable title="Work Status" data={demographics.workStatus} />
+            <Heading size="md">Civic participation responses</Heading>
+            <Text mt={1} mb={4} color="text.muted" fontSize="sm">Yes, No, and unanswered imported values are reported separately.</Text>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} gap={5}>
+              {demographicSections.filter((section) => section.group === 'participation').map((section) => (
+                <DemographicTable key={section.title} title={section.title} data={section.data} />
+              ))}
+            </SimpleGrid>
           </Box>
-        </SimpleGrid>
+        </VStack>
       )}
 
       <Dialog.Root open={exportDialogOpen} onOpenChange={({ open }) => { if (!exporting) setExportDialogOpen(open); }}>

@@ -4,6 +4,15 @@ import type { Profile, ProfileWithAssignment, BarangayAssignment } from '../../d
 const TABLE = 'profiles';
 
 export const accountRepository = {
+  async findAuthUserByEmail(email: string): Promise<{ id: string } | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw error;
+
+    const authUser = data.users.find((user) => user.email?.toLowerCase() === normalizedEmail);
+    return authUser ? { id: authUser.id } : null;
+  },
+
   async findById(id: string): Promise<Profile | null> {
     const { data, error } = await supabaseAdmin
       .from(TABLE)
@@ -67,14 +76,24 @@ export const accountRepository = {
     });
   },
 
-  async create(input: { id: string; full_name: string; role: string; created_by?: string }): Promise<Profile> {
+  async create(input: {
+    id: string;
+    full_name: string;
+    role: string;
+    contact_number?: string;
+    position_title?: string;
+    created_by?: string;
+  }): Promise<Profile> {
     const { data, error } = await supabaseAdmin
       .from(TABLE)
       .insert({
         id: input.id,
         full_name: input.full_name,
         role: input.role,
+        contact_number: input.contact_number ?? null,
+        position_title: input.position_title ?? null,
         account_status: 'ACTIVE',
+        must_change_password: true,
         created_by: input.created_by ?? null,
       })
       .select()
@@ -83,7 +102,12 @@ export const accountRepository = {
     return data;
   },
 
-  async update(id: string, input: { full_name?: string; contact_number?: string; position_title?: string }): Promise<Profile> {
+  async update(id: string, input: {
+    full_name?: string;
+    contact_number?: string;
+    position_title?: string;
+    must_change_password?: boolean;
+  }): Promise<Profile> {
     const { data, error } = await supabaseAdmin
       .from(TABLE)
       .update(input)
@@ -144,10 +168,32 @@ export const accountRepository = {
     return data;
   },
 
-  async inviteUser(email: string): Promise<{ id: string }> {
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+  async createAuthUser(email: string, temporaryPassword: string): Promise<{ id: string }> {
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: temporaryPassword,
+      email_confirm: true,
+    });
     if (error) throw error;
     return { id: data.user.id };
+  },
+
+  async setAuthUserPassword(id: string, temporaryPassword: string): Promise<void> {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+      password: temporaryPassword,
+      email_confirm: true,
+    });
+    if (error) throw error;
+  },
+
+  async deleteAuthUser(id: string): Promise<void> {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) throw error;
+  },
+
+  async deleteProfile(id: string): Promise<void> {
+    const { error } = await supabaseAdmin.from(TABLE).delete().eq('id', id);
+    if (error) throw error;
   },
 
   async resetPassword(_userId: string): Promise<void> {

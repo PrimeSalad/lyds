@@ -98,7 +98,18 @@ export const reportApi = {
     if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params?.status) searchParams.set('status', params.status);
     const qs = searchParams.toString();
-    return apiClient.request<{ data: { sex: DemographicBreakdown[]; civilStatus: DemographicBreakdown[]; youthClassification: DemographicBreakdown[]; youthAgeGroup: DemographicBreakdown[]; educationalAttainment: DemographicBreakdown[]; workStatus: DemographicBreakdown[]; } }>(`/reports/demographics${qs ? `?${qs}` : ''}`);
+    return apiClient.request<{ data: {
+      totalRecords: number;
+      sex: DemographicBreakdown[];
+      civilStatus: DemographicBreakdown[];
+      youthClassification: DemographicBreakdown[];
+      youthAgeGroup: DemographicBreakdown[];
+      educationalAttainment: DemographicBreakdown[];
+      workStatus: DemographicBreakdown[];
+      registeredVoter: DemographicBreakdown[];
+      votedLastElection: DemographicBreakdown[];
+      attendedAssembly: DemographicBreakdown[];
+    } }>(`/reports/demographics${qs ? `?${qs}` : ''}`);
   },
   getByBarangay: () => apiClient.request<{ data: BarangaySummary[] }>('/reports/by-barangay'),
   exportRecords: (params: { format: 'csv' | 'xlsx'; barangayId?: string; categoryId?: string; status?: string; filingYear?: number }) => {

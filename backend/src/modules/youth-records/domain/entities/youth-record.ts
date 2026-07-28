@@ -20,9 +20,9 @@ export interface YouthRecord {
   work_status_id: string | null;
   email: string | null;
   contact_number: string | null;
-  is_registered_voter: boolean;
-  voted_last_election: boolean;
-  attended_kk_assembly: boolean;
+  is_registered_voter: boolean | null;
+  voted_last_election: boolean | null;
+  attended_kk_assembly: boolean | null;
   kk_assembly_count: number;
   status: RecordStatus;
   return_reason: string | null;

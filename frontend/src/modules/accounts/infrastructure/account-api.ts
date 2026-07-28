@@ -30,6 +30,7 @@ export const accountApi = {
 
   async create(input: {
     email: string;
+    temporary_password: string;
     full_name: string;
     role: 'ADMIN' | 'SK_OFFICIAL';
     barangay_id?: string;
@@ -47,12 +48,17 @@ export const accountApi = {
     full_name?: string;
     contact_number?: string;
     position_title?: string;
+    temporary_password?: string;
   }): Promise<Profile> {
     const res = await apiClient.request<{ data: Profile }>(`/accounts/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(input),
     });
     return res.data;
+  },
+
+  async delete(id: string): Promise<void> {
+    await apiClient.request(`/accounts/${id}`, { method: 'DELETE' });
   },
 
   async activate(id: string): Promise<Profile> {

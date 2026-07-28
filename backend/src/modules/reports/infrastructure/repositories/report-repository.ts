@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../../config/supabase';
 import { buildDashboardAnalytics, type AnalyticsProfile } from '../../domain/dashboard-analytics';
+import { buildDemographicReport } from '../../domain/demographic-breakdown';
 
 type ReportFilters = {
   barangayId?: string | null;
@@ -175,31 +176,25 @@ export const reportRepository = {
         youth_classification:reference_options!youth_classification_id(label),
         youth_age_group:reference_options!youth_age_group_id(label),
         educational_attainment:reference_options!educational_attainment_id(label),
-        work_status:reference_options!work_status_id(label)
+        work_status:reference_options!work_status_id(label),
+        is_registered_voter,
+        voted_last_election,
+        attended_kk_assembly
       `),
       filters,
     ).range(from, to));
 
-    const countGroups = (field: string) => {
-      const counts = new Map<string, number>();
-      data.forEach((profile) => {
-        const label = relationLabel(profile[field]);
-        if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
-      });
-      const total = Array.from(counts.values()).reduce((sum, count) => sum + count, 0);
-      return Array.from(counts.entries())
-        .map(([label, count]) => ({ label, count, percentage: total > 0 ? (count / total) * 100 : 0 }))
-        .sort((a, b) => b.count - a.count);
-    };
-
-    return {
-      sex: countGroups('sex'),
-      civilStatus: countGroups('civil_status'),
-      youthClassification: countGroups('youth_classification'),
-      youthAgeGroup: countGroups('youth_age_group'),
-      educationalAttainment: countGroups('educational_attainment'),
-      workStatus: countGroups('work_status'),
-    };
+    return buildDemographicReport(data.map((profile) => ({
+      sex: relationLabel(profile.sex),
+      civilStatus: relationLabel(profile.civil_status),
+      youthClassification: relationLabel(profile.youth_classification),
+      youthAgeGroup: relationLabel(profile.youth_age_group),
+      educationalAttainment: relationLabel(profile.educational_attainment),
+      workStatus: relationLabel(profile.work_status),
+      registeredVoter: profile.is_registered_voter,
+      votedLastElection: profile.voted_last_election,
+      attendedAssembly: profile.attended_kk_assembly,
+    })));
   },
 
   async getByBarangay() {

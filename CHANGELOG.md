@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added permanent SK Account deletion with confirmation, self-delete protection, and linked-activity safeguards.
 - Added an admin-only Review Queue in the sidebar that groups submitted SK youth profiles by barangay and filing year, with individual review/approval and confirmed bulk barangay approval.
 - Added a redesigned annual Barangay Coverage panel with a filing-year filter, progress summary, and readable responsive records/pending columns for every active or inactive barangay.
 - Added real spreadsheet import history with status filtering, resumable validation reviews, and downloadable row correction reports.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Redesigned the Review Queue with a searchable desktop worklist, compact mobile barangay selector, explicit loading/error/retry states, richer submission context, and clearer individual and bulk approval actions.
 - Allowed administrators to approve all draft youth records from the Youth Records page and from individual record details.
 - Expanded the dashboard barangay coverage view to include inactive barangays with an explicit active/inactive badge.
 - Aligned the Reports XLSX export flow with Youth Records by adding a filing-year picker, official KK workbook naming, and the same year-based Excel layout.
@@ -50,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Reports excluding blank imported answers from demographic percentages; all filtered records now contribute to every breakdown through explicit No response rows, including safely restored voter and KK assembly blanks from exact historical import-row matches.
+- Fixed SK Account creation failing on emails left behind by an earlier partial invite, added rollback for incomplete account creation, preserved contact/title fields, surfaced backend errors, and added explicit temporary-password creation/reset controls.
 - Fixed bulk imports that could not start because the UI never supplied the required barangay, and now accept official KK workbooks whose headings begin after title rows.
 - Fixed import duplicate detection using the wrong normalized-data property and an all-year scope; duplicates are now checked within the selected barangay and filing year, including repeated names inside one upload.
 - Fixed import commits omitting the selected annual category and allowing partial multi-chunk writes; commits now recheck duplicates and create all valid rows atomically with their batch/category metadata.

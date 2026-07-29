@@ -498,7 +498,7 @@ export const ChildLaborerAnalytics = ({
         />
         <BreakdownPanel
           title="Reported nature of work"
-          description="Most common exact work descriptions; lower-frequency responses are grouped."
+          description="Most common standardized work categories; lower-frequency categories are grouped."
           items={workItems}
         />
       </Grid>

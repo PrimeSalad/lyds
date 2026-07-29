@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Box, Button, Card, Field, Flex, Grid, HStack, Icon, NativeSelect, SimpleGrid, Skeleton, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import type { IconType } from 'react-icons';
 import {
   LuArrowRight,
@@ -22,6 +22,9 @@ import { SkipLink } from '../../../../ui/components/skip-link';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { reportApi, type DashboardAnalytics } from '../../../reports/infrastructure/report-api';
 import { categoryApi } from '../../../categories/infrastructure/category-api';
+import { childLaborerApi, type ChildLaborerSummary } from '../../../child-laborers/infrastructure/child-laborer-api';
+import { ChildLaborerAnalytics } from '../../../child-laborers/presentation/components/ChildLaborerAnalytics';
+import { DashboardViewSwitcher, type DashboardView } from '../components/DashboardViewSwitcher';
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [navigationOpen, setNavigationOpen] = useState(false);
@@ -75,6 +78,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 };
 
 const formatNumber = (value: number) => value.toLocaleString('en-PH');
+const currentYear = new Date().getFullYear();
+const childLaborerYears = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index);
 const formatDateTime = (value: string) => new Intl.DateTimeFormat('en-PH', {
   month: 'short',
   day: 'numeric',
@@ -473,7 +478,11 @@ const DashboardSkeleton = () => (
 export const DashboardPage = () => {
   const profile = useSelector((state: RootState) => state.auth.profile);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAdmin = profile?.role === 'ADMIN';
+  const dashboardView: DashboardView = searchParams.get('view') === 'child-laborers'
+    ? 'CHILD_LABORERS'
+    : 'YOUTH';
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -485,6 +494,12 @@ export const DashboardPage = () => {
   const [coverageLoading, setCoverageLoading] = useState(false);
   const [coverageError, setCoverageError] = useState<string | null>(null);
   const coverageRequestId = useRef(0);
+  const childLaborerRequestId = useRef(0);
+  const [childLaborerYear, setChildLaborerYear] = useState(currentYear);
+  const [childLaborerSummary, setChildLaborerSummary] = useState<ChildLaborerSummary | null>(null);
+  const [childLaborerLoading, setChildLaborerLoading] = useState(false);
+  const [childLaborerRefreshing, setChildLaborerRefreshing] = useState(false);
+  const [childLaborerError, setChildLaborerError] = useState<string | null>(null);
 
   const loadAnalytics = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
@@ -556,95 +571,166 @@ export const DashboardPage = () => {
     void loadCoverage(coverageYear);
   }, [coverageYear, isAdmin, loadCoverage]);
 
+  const loadChildLaborerAnalytics = useCallback(async (refresh = false) => {
+    const requestId = ++childLaborerRequestId.current;
+    if (refresh) setChildLaborerRefreshing(true);
+    else {
+      setChildLaborerLoading(true);
+      setChildLaborerSummary(null);
+    }
+    setChildLaborerError(null);
+    try {
+      const response = await childLaborerApi.summary({ filingYear: childLaborerYear });
+      if (requestId === childLaborerRequestId.current) setChildLaborerSummary(response.data);
+    } catch (requestError) {
+      if (requestId === childLaborerRequestId.current) {
+        setChildLaborerError(requestError instanceof Error
+          ? requestError.message
+          : 'Child laborer analytics could not be loaded.');
+      }
+    } finally {
+      if (requestId === childLaborerRequestId.current) {
+        setChildLaborerLoading(false);
+        setChildLaborerRefreshing(false);
+      }
+    }
+  }, [childLaborerYear]);
+
+  useEffect(() => {
+    if (dashboardView !== 'CHILD_LABORERS') return;
+    void loadChildLaborerAnalytics();
+  }, [dashboardView, loadChildLaborerAnalytics]);
+
   const summary = analytics?.summary;
   const coverageData = coverageAnalytics ?? analytics;
 
   const refreshDashboard = async () => {
+    if (dashboardView === 'CHILD_LABORERS') {
+      await loadChildLaborerAnalytics(true);
+      return;
+    }
     await Promise.all([
       loadAnalytics(true),
       isAdmin && coverageYear ? loadCoverage(coverageYear) : Promise.resolve(),
     ]);
   };
 
+  const changeDashboardView = (view: DashboardView) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (view === 'CHILD_LABORERS') nextParams.set('view', 'child-laborers');
+    else nextParams.delete('view');
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const refreshingCurrentView = dashboardView === 'CHILD_LABORERS'
+    ? childLaborerRefreshing || childLaborerLoading
+    : refreshing || coverageLoading;
+
   return (
     <DashboardLayout>
       <PageHeader
-        title={isAdmin ? 'Admin Dashboard' : 'Dashboard'}
-        description={isAdmin
-          ? 'Live youth registry, review workload, coverage, and data quality across Boac.'
-          : 'Live record activity and review status for your assigned barangay.'}
+        title={dashboardView === 'CHILD_LABORERS'
+          ? 'Child Laborer Dashboard'
+          : isAdmin ? 'Admin Dashboard' : 'Dashboard'}
+        description={dashboardView === 'CHILD_LABORERS'
+          ? 'Current child labor records, validation progress, demographics, education status, and reported work.'
+          : isAdmin
+            ? 'Live youth registry, review workload, coverage, and data quality across Boac.'
+            : 'Live record activity and review status for your assigned barangay.'}
         actions={(
-          <Button variant="outline" onClick={() => void refreshDashboard()} disabled={refreshing || coverageLoading}>
+          <Button variant="outline" onClick={() => void refreshDashboard()} disabled={refreshingCurrentView}>
             <LuRefreshCw />
-            {refreshing ? 'Refreshing' : 'Refresh data'}
+            {refreshingCurrentView ? 'Refreshing' : 'Refresh data'}
           </Button>
         )}
       />
 
-      {error && (
-        <Flex role="alert" mb={5} p={4} border="1px solid" borderColor="danger" bg="danger.light" borderRadius="md" gap={3} align="flex-start">
-          <Icon as={LuTriangleAlert} color="danger" boxSize="20px" mt="1px" flexShrink={0} />
-          <Box flex={1}>
-            <Text fontWeight="700" color="danger">Analytics unavailable</Text>
-            <Text mt={1} fontSize="sm" color="text.secondary">{error}</Text>
-          </Box>
-          <Button size="sm" variant="outline" colorPalette="red" onClick={() => void loadAnalytics()}>Retry</Button>
-        </Flex>
-      )}
+      <DashboardViewSwitcher
+        view={dashboardView}
+        childLaborerYear={childLaborerYear}
+        childLaborerYears={childLaborerYears}
+        onViewChange={changeDashboardView}
+        onChildLaborerYearChange={setChildLaborerYear}
+        onOpenRecords={() => navigate(dashboardView === 'CHILD_LABORERS' ? '/child-laborers' : '/youth-records')}
+      />
 
-      {loading && !analytics ? (
-        <DashboardSkeleton />
-      ) : analytics ? (
+      {dashboardView === 'CHILD_LABORERS' ? (
+        <ChildLaborerAnalytics
+          summary={childLaborerSummary}
+          year={childLaborerYear}
+          scopeLabel={isAdmin ? 'All barangays' : 'Assigned barangay'}
+          loading={childLaborerLoading}
+          error={childLaborerError}
+          onRetry={() => void loadChildLaborerAnalytics()}
+        />
+      ) : (
         <>
-          <SimpleGrid columns={{ base: 1, sm: 2, xl: isAdmin ? 5 : 4 }} gap={4}>
-            <MetricCard label="Youth records" value={summary?.totalRecords ?? 0} helper={`${summary?.thisMonth ?? 0} added this month`} icon={LuUsersRound} loading={loading} />
-            <MetricCard label="Pending review" value={summary?.submitted ?? 0} helper="Submitted and awaiting action" icon={LuClock3} loading={loading} tone="warning" />
-            <MetricCard label="Approved" value={summary?.approved ?? 0} helper="Completed review workflow" icon={LuCircleCheckBig} loading={loading} tone="success" />
-            <MetricCard label="Active drafts" value={summary?.draft ?? 0} helper={`${summary?.returned ?? 0} returned for revision`} icon={LuFileCheck2} loading={loading} />
-            {isAdmin && coverageData && (
-              <MetricCard
-                label="Barangay coverage"
-                value={coverageData.coverage.barangaysWithRecords}
-                helper={`of ${coverageData.coverage.totalBarangays} barangays${appliedCoverageYear ? ` · ${appliedCoverageYear}` : ' · all years'}`}
-                icon={LuMapPin}
-                loading={loading || coverageLoading}
-              />
-            )}
-          </SimpleGrid>
+          {error && (
+            <Flex role="alert" mb={5} p={4} border="1px solid" borderColor="danger" bg="danger.light" borderRadius="md" gap={3} align="flex-start">
+              <Icon as={LuTriangleAlert} color="danger" boxSize="20px" mt="1px" flexShrink={0} />
+              <Box flex={1}>
+                <Text fontWeight="700" color="danger">Analytics unavailable</Text>
+                <Text mt={1} fontSize="sm" color="text.secondary">{error}</Text>
+              </Box>
+              <Button size="sm" variant="outline" colorPalette="red" onClick={() => void loadAnalytics()}>Retry</Button>
+            </Flex>
+          )}
 
-          <Grid templateColumns={{ base: '1fr', xl: 'minmax(0, 1.45fr) minmax(320px, 0.75fr)' }} gap={5} mt={5} alignItems="stretch">
-            <StatusPanel data={analytics} />
-            <DataQualityPanel data={analytics} onOpenRecords={() => navigate('/youth-records')} />
-          </Grid>
+          {loading && !analytics ? (
+            <DashboardSkeleton />
+          ) : analytics ? (
+            <>
+              <SimpleGrid columns={{ base: 1, sm: 2, xl: isAdmin ? 5 : 4 }} gap={4}>
+                <MetricCard label="Youth records" value={summary?.totalRecords ?? 0} helper={`${summary?.thisMonth ?? 0} added this month`} icon={LuUsersRound} loading={loading} />
+                <MetricCard label="Pending review" value={summary?.submitted ?? 0} helper="Submitted and awaiting action" icon={LuClock3} loading={loading} tone="warning" />
+                <MetricCard label="Approved" value={summary?.approved ?? 0} helper="Completed review workflow" icon={LuCircleCheckBig} loading={loading} tone="success" />
+                <MetricCard label="Active drafts" value={summary?.draft ?? 0} helper={`${summary?.returned ?? 0} returned for revision`} icon={LuFileCheck2} loading={loading} />
+                {isAdmin && coverageData && (
+                  <MetricCard
+                    label="Barangay coverage"
+                    value={coverageData.coverage.barangaysWithRecords}
+                    helper={`of ${coverageData.coverage.totalBarangays} barangays${appliedCoverageYear ? ` · ${appliedCoverageYear}` : ' · all years'}`}
+                    icon={LuMapPin}
+                    loading={loading || coverageLoading}
+                  />
+                )}
+              </SimpleGrid>
 
-          <Box mt={5}>
-            <TrendPanel data={analytics} />
-          </Box>
+              <Grid templateColumns={{ base: '1fr', xl: 'minmax(0, 1.45fr) minmax(320px, 0.75fr)' }} gap={5} mt={5} alignItems="stretch">
+                <StatusPanel data={analytics} />
+                <DataQualityPanel data={analytics} onOpenRecords={() => navigate('/youth-records')} />
+              </Grid>
 
-          <Grid templateColumns={{ base: '1fr', lg: isAdmin ? 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' : '1fr' }} gap={5} mt={5} alignItems="start">
-            {isAdmin && coverageData && (
-              <BarangayPanel
-                data={coverageData}
-                filingYears={coverageYears}
-                selectedYear={coverageYear}
-                appliedYear={appliedCoverageYear}
-                loading={coverageLoading}
-                error={coverageError}
-                onYearChange={setCoverageYear}
-                onOpenReports={() => navigate('/reports')}
-              />
-            )}
-            <VStack align="stretch" gap={5}>
-              <RecentRecordsPanel data={analytics} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
-              <AnnouncementFeed />
-            </VStack>
-          </Grid>
+              <Box mt={5}>
+                <TrendPanel data={analytics} />
+              </Box>
 
-          <Text mt={4} textAlign="right" color="text.muted" fontSize="xs">
-            Updated {formatDateTime(analytics.generatedAt)}
-          </Text>
+              <Grid templateColumns={{ base: '1fr', lg: isAdmin ? 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' : '1fr' }} gap={5} mt={5} alignItems="start">
+                {isAdmin && coverageData && (
+                  <BarangayPanel
+                    data={coverageData}
+                    filingYears={coverageYears}
+                    selectedYear={coverageYear}
+                    appliedYear={appliedCoverageYear}
+                    loading={coverageLoading}
+                    error={coverageError}
+                    onYearChange={setCoverageYear}
+                    onOpenReports={() => navigate('/reports')}
+                  />
+                )}
+                <VStack align="stretch" gap={5}>
+                  <RecentRecordsPanel data={analytics} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
+                  <AnnouncementFeed />
+                </VStack>
+              </Grid>
+
+              <Text mt={4} textAlign="right" color="text.muted" fontSize="xs">
+                Updated {formatDateTime(analytics.generatedAt)}
+              </Text>
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
     </DashboardLayout>
   );
 };

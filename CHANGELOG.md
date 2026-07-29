@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an accessible, URL-preserved Dashboard workspace switcher with a full current-record child laborer analytics view, filing-year control, and direct registry action.
 - Added a protected yearly Child Laborer Records registry with birthday-derived annual ages, education and work details, parent or guardian information, workflow statuses, remarks, duplicate checks, archival, barangay scoping, audit history, responsive tables, and official CSV/XLSX consolidation exports.
 - Added a Reports dataset selector for switching between KK Youth and Child Laborer records, with independent year, barangay, status, search, pagination, sorting, summary, and export controls.
 - Added mandatory authenticator-app 2FA enrollment and challenge screens for every account, plus an audited admin-only recovery reset that blocks self-reset.

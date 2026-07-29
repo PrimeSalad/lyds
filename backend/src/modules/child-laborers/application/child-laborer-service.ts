@@ -2,6 +2,11 @@ import { createApiError } from '../../../config/api-error';
 import type { AuthenticatedRequest } from '../../../middleware/auth';
 import { auditService } from '../../audit-logs/infrastructure/audit-service';
 import type { ChildLaborerWriteInput } from '../domain/child-laborer';
+import {
+  normalizeChildLaborerRemarks,
+  normalizeNatureOfWork,
+  normalizeParentGuardianOccupation,
+} from '../domain/child-laborer-text-normalization';
 import { childLaborerRepository, type ChildLaborerFilters } from '../infrastructure/child-laborer-repository';
 import { childLaborerExportService } from '../infrastructure/child-laborer-export-service';
 import type {
@@ -42,13 +47,13 @@ const writeInput = (input: CreateInput | UpdateInput, barangayId: string): Child
   gender: input.gender,
   attending_school: input.attending_school,
   highest_grade_completed: blankToNull(input.highest_grade_completed),
-  nature_of_work: input.nature_of_work.trim(),
+  nature_of_work: normalizeNatureOfWork(input.nature_of_work),
   father_name: blankToNull(input.father_name),
   mother_name: blankToNull(input.mother_name),
   guardian_name: blankToNull(input.guardian_name),
-  parent_guardian_occupation: blankToNull(input.parent_guardian_occupation),
+  parent_guardian_occupation: normalizeParentGuardianOccupation(input.parent_guardian_occupation),
   record_status: input.record_status,
-  remarks: blankToNull(input.remarks),
+  remarks: normalizeChildLaborerRemarks(input.remarks),
 });
 
 const checkDuplicate = async (input: ChildLaborerWriteInput, excludeId?: string) => {

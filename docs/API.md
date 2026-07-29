@@ -52,6 +52,8 @@ Imported source files can omit demographic and civic answers. Nullable fields re
 
 A record can be marked `VALIDATED` only when remarks document the validation. Records without remarks remain `IDENTIFIED`, and report validation percentages are calculated from these current persisted statuses rather than from the spreadsheet name or visible table page.
 
+Child laborer writes also normalize known imported variants into professional, canonical wording for nature of work and parent/guardian occupation. Equivalent field notes are standardized as complete sentences, while blank remarks remain blank and do not become validation evidence.
+
 `GET /child-laborers/summary` accepts the same filing year, barangay, status, and search scope used by the report registry. It summarizes the complete filtered dataset—not only the visible table page—with school attendance, workflow status, gender, filing-year age bands, barangay concentration, leading exact nature-of-work responses, and reporting-quality indicators. The completeness percentage measures the presence of highest grade, parent or guardian occupation, and a specified nature of work across all matched records.
 
 The export endpoint requires a filing year and produces either CSV or the print-ready official XLSX column layout. User-entered spreadsheet cells are neutralized when they begin with formula control characters. SK accounts are always restricted to their active barangay assignment even if a different `barangayId` is supplied.

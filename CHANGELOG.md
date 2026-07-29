@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Standardized child laborer nature-of-work categories, parent/guardian occupations, and existing validation remarks with professional canonical wording while preserving blank remarks as not yet validated.
 - Added a complete-record frontend analytics fallback so gender, age, barangay, and nature-of-work charts remain populated while a legacy backend deployment is still serving the basic summary shape.
 - Corrected the 2026 child laborer validation baseline from source remarks, surfaced validated and awaiting-validation percentages prominently in Reports, and now require remarks before `VALIDATED` can be saved.
 - Replaced the authentication gate's endless loading state with cold-start guidance, a bounded API wait, session-preserving failure feedback, and an explicit retry action; report analytics also tolerate frontend/backend deployment overlap.

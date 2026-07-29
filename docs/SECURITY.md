@@ -26,6 +26,9 @@ This system uses defense in depth. The browser improves the user journey, but th
 - The frontend shell loads its fonts and scripts from the same origin; no third-party font or inline speculative script is required.
 - Incoming direct PostgreSQL and pooler connections must use SSL; Supabase HTTP APIs enforce HTTPS independently.
 - RLS is enabled on every application table. Service-role credentials remain backend-only and are never included in browser variables.
+- Child laborer records receive the same AAL2 gate plus independent administrator/assigned-barangay RLS policies. The API repeats barangay scoping before every list, read, write, summary, archive, restore, and export operation.
+- Child laborer records use non-destructive archival, optimistic versions, duplicate detection, bounded validated fields, immutable database-trigger audit snapshots, and formula-injection neutralization for CSV/XLSX exports.
+- Operator-account deletion cannot erase protected child records or become blocked by their attribution foreign keys; creator/updater links are safely detached while the annual record remains restricted and auditable.
 - Database function search paths are pinned, and privileged security-definer maintenance functions are executable only by trusted backend/database roles.
 - Permanent account deletion is guarded: only unapproved data can be erased; approved records preserve accountability and require deactivation instead.
 - Audit logs capture account security and data-workflow actions and cannot be updated or deleted through normal RLS access.

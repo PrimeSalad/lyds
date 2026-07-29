@@ -107,6 +107,33 @@ const barangay = {
   updated_at: '2026-01-01T00:00:00.000Z',
 };
 
+const childLaborer = {
+  id: 'child-laborer-1',
+  row_number: 1,
+  filing_year: 2026,
+  barangay_id: barangay.id,
+  barangay_name: barangay.name,
+  first_name: 'Maria',
+  middle_name: 'Santos',
+  last_name: 'Dela Cruz',
+  child_name: 'Dela Cruz, Maria Santos',
+  birth_date: '2012-04-15',
+  age: 14,
+  gender: 'FEMALE',
+  attending_school: true,
+  highest_grade_completed: 'Grade 7',
+  nature_of_work: 'Seasonal farm work',
+  father_name: 'Pedro Dela Cruz',
+  mother_name: 'Ana Dela Cruz',
+  guardian_name: null,
+  parent_guardian_occupation: 'Farmer',
+  record_status: 'MONITORED',
+  remarks: 'Quarterly follow-up',
+  version: 1,
+  created_at: '2026-01-01T00:00:00.000Z',
+  updated_at: '2026-01-01T00:00:00.000Z',
+};
+
 export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
   const now = Math.floor(Date.now() / 1_000);
   await page.addInitScript(({ key, session }) => {
@@ -227,6 +254,27 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
     }
     if (path === '/youth-records') {
       await json(route, { data: [], meta: emptyMeta });
+      return;
+    }
+    if (path === '/child-laborers') {
+      await json(route, { data: [childLaborer], meta: { ...emptyMeta, totalItems: 1, totalPages: 1 } });
+      return;
+    }
+    if (path === '/child-laborers/summary') {
+      await json(route, {
+        data: {
+          total_records: 1,
+          attending_school: 1,
+          not_attending_school: 0,
+          active_cases: 1,
+          closed_cases: 0,
+          status_counts: { MONITORED: 1 },
+        },
+      });
+      return;
+    }
+    if (path === `/child-laborers/${childLaborer.id}`) {
+      await json(route, { data: childLaborer });
       return;
     }
     if (path === '/youth-records/record-unanswered') {

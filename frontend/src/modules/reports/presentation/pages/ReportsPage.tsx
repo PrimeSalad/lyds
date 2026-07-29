@@ -9,6 +9,7 @@ import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { reportApi, type DemographicBreakdown, type SummaryData } from '../../infrastructure/report-api';
+import { ChildLaborerReportsView } from '../../../child-laborers/presentation/components/ChildLaborerReportsView';
 
 type Demographics = {
   totalRecords: number;
@@ -26,6 +27,7 @@ type Demographics = {
 const ReportsPage = () => {
   const profile = useSelector((state: RootState) => state.auth.profile);
   const isAdmin = profile?.role === 'ADMIN';
+  const [dataset, setDataset] = useState<'KK_YOUTH' | 'CHILD_LABORERS'>('KK_YOUTH');
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [demographics, setDemographics] = useState<Demographics | null>(null);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
@@ -76,6 +78,7 @@ const ReportsPage = () => {
   }, [exportYear, exportYears]);
 
   useEffect(() => {
+    if (dataset !== 'KK_YOUTH') return;
     const fetchData = async () => {
       try {
         const [sumRes, demRes, barangayData, categoryRes] = await Promise.all([
@@ -93,7 +96,7 @@ const ReportsPage = () => {
       }
     };
     fetchData();
-  }, [barangayId, categoryId, status, isAdmin]);
+  }, [barangayId, categoryId, status, isAdmin, dataset]);
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
     setExporting(true);
@@ -172,6 +175,10 @@ const ReportsPage = () => {
     </Card.Root>
   );
 
+  if (dataset === 'CHILD_LABORERS') {
+    return <ChildLaborerReportsView onShowYouthRecords={() => setDataset('KK_YOUTH')} />;
+  }
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -179,6 +186,18 @@ const ReportsPage = () => {
         description="Review consolidated record totals and export scoped datasets."
         actions={(
           <HStack gap={3} wrap="wrap">
+            <NativeSelect.Root maxW={{ base: 'full', md: '220px' }}>
+              <NativeSelect.Field
+                aria-label="Report dataset"
+                value={dataset}
+                minH="44px"
+                onChange={(event) => setDataset(event.target.value as 'KK_YOUTH' | 'CHILD_LABORERS')}
+              >
+                <option value="KK_YOUTH">KK Youth Records</option>
+                <option value="CHILD_LABORERS">Child Laborer Records</option>
+              </NativeSelect.Field>
+              <NativeSelect.Indicator />
+            </NativeSelect.Root>
             {isAdmin && (
               <NativeSelect.Root maxW={{ base: 'full', md: '190px' }}>
                 <NativeSelect.Field value={barangayId} onChange={(e) => setBarangayId(e.target.value)}>

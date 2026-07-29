@@ -17,6 +17,8 @@ const AuditLogListPage = lazy(() => import('./modules/audit-logs/presentation/pa
 const YouthRecordListPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordListPage'));
 const YouthRecordFormPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordFormPage'));
 const YouthRecordDetailPage = lazy(() => import('./modules/youth-records/presentation/pages/YouthRecordDetailPage'));
+const ChildLaborerListPage = lazy(() => import('./modules/child-laborers/presentation/pages/ChildLaborerListPage'));
+const ChildLaborerFormPage = lazy(() => import('./modules/child-laborers/presentation/pages/ChildLaborerFormPage'));
 const ReviewQueuePage = lazy(() => import('./modules/youth-records/presentation/pages/ReviewQueuePage'));
 const CategoryListPage = lazy(() => import('./modules/categories/presentation/pages/CategoryListPage'));
 const CategoryFormPage = lazy(() => import('./modules/categories/presentation/pages/CategoryFormPage'));
@@ -63,6 +65,10 @@ const App = () => (
         <Route path="/youth-records/new" element={<Lazy><YouthRecordFormPage /></Lazy>} />
         <Route path="/youth-records/:recordId" element={<Lazy><YouthRecordDetailPage /></Lazy>} />
         <Route path="/youth-records/:recordId/edit" element={<Lazy><YouthRecordFormPage /></Lazy>} />
+        {/* Child Laborer Records */}
+        <Route path="/child-laborers" element={<Lazy><ChildLaborerListPage /></Lazy>} />
+        <Route path="/child-laborers/new" element={<Lazy><ChildLaborerFormPage /></Lazy>} />
+        <Route path="/child-laborers/:recordId/edit" element={<Lazy><ChildLaborerFormPage /></Lazy>} />
         {/* Imports */}
         <Route path="/imports" element={<Lazy><ImportHistoryPage /></Lazy>} />
         <Route path="/imports/new" element={<Lazy><ImportPage /></Lazy>} />

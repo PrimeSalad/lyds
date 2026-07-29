@@ -21,6 +21,7 @@ All groups except process health require a valid bearer token with a verified `a
 | `/health` | Process and database readiness | Public |
 | `/auth` | Current authorization context, account settings, and password-change completion | AAL2 signed-in user |
 | `/youth-records` | Profiles, workflow actions, history | Barangay-scoped; admin-only review actions |
+| `/child-laborers` | Yearly child laborer registry, status summaries, archival, and consolidation exports | AAL2 and barangay-scoped; administrators can access all barangays |
 | `/imports` | Template, validation, batches, commit, error files | Barangay-scoped |
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
 | `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
@@ -44,6 +45,12 @@ The router files under `backend/src/routes/` and `backend/src/modules/*/interfac
 ## Youth-record null semantics
 
 Imported source files can omit demographic and civic answers. Nullable fields remain `null` through detail, edit, update, export, and report flows. Reports label those values **No response** rather than treating them as “No.”
+
+## Child laborer annual records
+
+`/child-laborers` stores a separate protected registry for each filing year. Birth date is required, while `age` is calculated as of December 31 of that filing year so historical consolidations do not change over time. Every active record has one of the `IDENTIFIED`, `VALIDATED`, `REFERRED`, `MONITORED`, or `CLOSED` statuses; archival retains the row and its audit history without including it in active totals or default exports.
+
+The export endpoint requires a filing year and produces either CSV or the print-ready official XLSX column layout. User-entered spreadsheet cells are neutralized when they begin with formula control characters. SK accounts are always restricted to their active barangay assignment even if a different `barangayId` is supplied.
 
 ## Adding or changing an endpoint
 

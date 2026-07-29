@@ -43,6 +43,11 @@ interface DataTableProps<T> {
     totalItems: number;
     onPageChange: (page: number) => void;
   };
+  sorting?: {
+    key: string;
+    direction: 'asc' | 'desc';
+    onChange: (key: string, direction: 'asc' | 'desc') => void;
+  };
 }
 
 export const DataTable = <T,>({
@@ -57,6 +62,7 @@ export const DataTable = <T,>({
   pageSize = 25,
   variant = 'default',
   pagination,
+  sorting,
 }: DataTableProps<T>) => {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -76,7 +82,7 @@ export const DataTable = <T,>({
       });
     }
 
-    if (sortKey) {
+    if (sortKey && !sorting) {
       result = [...result].sort((a, b) => {
         const aVal = (a as Record<string, unknown>)[sortKey] ?? '';
         const bVal = (b as Record<string, unknown>)[sortKey] ?? '';
@@ -85,7 +91,7 @@ export const DataTable = <T,>({
       });
     }
     return result;
-  }, [data, search, searchKey, sortKey, sortDir]);
+  }, [data, search, searchKey, sortKey, sortDir, sorting]);
 
   const totalPages = pagination?.totalPages ?? Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = pagination?.page ?? page;
@@ -98,6 +104,13 @@ export const DataTable = <T,>({
   };
 
   const handleSort = (key: string) => {
+    if (sorting) {
+      sorting.onChange(
+        key,
+        sorting.key === key && sorting.direction === 'asc' ? 'desc' : 'asc',
+      );
+      return;
+    }
     if (sortKey === key) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
@@ -105,6 +118,9 @@ export const DataTable = <T,>({
       setSortDir('asc');
     }
   };
+
+  const activeSortKey = sorting?.key ?? sortKey;
+  const activeSortDir = sorting?.direction ?? sortDir;
 
   const getRowKey = (row: T, index: number) => {
     const id = (row as Record<string, unknown>).id;
@@ -221,8 +237,8 @@ export const DataTable = <T,>({
                   borderColor="border"
                   _last={isExcel ? { borderRightWidth: '0' } : undefined}
                   aria-sort={
-                    col.sortable && sortKey === col.key
-                      ? sortDir === 'asc' ? 'ascending' : 'descending'
+                    col.sortable && activeSortKey === col.key
+                      ? activeSortDir === 'asc' ? 'ascending' : 'descending'
                       : undefined
                   }
                 >
@@ -241,8 +257,8 @@ export const DataTable = <T,>({
                       aria-label={`Sort by ${col.header}`}
                     >
                       {col.header}
-                      {sortKey === col.key && (
-                        sortDir === 'asc'
+                      {activeSortKey === col.key && (
+                        activeSortDir === 'asc'
                           ? <LuArrowUp size={14} aria-hidden="true" />
                           : <LuArrowDown size={14} aria-hidden="true" />
                       )}

@@ -444,6 +444,367 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/child-laborers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List yearly child laborer records
+         * @description Returns child laborer records within the authenticated account's
+         *     barangay scope. Age is derived from birth date as of December 31 of
+         *     the selected filing year so annual consolidations remain reproducible.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    filingYear?: number;
+                    barangayId?: string;
+                    status?: components["schemas"]["ChildLaborerStatus"];
+                    search?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sortField?: "child_name" | "barangay_name" | "birth_date" | "gender" | "record_status" | "created_at";
+                    sortDir?: "asc" | "desc";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated child laborer records */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerListResponse"];
+                    };
+                };
+                /** @description Invalid list filters */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Verified two-factor authentication or barangay access required */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a yearly child laborer record */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateChildLaborerInput"];
+                };
+            };
+            responses: {
+                /** @description Child laborer record created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerResponse"];
+                    };
+                };
+                /** @description Invalid record data */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Record is outside the account's barangay scope */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/child-laborers/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summarize yearly child laborer records */
+        get: {
+            parameters: {
+                query?: {
+                    filingYear?: number;
+                    barangayId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Child laborer totals by status and school attendance */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/child-laborers/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export the yearly child laborer consolidation */
+        get: {
+            parameters: {
+                query: {
+                    format?: "csv" | "xlsx";
+                    filingYear: number;
+                    barangayId?: string;
+                    status?: components["schemas"]["ChildLaborerStatus"];
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Child laborer spreadsheet or CSV export */
+                200: {
+                    headers: {
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                        "text/csv": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/child-laborers/{recordId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordId: string;
+            };
+            cookie?: never;
+        };
+        /** Get a child laborer record */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Child laborer record */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerResponse"];
+                    };
+                };
+                /** @description Child laborer record not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a child laborer record
+         * @description Uses optimistic version checking to prevent lost updates.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recordId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateChildLaborerInput"];
+                };
+            };
+            responses: {
+                /** @description Child laborer record updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerResponse"];
+                    };
+                };
+                /** @description Record was updated by another user */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/child-laborers/{recordId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a child laborer record */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Child laborer record archived */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/child-laborers/{recordId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore an archived child laborer record */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Child laborer record restored as identified */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChildLaborerResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/youth-records/approve-drafts": {
         parameters: {
             query?: never;
@@ -1409,6 +1770,89 @@ export interface components {
             full_name: string;
             contact_number?: string;
             position_title?: string;
+        };
+        /** @enum {string} */
+        ChildLaborerStatus: "IDENTIFIED" | "VALIDATED" | "REFERRED" | "MONITORED" | "CLOSED" | "ARCHIVED";
+        /** @enum {string} */
+        ChildLaborerGender: "MALE" | "FEMALE" | "NOT_SPECIFIED";
+        CreateChildLaborerInput: {
+            filing_year: number;
+            /**
+             * Format: uuid
+             * @description Required for administrators; ignored in favor of the assigned barangay for SK officials.
+             */
+            barangay_id?: string;
+            first_name: string;
+            middle_name?: string;
+            last_name: string;
+            /** Format: date */
+            birth_date: string;
+            gender: components["schemas"]["ChildLaborerGender"];
+            attending_school: boolean;
+            highest_grade_completed?: string;
+            nature_of_work: string;
+            father_name?: string;
+            mother_name?: string;
+            /** @description At least one parent or guardian name must be supplied. */
+            guardian_name?: string;
+            parent_guardian_occupation?: string;
+            /** @default IDENTIFIED */
+            record_status: components["schemas"]["ChildLaborerStatus"];
+            remarks?: string;
+        };
+        UpdateChildLaborerInput: components["schemas"]["CreateChildLaborerInput"] & {
+            version: number;
+        };
+        ChildLaborerRecord: {
+            /** Format: uuid */
+            id: string;
+            row_number?: number;
+            filing_year: number;
+            /** Format: uuid */
+            barangay_id: string;
+            barangay_name: string;
+            first_name: string;
+            middle_name: string | null;
+            last_name: string;
+            child_name: string;
+            /** Format: date */
+            birth_date: string;
+            age: number;
+            gender: components["schemas"]["ChildLaborerGender"];
+            attending_school: boolean;
+            highest_grade_completed: string | null;
+            nature_of_work: string;
+            father_name: string | null;
+            mother_name: string | null;
+            guardian_name: string | null;
+            parent_guardian_occupation: string | null;
+            record_status: components["schemas"]["ChildLaborerStatus"];
+            remarks: string | null;
+            version: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ChildLaborerResponse: {
+            data: components["schemas"]["ChildLaborerRecord"];
+        };
+        ChildLaborerListResponse: {
+            data: components["schemas"]["ChildLaborerRecord"][];
+            meta: components["schemas"]["PaginationMeta"];
+        };
+        ChildLaborerSummary: {
+            total_records: number;
+            attending_school: number;
+            not_attending_school: number;
+            active_cases: number;
+            closed_cases: number;
+            status_counts: {
+                [key: string]: number;
+            };
+        };
+        ChildLaborerSummaryResponse: {
+            data: components["schemas"]["ChildLaborerSummary"];
         };
         CreateYouthRecordInput: {
             /** Format: uuid */

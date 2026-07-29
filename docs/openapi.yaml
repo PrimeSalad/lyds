@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SK Youth Information Management System API
-  version: 1.5.0
+  version: 1.6.0
   description: |
     Contract-first definition for the SK Youth Information Management System.
     Authentication is handled by Supabase Auth. Protected endpoints require an
@@ -230,6 +230,250 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/child-laborers:
+    get:
+      tags: [app]
+      summary: List yearly child laborer records
+      description: |
+        Returns child laborer records within the authenticated account's
+        barangay scope. Age is derived from birth date as of December 31 of
+        the selected filing year so annual consolidations remain reproducible.
+      parameters:
+        - in: query
+          name: filingYear
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ChildLaborerStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - in: query
+          name: sortField
+          schema:
+            type: string
+            enum: [child_name, barangay_name, birth_date, gender, record_status, created_at]
+        - in: query
+          name: sortDir
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Paginated child laborer records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerListResponse'
+        '400':
+          description: Invalid list filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Verified two-factor authentication or barangay access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [app]
+      summary: Create a yearly child laborer record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChildLaborerInput'
+      responses:
+        '201':
+          description: Child laborer record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerResponse'
+        '400':
+          description: Invalid record data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Record is outside the account's barangay scope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/child-laborers/summary:
+    get:
+      tags: [app]
+      summary: Summarize yearly child laborer records
+      parameters:
+        - in: query
+          name: filingYear
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Child laborer totals by status and school attendance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerSummaryResponse'
+  /api/v1/child-laborers/export:
+    get:
+      tags: [app]
+      summary: Export the yearly child laborer consolidation
+      parameters:
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: [csv, xlsx]
+            default: xlsx
+        - in: query
+          name: filingYear
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ChildLaborerStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        '200':
+          description: Child laborer spreadsheet or CSV export
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+  /api/v1/child-laborers/{recordId}:
+    parameters:
+      - in: path
+        name: recordId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [app]
+      summary: Get a child laborer record
+      responses:
+        '200':
+          description: Child laborer record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerResponse'
+        '404':
+          description: Child laborer record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags: [app]
+      summary: Update a child laborer record
+      description: Uses optimistic version checking to prevent lost updates.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChildLaborerInput'
+      responses:
+        '200':
+          description: Child laborer record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerResponse'
+        '409':
+          description: Record was updated by another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/child-laborers/{recordId}/archive:
+    post:
+      tags: [app]
+      summary: Archive a child laborer record
+      responses:
+        '200':
+          description: Child laborer record archived
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerResponse'
+  /api/v1/child-laborers/{recordId}/restore:
+    post:
+      tags: [app]
+      summary: Restore an archived child laborer record
+      responses:
+        '200':
+          description: Child laborer record restored as identified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChildLaborerResponse'
   /api/v1/youth-records/approve-drafts:
     post:
       tags: [app]
@@ -847,6 +1091,213 @@ components:
         position_title:
           type: string
           maxLength: 200
+    ChildLaborerStatus:
+      type: string
+      enum: [IDENTIFIED, VALIDATED, REFERRED, MONITORED, CLOSED, ARCHIVED]
+    ChildLaborerGender:
+      type: string
+      enum: [MALE, FEMALE, NOT_SPECIFIED]
+    CreateChildLaborerInput:
+      type: object
+      required:
+        - filing_year
+        - first_name
+        - last_name
+        - birth_date
+        - gender
+        - attending_school
+        - nature_of_work
+      properties:
+        filing_year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        barangay_id:
+          type: string
+          format: uuid
+          description: Required for administrators; ignored in favor of the assigned barangay for SK officials.
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        birth_date:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/ChildLaborerGender'
+        attending_school:
+          type: boolean
+        highest_grade_completed:
+          type: string
+          maxLength: 150
+        nature_of_work:
+          type: string
+          minLength: 1
+          maxLength: 300
+        father_name:
+          type: string
+          maxLength: 200
+        mother_name:
+          type: string
+          maxLength: 200
+        guardian_name:
+          type: string
+          maxLength: 200
+          description: At least one parent or guardian name must be supplied.
+        parent_guardian_occupation:
+          type: string
+          maxLength: 300
+        record_status:
+          allOf:
+            - $ref: '#/components/schemas/ChildLaborerStatus'
+          default: IDENTIFIED
+        remarks:
+          type: string
+          maxLength: 1000
+    UpdateChildLaborerInput:
+      allOf:
+        - $ref: '#/components/schemas/CreateChildLaborerInput'
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              minimum: 1
+    ChildLaborerRecord:
+      type: object
+      required:
+        - id
+        - filing_year
+        - barangay_id
+        - barangay_name
+        - first_name
+        - middle_name
+        - last_name
+        - child_name
+        - birth_date
+        - age
+        - gender
+        - attending_school
+        - highest_grade_completed
+        - nature_of_work
+        - father_name
+        - mother_name
+        - guardian_name
+        - parent_guardian_occupation
+        - record_status
+        - remarks
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        row_number:
+          type: integer
+          minimum: 1
+        filing_year:
+          type: integer
+        barangay_id:
+          type: string
+          format: uuid
+        barangay_name:
+          type: string
+        first_name:
+          type: string
+        middle_name:
+          type: [string, "null"]
+        last_name:
+          type: string
+        child_name:
+          type: string
+        birth_date:
+          type: string
+          format: date
+        age:
+          type: integer
+          minimum: 0
+        gender:
+          $ref: '#/components/schemas/ChildLaborerGender'
+        attending_school:
+          type: boolean
+        highest_grade_completed:
+          type: [string, "null"]
+        nature_of_work:
+          type: string
+        father_name:
+          type: [string, "null"]
+        mother_name:
+          type: [string, "null"]
+        guardian_name:
+          type: [string, "null"]
+        parent_guardian_occupation:
+          type: [string, "null"]
+        record_status:
+          $ref: '#/components/schemas/ChildLaborerStatus'
+        remarks:
+          type: [string, "null"]
+        version:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ChildLaborerResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChildLaborerRecord'
+    ChildLaborerListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildLaborerRecord'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    ChildLaborerSummary:
+      type: object
+      required: [total_records, attending_school, not_attending_school, active_cases, closed_cases, status_counts]
+      properties:
+        total_records:
+          type: integer
+          minimum: 0
+        attending_school:
+          type: integer
+          minimum: 0
+        not_attending_school:
+          type: integer
+          minimum: 0
+        active_cases:
+          type: integer
+          minimum: 0
+        closed_cases:
+          type: integer
+          minimum: 0
+        status_counts:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+    ChildLaborerSummaryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ChildLaborerSummary'
     CreateYouthRecordInput:
       type: object
       required: [category_id, first_name, last_name]

@@ -1,6 +1,18 @@
 import { Badge, HStack, Circle, Text } from '@chakra-ui/react';
 
-type Status = 'DRAFT' | 'SUBMITTED' | 'RETURNED' | 'APPROVED' | 'ARCHIVED' | 'ACTIVE' | 'INACTIVE';
+type Status =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'RETURNED'
+  | 'APPROVED'
+  | 'ARCHIVED'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'IDENTIFIED'
+  | 'VALIDATED'
+  | 'REFERRED'
+  | 'MONITORED'
+  | 'CLOSED';
 
 const statusConfig: Record<Status, { bg: string; color: string; label: string }> = {
   DRAFT:     { bg: 'surface.muted',  color: 'text.secondary',  label: 'Draft' },
@@ -10,6 +22,11 @@ const statusConfig: Record<Status, { bg: string; color: string; label: string }>
   ARCHIVED:  { bg: 'surface.muted',  color: 'text.muted',      label: 'Archived' },
   ACTIVE:    { bg: 'success.light',  color: 'success',         label: 'Active' },
   INACTIVE:  { bg: 'surface.muted',  color: 'text.muted',      label: 'Inactive' },
+  IDENTIFIED:{ bg: 'info.light',     color: 'info',            label: 'Identified' },
+  VALIDATED: { bg: 'success.light',  color: 'success',         label: 'Validated' },
+  REFERRED:  { bg: 'warning.light',  color: 'warning',         label: 'Referred' },
+  MONITORED: { bg: 'primary.50',     color: 'primary.700',     label: 'Monitored' },
+  CLOSED:    { bg: 'surface.muted',  color: 'text.secondary',  label: 'Closed' },
 };
 
 export const StatusBadge = ({ status }: { status: Status }) => {

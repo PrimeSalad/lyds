@@ -49,6 +49,7 @@ If an account holder loses the authenticator device, a different administrator c
 - **Deactivate** immediately blocks application access while preserving the account and its historical references. It can be reversed.
 - **Delete permanently** removes the Supabase login, profile, barangay assignment, audit entries, import files/results, and youth records created by that account when those youth records have never been approved. Self-deletion is blocked.
 - An account that created an approved youth record cannot be permanently deleted. Deactivate it instead so the approved record and its accountable history remain intact.
+- Yearly child laborer records are statutory data rather than account-owned drafts, so deleting an operator account retains those rows and safely clears their creator/updater attribution links. The records remain protected by barangay scope, MFA, and audit controls.
 
 ## Environment variables
 

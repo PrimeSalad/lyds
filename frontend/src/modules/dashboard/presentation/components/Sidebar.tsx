@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { showToast } from '../../../../shared/toast';
 import {
   LuChartNoAxesCombined,
+  LuBriefcaseBusiness,
   LuClipboardList,
   LuClipboardCheck,
   LuDatabase,
@@ -28,6 +29,7 @@ import {
 const adminLinks = [
   { label: 'Dashboard', path: '/', icon: LuLayoutDashboard },
   { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+  { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
   { label: 'Review Queue', path: '/review-queue', icon: LuClipboardCheck },
   { label: 'Imports', path: '/imports', icon: LuUpload },
   { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
@@ -42,6 +44,7 @@ const adminLinks = [
 const skLinks = [
   { label: 'Dashboard', path: '/', icon: LuLayoutDashboard },
   { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+  { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
   { label: 'Add Record', path: '/youth-records/new', icon: LuFilePlus2, exact: true },
   { label: 'Bulk Import', path: '/imports/new', icon: LuUpload, exact: true },
   { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },

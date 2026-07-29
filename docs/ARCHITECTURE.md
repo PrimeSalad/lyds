@@ -14,7 +14,7 @@ Express API (port 4000, /api/v1)
   ├─ Auth middleware: verifies Supabase token and active profile
   ├─ Role/scope checks: ADMIN or barangay-scoped SK_OFFICIAL
   ├─ Modules: accounts, barangays, categories, youth records,
-  │           imports, reports, announcements, and audit logs
+  │           child laborers, imports, reports, announcements, and audit logs
   └─ Supabase service client
              │
              ▼
@@ -65,6 +65,15 @@ docs/openapi.yaml             API contract source of truth
 - Reports include every in-scope record and expose missing source answers as **No response**.
 - SK officials are constrained to their assigned barangay. Administrators can review and report across barangays.
 - CSV/XLSX generation is performed by the API.
+
+## Child laborer registry and reporting flow
+
+- Child laborer records are independent annual rows keyed by filing year and barangay; they do not overload KK Youth categories.
+- The API calculates age from the birthday at December 31 of the filing year, checks same-year duplicate identity, and uses optimistic versions to avoid lost updates.
+- Records progress through identified, validated, referred, monitored, and closed states. Archive is a retained state rather than a destructive delete.
+- Administrators can work across barangays; SK officials are limited to the active assigned barangay in both application services and database RLS.
+- Database triggers keep immutable before/after audit entries for creates, edits, archives, and restores. Direct database access also requires an AAL2 token through a restrictive RLS policy.
+- Reports can switch between KK Youth and Child Laborer datasets. Each dataset keeps its own filters, summaries, sortable table, and CSV/XLSX export.
 
 ## API contract
 

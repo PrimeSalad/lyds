@@ -13,8 +13,8 @@ interface TextFieldProps {
   disabled?: boolean;
   readOnly?: boolean;
   autoComplete?: string;
-  min?: number;
-  max?: number;
+  min?: number | string;
+  max?: number | string;
   onBlur?: () => void;
   ref?: React.Ref<HTMLInputElement>;
 }

@@ -10,6 +10,7 @@ import { youthRecordRouter } from '../modules/youth-records/interface/http/route
 import { importRouter } from '../modules/imports/interface/http/routes';
 import { reportRouter } from '../modules/reports/interface/http/routes';
 import { announcementRouter } from '../modules/announcements/interface/http/routes';
+import { childLaborerRouter } from '../modules/child-laborers/interface/http/routes';
 
 export const v1Router = Router();
 
@@ -21,6 +22,7 @@ v1Router.use('/audit-logs', auditLogRouter);
 v1Router.use('/categories', categoryRoutes);
 v1Router.use('/reference-data', referenceDataRoutes);
 v1Router.use('/youth-records', youthRecordRouter);
+v1Router.use('/child-laborers', childLaborerRouter);
 v1Router.use('/imports', importRouter);
 v1Router.use('/reports', reportRouter);
 v1Router.use('/announcements', announcementRouter);

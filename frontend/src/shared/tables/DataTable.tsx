@@ -252,7 +252,7 @@ export const DataTable = <T,>({
               ))}
               {actions && actions.length > 0 && (
                 <Table.ColumnHeader
-                  width={isExcel ? '120px' : '160px'}
+                  width={isExcel ? '120px' : 'auto'}
                   fontFamily="heading"
                   fontSize="sm"
                   fontWeight="600"
@@ -310,7 +310,7 @@ export const DataTable = <T,>({
                   ))}
                   {actions && actions.length > 0 && (
                     <Table.Cell py={3} px={4} borderLeftWidth={isExcel ? '1px' : undefined} borderColor="border" textAlign="right">
-                      <HStack gap={1} justify="flex-end">
+                      <HStack gap={1} justify="flex-end" wrap="wrap">
                         {availableActions(row).map((action) => (
                             <Button
                               key={action.label}

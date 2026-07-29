@@ -17,7 +17,9 @@
     "db:verify": "npm --prefix backend run db:verify",
     "db:sync": "npm --prefix backend run db:sync",
     "db:sync:dry": "npm --prefix backend run db:sync:dry",
-    "db:baseline": "npm --prefix backend run db:baseline"
+    "db:baseline": "npm --prefix backend run db:baseline",
+    "auth:harden": "npm --prefix backend run auth:harden",
+    "auth:harden:check": "npm --prefix backend run auth:harden:check"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0"

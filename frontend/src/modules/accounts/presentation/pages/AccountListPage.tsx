@@ -101,17 +101,39 @@ const AccountListPage = () => {
       show: (row) => row.account_status === 'INACTIVE',
     },
     {
+      label: 'Reset 2FA',
+      onClick: async (row) => {
+        try {
+          const result = await accountApi.resetMfa(row.id);
+          showToast.success(result.removed_factors > 0
+            ? 'Two-factor authentication reset'
+            : 'No two-factor authenticator was enrolled');
+        } catch (error) {
+          showToast.error({
+            title: 'Could not reset two-factor authentication',
+            description: error instanceof Error ? error.message : 'Please try again.',
+          });
+        }
+      },
+      confirm: {
+        title: (row) => `Reset 2FA for ${row.full_name}?`,
+        description: 'Their enrolled authenticator will be removed. They will be required to set up a new authenticator after their next password sign-in.',
+        confirmLabel: 'Reset 2FA',
+      },
+      show: (row) => row.id !== currentProfileId,
+    },
+    {
       label: 'Delete',
       onClick: async (row) => {
         await accountApi.delete(row.id);
-        showToast.success('Account permanently deleted');
+        showToast.success('Account and unapproved records permanently deleted');
         await loadAccounts();
       },
       variant: 'danger',
       confirm: {
         title: (row) => `Permanently delete ${row.full_name}?`,
-        description: 'This permanently removes the login and account profile and cannot be undone. Accounts with linked historical activity must be deactivated instead.',
-        confirmLabel: 'Delete permanently',
+        description: 'This permanently removes the login, account profile, barangay assignment, and every youth record or import added by this account that has never been approved. This cannot be undone. Accounts with approved records must be deactivated instead.',
+        confirmLabel: 'Delete account and data',
         variant: 'danger',
       },
       show: (row) => row.id !== currentProfileId,
@@ -122,7 +144,7 @@ const AccountListPage = () => {
     <DashboardLayout>
       <PageHeader
         title="SK Accounts"
-        description="Manage official accounts, assignments, and account status."
+        description="Manage official accounts, assignments, two-factor recovery, and account status."
         actions={(
           <Button colorPalette="green" onClick={() => navigate('/accounts/new')}>
             Add Account

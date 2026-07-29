@@ -8,6 +8,24 @@ const json = async (route: Route, body: unknown, status = 200) => route.fulfill(
   body: JSON.stringify(body),
 });
 
+const encodeJwtPart = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+
+const accessTokenWithAal = (aal: 'aal1' | 'aal2') => [
+  encodeJwtPart({ alg: 'none', typ: 'JWT' }),
+  encodeJwtPart({
+    sub: 'profile-1',
+    aud: 'authenticated',
+    role: 'authenticated',
+    aal,
+    amr: aal === 'aal2'
+      ? [{ method: 'password', timestamp: Math.floor(Date.now() / 1_000) }, { method: 'totp', timestamp: Math.floor(Date.now() / 1_000) }]
+      : [{ method: 'password', timestamp: Math.floor(Date.now() / 1_000) }],
+    iat: Math.floor(Date.now() / 1_000),
+    exp: Math.floor(Date.now() / 1_000) + 3_600,
+  }),
+  'test-signature',
+].join('.');
+
 const emptyMeta = {
   page: 1,
   pageSize: 25,
@@ -90,6 +108,37 @@ const barangay = {
 };
 
 export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
+  const now = Math.floor(Date.now() / 1_000);
+  await page.addInitScript(({ key, session }) => {
+    window.localStorage.setItem(key, JSON.stringify(session));
+  }, {
+    key: 'sb-localhost-auth-token',
+    session: {
+      access_token: accessTokenWithAal('aal2'),
+      token_type: 'bearer',
+      expires_in: 3_600,
+      expires_at: now + 3_600,
+      refresh_token: 'test-refresh-token',
+      user: {
+        id: 'profile-1',
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: 'admin@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        created_at: '2026-01-01T00:00:00.000Z',
+        factors: [{
+          id: 'totp-factor-1',
+          status: 'verified',
+          factor_type: 'totp',
+          friendly_name: 'Test Authenticator',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        }],
+      },
+    },
+  });
+
   await page.route('http://localhost:4000/api/v1/**', async (route) => {
     const url = new URL(route.request().url());
     const path = url.pathname.replace('/api/v1', '');
@@ -101,6 +150,8 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
           role,
           barangayId: role === 'SK_OFFICIAL' ? barangay.id : null,
           accountStatus: 'ACTIVE',
+          mfaVerified: true,
+          mustChangePassword: false,
         },
       });
       return;
@@ -236,7 +287,11 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
   });
 };
 
-export const installSupabaseLoginMock = async (page: Page, succeeds: boolean) => {
+export const installSupabaseLoginMock = async (
+  page: Page,
+  succeeds: boolean,
+  mfaState: 'verified' | 'challenge' = 'verified',
+) => {
   await page.route('**/auth/v1/token**', async (route) => {
     if (!succeeds) {
       await json(route, { message: 'Invalid login credentials' }, 400);
@@ -244,7 +299,7 @@ export const installSupabaseLoginMock = async (page: Page, succeeds: boolean) =>
     }
 
     await json(route, {
-      access_token: 'test-access-token',
+      access_token: accessTokenWithAal(mfaState === 'verified' ? 'aal2' : 'aal1'),
       token_type: 'bearer',
       expires_in: 3_600,
       expires_at: Math.floor(Date.now() / 1_000) + 3_600,
@@ -256,10 +311,69 @@ export const installSupabaseLoginMock = async (page: Page, succeeds: boolean) =>
         email: 'admin@example.com',
         app_metadata: {},
         user_metadata: {},
+        factors: [{
+          id: 'totp-factor-1',
+          status: 'verified',
+          factor_type: 'totp',
+          friendly_name: 'Test Authenticator',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        }],
         created_at: '2026-01-01T00:00:00.000Z',
       },
     });
   });
+
+  if (succeeds && mfaState === 'challenge') {
+    await page.route('**/auth/v1/user', async (route) => {
+      await json(route, {
+        id: 'profile-1',
+        aud: 'authenticated',
+        role: 'authenticated',
+        email: 'admin@example.com',
+        app_metadata: {},
+        user_metadata: {},
+        factors: [{
+          id: 'totp-factor-1',
+          status: 'verified',
+          factor_type: 'totp',
+          friendly_name: 'Test Authenticator',
+          created_at: '2026-01-01T00:00:00.000Z',
+          updated_at: '2026-01-01T00:00:00.000Z',
+        }],
+        created_at: '2026-01-01T00:00:00.000Z',
+      });
+    });
+    await page.route('**/auth/v1/factors/totp-factor-1/challenge', async (route) => {
+      await json(route, { id: 'mfa-challenge-1', expires_at: Math.floor(Date.now() / 1_000) + 300 });
+    });
+    await page.route('**/auth/v1/factors/totp-factor-1/verify', async (route) => {
+      await json(route, {
+        access_token: accessTokenWithAal('aal2'),
+        token_type: 'bearer',
+        expires_in: 3_600,
+        expires_at: Math.floor(Date.now() / 1_000) + 3_600,
+        refresh_token: 'verified-refresh-token',
+        user: {
+          id: 'profile-1',
+          aud: 'authenticated',
+          role: 'authenticated',
+          email: 'admin@example.com',
+          app_metadata: {},
+          user_metadata: {},
+          factors: [{
+            id: 'totp-factor-1',
+            status: 'verified',
+            factor_type: 'totp',
+            friendly_name: 'Test Authenticator',
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-01T00:00:00.000Z',
+          }],
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
+      });
+    });
+  }
 };
 
 export const runtimeErrors = (page: Page) => {

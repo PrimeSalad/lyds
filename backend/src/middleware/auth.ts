@@ -8,8 +8,20 @@ export interface AuthenticatedRequest extends Request {
     role: 'ADMIN' | 'SK_OFFICIAL';
     barangayId: string | null;
     accountStatus: 'ACTIVE' | 'INACTIVE';
+    mfaVerified: true;
+    mustChangePassword: boolean;
   };
 }
+
+const getAuthenticatorAssuranceLevel = (token: string): string | null => {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+
+  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+    aal?: unknown;
+  };
+  return typeof claims.aal === 'string' ? claims.aal : null;
+};
 
 export const requireAuth: RequestHandler = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -28,10 +40,22 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       return;
     }
 
+    // getUser() has already verified the token signature and expiry, so the
+    // assurance claim can now be trusted for this same token.
+    if (getAuthenticatorAssuranceLevel(token) !== 'aal2') {
+      res.status(403).json({
+        error: {
+          code: 'MFA_REQUIRED',
+          message: 'Complete two-factor authentication to continue.',
+        },
+      });
+      return;
+    }
+
     // Load profile from profiles table
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, role, account_status')
+      .select('id, role, account_status, must_change_password')
       .eq('id', user.id)
       .single();
 
@@ -64,6 +88,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       role: profile.role,
       barangayId,
       accountStatus: profile.account_status,
+      mfaVerified: true,
+      mustChangePassword: profile.must_change_password,
     };
 
     next();

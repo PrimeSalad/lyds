@@ -3,6 +3,7 @@ import { Routes, Route, BrowserRouter, Link as RouterLink } from 'react-router';
 import { AuthGuard } from './modules/auth/presentation/components/AuthGuard';
 import { AdminGuard } from './modules/auth/presentation/components/AdminGuard';
 import LoginPage from './modules/auth/presentation/pages/LoginPage';
+import MfaPage from './modules/auth/presentation/pages/MfaPage';
 import DashboardPage from './modules/dashboard/presentation/pages/DashboardPage';
 import { Spinner, Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
 import { LuHouse } from 'react-icons/lu';
@@ -53,6 +54,7 @@ const App = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/mfa" element={<MfaPage />} />
       <Route element={<AuthGuard />}>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/account-settings" element={<Lazy><AccountSettingsPage /></Lazy>} />

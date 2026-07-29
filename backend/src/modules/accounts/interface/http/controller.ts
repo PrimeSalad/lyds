@@ -8,6 +8,7 @@ import { activateAccount } from '../../application/use-cases/activate-account';
 import { deactivateAccount } from '../../application/use-cases/deactivate-account';
 import { assignBarangay } from '../../application/use-cases/assign-barangay';
 import { deleteAccount } from '../../application/use-cases/delete-account';
+import { resetAccountMfa } from '../../application/use-cases/reset-account-mfa';
 import { createAccountSchema, updateAccountSchema, assignBarangaySchema } from './schema';
 
 export const accountController = {
@@ -41,6 +42,13 @@ export const accountController = {
     const id = String(req.params.accountId);
     await deleteAccount(id, ctx.profileId);
     res.status(204).end();
+  },
+
+  async resetMfa(req: Request, res: Response) {
+    const ctx = (req as AuthenticatedRequest).authContext!;
+    const id = String(req.params.accountId);
+    const result = await resetAccountMfa(id, ctx.profileId, ctx.role);
+    res.json({ data: result });
   },
 
   async activate(req: Request, res: Response) {

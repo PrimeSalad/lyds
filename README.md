@@ -43,7 +43,7 @@ Requirements: Node.js 24+ and npm 10+.
 
 The frontend runs at `http://localhost:5173`; the API runs at `http://localhost:4000/api/v1`.
 
-There is no hardcoded default login. An administrator creates an account from **SK Accounts → Add Account** and explicitly sets its temporary password. Share that password privately; the account holder can replace it under **Account Settings**.
+There is no hardcoded default login. An administrator creates an account from **SK Accounts → Add Account** and explicitly sets a strong temporary password. At first sign-in, the account holder must enroll an authenticator app, complete two-factor verification, and replace the temporary password.
 
 ## Commands
 
@@ -60,6 +60,7 @@ There is no hardcoded default login. An administrator creates an account from **
 | Regenerate OpenAPI types | `npm run gen:api-types` |
 | Verify Supabase schema/data access | `npm run db:verify` |
 | Preview database synchronization | `npm run db:sync:dry` |
+| Verify Supabase Auth hardening | `npm run auth:harden:check` |
 
 Install Chromium once before running browser tests:
 
@@ -71,6 +72,7 @@ npm exec --prefix frontend -- playwright install chromium
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Authentication and account passwords](docs/AUTHENTICATION.md)
+- [Security controls and operations](docs/SECURITY.md)
 - [API and OpenAPI workflow](docs/API.md)
 - [Script reference](docs/SCRIPTS.md)
 - [Contributing](docs/CONTRIBUTING.md)

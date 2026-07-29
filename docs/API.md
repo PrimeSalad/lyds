@@ -14,12 +14,12 @@ Edit the YAML first, regenerate the TypeScript definitions, and commit both file
 
 ## Route groups
 
-All groups except process health require a valid bearer token.
+All groups except process health require a valid bearer token with a verified `aal2` claim. A password-only (`aal1`) token receives `403 MFA_REQUIRED`; the backend remains authoritative even if a caller bypasses the browser UI.
 
 | Prefix | Purpose | Access |
 |---|---|---|
 | `/health` | Process and database readiness | Public |
-| `/auth` | Current authorization context and account settings | Signed-in user |
+| `/auth` | Current authorization context, account settings, and password-change completion | AAL2 signed-in user |
 | `/youth-records` | Profiles, workflow actions, history | Barangay-scoped; admin-only review actions |
 | `/imports` | Template, validation, batches, commit, error files | Barangay-scoped |
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
@@ -27,7 +27,7 @@ All groups except process health require a valid bearer token.
 | `/categories` | Filing categories and custom fields | Reads scoped; writes admin-only |
 | `/reference-data` | Reference groups and options | Reads signed-in; writes admin-only |
 | `/barangays` | Barangay directory and status | Admin-only |
-| `/accounts` | Account creation, temporary password reset, status, assignment, deletion | Admin-only |
+| `/accounts` | Account creation, temporary password and 2FA reset, status, assignment, and guarded permanent deletion with unapproved-data cleanup | AAL2 admin-only |
 | `/audit-logs` | Audit history | Admin-only |
 
 The router files under `backend/src/routes/` and `backend/src/modules/*/interface/http/routes.ts` compose these groups. Backend middleware is authoritative even when the frontend also hides inaccessible navigation.
@@ -36,7 +36,7 @@ The router files under `backend/src/routes/` and `backend/src/modules/*/interfac
 
 - JSON response bodies wrap successful resources in `data`; paginated lists also include `meta`.
 - Validation errors use HTTP 400 with a structured `error` body.
-- Authentication failures use 401; authorization/scope failures use 403.
+- Authentication failures use 401; missing MFA, authorization, and scope failures use 403.
 - Creates generally return 201, updates 200, and successful deletes without a body 204.
 - Internal provider/database errors return a generic 500 response; raw provider details are not sent to clients.
 - CSV/XLSX endpoints return a binary body and a `Content-Disposition` filename.

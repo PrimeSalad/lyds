@@ -32,3 +32,7 @@ services:
         value: 5000
       - key: IMPORT_RAW_DATA_RETENTION_DAYS
         value: 30
+      - key: API_RATE_LIMIT_WINDOW_MS
+        value: 300000
+      - key: API_RATE_LIMIT_MAX_REQUESTS
+        value: 1200

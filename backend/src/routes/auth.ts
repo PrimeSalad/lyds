@@ -4,6 +4,7 @@ import { requireAuth, type AuthenticatedRequest } from '../middleware/auth';
 import { getAccount } from '../modules/accounts/application/use-cases/get-account';
 import { updateAccount } from '../modules/accounts/application/use-cases/update-account';
 import { supabaseAdmin } from '../config/supabase';
+import { confirmOwnPasswordChange } from '../modules/accounts/application/use-cases/confirm-own-password-change';
 
 export const authRouter = Router();
 
@@ -22,6 +23,8 @@ authRouter.get('/me', requireAuth, (req, res) => {
       role: ctx!.role,
       barangayId: ctx!.barangayId,
       accountStatus: ctx!.accountStatus,
+      mfaVerified: ctx!.mfaVerified,
+      mustChangePassword: ctx!.mustChangePassword,
     },
   });
 });
@@ -46,4 +49,10 @@ authRouter.patch('/profile', requireAuth, async (req, res) => {
   const input = updateOwnProfileSchema.parse(req.body);
   const profile = await updateAccount(ctx.profileId, input);
   res.json({ data: profile });
+});
+
+authRouter.post('/password-change-completed', requireAuth, async (req, res) => {
+  const ctx = (req as AuthenticatedRequest).authContext!;
+  await confirmOwnPasswordChange(ctx.profileId, ctx.role);
+  res.status(204).end();
 });

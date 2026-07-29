@@ -22,8 +22,13 @@ export const LoginPage = () => {
 
     try {
       await authApi.signIn(email, password);
-      await dispatch(loadProfile()).unwrap();
-      navigate('/');
+      const mfaStatus = await authApi.getMfaStatus();
+      if (mfaStatus !== 'verified') {
+        navigate('/mfa');
+        return;
+      }
+      const profile = await dispatch(loadProfile()).unwrap();
+      navigate(profile.mustChangePassword ? '/account-settings' : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

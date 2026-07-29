@@ -75,6 +75,13 @@ export const accountApi = {
     return res.data;
   },
 
+  async resetMfa(id: string): Promise<{ removed_factors: number }> {
+    const res = await apiClient.request<{ data: { removed_factors: number } }>(`/accounts/${id}/reset-mfa`, {
+      method: 'POST',
+    });
+    return res.data;
+  },
+
   async assignBarangay(id: string, barangayId: string): Promise<{ profile: Profile; assignment: unknown }> {
     const res = await apiClient.request<{ data: { profile: Profile; assignment: unknown } }>(
       `/accounts/${id}/assign-barangay`,

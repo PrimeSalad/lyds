@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added mandatory authenticator-app 2FA enrollment and challenge screens for every account, plus an audited admin-only recovery reset that blocks self-reset.
+- Added forced replacement of administrator-issued temporary passwords and a 30-minute frontend inactivity sign-out.
 - Added permanent SK Account deletion with confirmation, self-delete protection, and linked-activity safeguards.
 - Added an admin-only Review Queue in the sidebar that groups submitted SK youth profiles by barangay and filing year, with individual review/approval and confirmed bulk barangay approval.
 - Added a redesigned annual Barangay Coverage panel with a filing-year filter, progress summary, and readable responsive records/pending columns for every active or inactive barangay.
@@ -25,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Increased account passwords to 12–72 characters with required upper- and lowercase letters, a number, and an approved special character; password changes now require the current password.
+- Permanent account deletion now removes the account's never-approved youth records, import data, and related audit entries before deleting its login and profile; approved youth records continue to block deletion.
 - Published the production frontend on Vercel and API on Render, with the Vite output directory, SPA rewrites, production API endpoint, health checks, and allowed frontend origin configured for repeatable deployments.
 - Prepared production hosting with a bounded Node.js 24 runtime, Render-safe environment loading, Singapore deployment settings, health checks, automatic deploys, and secret placeholders that never commit credential values.
 - Kept TypeScript and type definitions available during production compilation, then pruned development-only packages before the Render runtime starts.
@@ -97,6 +101,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Enforced Supabase `aal2` at the frontend guard, every protected Express API request, and restrictive RLS policies on all application tables.
+- Pinned database function search paths and revoked anonymous/authenticated execution of privileged security-definer maintenance functions.
+- Disabled public signup and anonymous authentication, limited TOTP enrollment to one factor, retained refresh-token rotation, and enabled password/email/identity/MFA security notifications through a reproducible Management API script.
+- Added global API rate limiting, strict Vercel CSP/HSTS/clickjacking/referrer/permissions/cross-origin headers, and removed third-party font and speculative scripts from the application shell.
+- Enabled SSL enforcement for all incoming Supabase PostgreSQL and connection-pooler clients.
 
 ## [1.3.0] - 2026-05-20
 

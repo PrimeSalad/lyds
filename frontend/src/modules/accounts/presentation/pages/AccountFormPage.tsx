@@ -8,6 +8,11 @@ import { showToast } from '../../../../shared/toast';
 import { accountApi } from '../../infrastructure/account-api';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  validateStrongPassword,
+} from '../../../auth/domain/password-policy';
 
 const AccountFormPage = () => {
   const navigate = useNavigate();
@@ -54,8 +59,9 @@ const AccountFormPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
-    if (temporaryPassword && temporaryPassword.length < 8) {
-      setPasswordError('Temporary password must contain at least 8 characters.');
+    const strongPasswordError = temporaryPassword ? validateStrongPassword(temporaryPassword) : null;
+    if (strongPasswordError) {
+      setPasswordError(strongPasswordError.replace('Password', 'Temporary password'));
       return;
     }
     if (!isEditing && !temporaryPassword) {
@@ -168,8 +174,8 @@ const AccountFormPage = () => {
                           setPasswordError(null);
                         }}
                         autoComplete="new-password"
-                        minLength={8}
-                        maxLength={72}
+                        minLength={PASSWORD_MIN_LENGTH}
+                        maxLength={PASSWORD_MAX_LENGTH}
                         minH="44px"
                         pr="52px"
                         borderColor="border.strong"
@@ -189,7 +195,11 @@ const AccountFormPage = () => {
                         {showPassword ? <LuEyeOff /> : <LuEye />}
                       </IconButton>
                     </Box>
-                    {!passwordError && <Field.HelperText>Use 8–72 characters.</Field.HelperText>}
+                    {!passwordError && (
+                      <Field.HelperText>
+                        Use 12–72 characters with upper- and lowercase letters, a number, and one of !@#$%^&amp;*.
+                      </Field.HelperText>
+                    )}
                   </Field.Root>
                   <Field.Root invalid={!!passwordError} required={!isEditing}>
                     <Field.Label fontWeight="600" color="text.primary">Confirm temporary password</Field.Label>
@@ -202,8 +212,8 @@ const AccountFormPage = () => {
                         setPasswordError(null);
                       }}
                       autoComplete="new-password"
-                      minLength={8}
-                      maxLength={72}
+                      minLength={PASSWORD_MIN_LENGTH}
+                      maxLength={PASSWORD_MAX_LENGTH}
                       minH="44px"
                       borderColor="border.strong"
                     />

@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import { applySecurityHeaders } from './middleware/security-headers';
 import { applyCors } from './middleware/cors';
 import { globalErrorHandler } from './middleware/error-handler';
+import { apiRateLimiter } from './middleware/api-rate-limit';
 import { v1Router } from './routes/v1';
 
 export const createApp = () => {
@@ -16,7 +17,7 @@ export const createApp = () => {
   app.use(express.json({ limit: '15mb' }));
   app.use(cookieParser());
 
-  app.use('/api/v1', v1Router);
+  app.use('/api/v1', apiRateLimiter, v1Router);
   app.use(globalErrorHandler);
 
   return app;

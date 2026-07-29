@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
   title: SK Youth Information Management System API
-  version: 1.3.0
+  version: 1.5.0
   description: |
     Contract-first definition for the SK Youth Information Management System.
-    Authentication is handled by Supabase Auth; protected endpoints accept its access token.
+    Authentication is handled by Supabase Auth. Protected endpoints require an
+    access token whose authenticator assurance level is `aal2` (password plus a
+    verified second factor).
 servers:
   - url: http://localhost:4000
 tags:
@@ -44,6 +46,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Verified two-factor authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/profile:
     get:
       tags: [auth]
@@ -79,6 +87,119 @@ paths:
                 $ref: '#/components/schemas/ProfileResponse'
         '400':
           description: Invalid profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/password-change-completed:
+    post:
+      tags: [auth]
+      summary: Confirm a successful authenticated password replacement
+      description: |
+        Called immediately after Supabase accepts a password update with the
+        current password. Clears the account's forced temporary-password flag
+        and records the security event in the audit log.
+      responses:
+        '204':
+          description: Password-change requirement cleared
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Verified two-factor authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/accounts/{accountId}:
+    parameters:
+      - in: path
+        name: accountId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      tags: [app]
+      summary: Permanently delete an account and its unapproved data
+      description: |
+        Admin-only operation. Removes the account's never-approved youth
+        records, import data, related audit entries, Supabase login, profile,
+        and barangay assignment. The current administrator cannot delete their
+        own account, and an account that created an approved youth record must
+        be deactivated instead.
+      responses:
+        '204':
+          description: Account and unapproved data permanently deleted
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Self-deletion, approved youth records, or provider cleanup failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/accounts/{accountId}/reset-mfa:
+    parameters:
+      - in: path
+        name: accountId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [app]
+      summary: Reset another account's enrolled two-factor authenticators
+      description: |
+        Admin-only recovery operation. Removes all enrolled factors so the
+        account must enroll a new authenticator after its next password sign-in.
+        Administrators cannot reset their own factors through this endpoint.
+      responses:
+        '200':
+          description: Enrolled factors removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetMfaResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Verified two-factor authentication and administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Self-reset or identity-provider cleanup failure
           content:
             application/json:
               schema:
@@ -630,7 +751,7 @@ components:
           format: date-time
     AuthContext:
       type: object
-      required: [profileId, role, barangayId, accountStatus]
+      required: [profileId, role, barangayId, accountStatus, mfaVerified, mustChangePassword]
       properties:
         profileId:
           type: string
@@ -644,6 +765,11 @@ components:
         accountStatus:
           type: string
           enum: [ACTIVE, INACTIVE]
+        mfaVerified:
+          type: boolean
+          const: true
+        mustChangePassword:
+          type: boolean
     AuthContextResponse:
       type: object
       required: [data]
@@ -683,6 +809,17 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/Profile'
+    ResetMfaResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [removed_factors]
+          properties:
+            removed_factors:
+              type: integer
+              minimum: 0
     AccountSettingsResponse:
       type: object
       required: [data]

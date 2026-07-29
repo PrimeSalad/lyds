@@ -6,6 +6,17 @@ export interface UserProfile {
   role: 'ADMIN' | 'SK_OFFICIAL';
   barangayId: string | null;
   accountStatus: 'ACTIVE' | 'INACTIVE';
+  mfaVerified: true;
+  mustChangePassword: boolean;
+}
+
+export type MfaStatus = 'signed_out' | 'setup_required' | 'challenge_required' | 'verified';
+
+export interface MfaEnrollment {
+  factorId: string;
+  qrCode: string;
+  secret: string;
+  uri: string;
 }
 
 export interface AccountSettingsProfile {
@@ -27,8 +38,60 @@ export const authApi = {
     return data;
   },
 
-  async signOut() {
-    const { error } = await supabase.auth.signOut();
+  async signOut(scope: 'global' | 'local' | 'others' = 'global') {
+    const { error } = await supabase.auth.signOut({ scope });
+    if (error) throw error;
+  },
+
+  async getMfaStatus(): Promise<MfaStatus> {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!sessionData.session) return 'signed_out';
+
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error) throw error;
+    if (data.currentLevel === 'aal2') return 'verified';
+    return data.nextLevel === 'aal2' ? 'challenge_required' : 'setup_required';
+  },
+
+  async beginMfaEnrollment(): Promise<MfaEnrollment> {
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (factorsError) throw factorsError;
+    if (factors.totp.length > 0) {
+      throw new Error('An authenticator is already enrolled. Enter its current code instead.');
+    }
+
+    for (const factor of factors.all.filter((item) => item.status === 'unverified')) {
+      const { error: cleanupError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      if (cleanupError) throw cleanupError;
+    }
+
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: 'Boac LYDS Authenticator',
+    });
+    if (error) throw error;
+
+    return {
+      factorId: data.id,
+      qrCode: data.totp.qr_code,
+      secret: data.totp.secret,
+      uri: data.totp.uri,
+    };
+  },
+
+  async verifyMfaEnrollment(factorId: string, code: string): Promise<void> {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+    if (error) throw error;
+  },
+
+  async verifyMfaChallenge(code: string): Promise<void> {
+    const { data, error: factorsError } = await supabase.auth.mfa.listFactors();
+    if (factorsError) throw factorsError;
+    const factor = data.totp[0];
+    if (!factor) throw new Error('No verified authenticator was found. Ask an administrator to reset 2FA.');
+
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
     if (error) throw error;
   },
 
@@ -56,8 +119,15 @@ export const authApi = {
     return response.data;
   },
 
-  async updatePassword(password: string): Promise<void> {
-    const { error } = await supabase.auth.updateUser({ password });
+  async updatePassword(currentPassword: string, password: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({
+      current_password: currentPassword,
+      password,
+    });
     if (error) throw error;
+  },
+
+  async confirmPasswordChanged(): Promise<void> {
+    await apiClient.request('/auth/password-change-completed', { method: 'POST' });
   },
 };

@@ -191,6 +191,29 @@ export const accountRepository = {
     if (error) throw error;
   },
 
+  async prepareForDeletion(id: string): Promise<void> {
+    const { error } = await supabaseAdmin.rpc('prepare_account_deletion', {
+      p_account_id: id,
+    });
+    if (error) throw error;
+  },
+
+  async deleteMfaFactors(id: string): Promise<number> {
+    const { data, error } = await supabaseAdmin.auth.admin.mfa.listFactors({ userId: id });
+    if (error) throw error;
+
+    const factors = data?.factors ?? [];
+    for (const factor of factors) {
+      const { error: deleteError } = await supabaseAdmin.auth.admin.mfa.deleteFactor({
+        userId: id,
+        id: factor.id,
+      });
+      if (deleteError) throw deleteError;
+    }
+
+    return factors.length;
+  },
+
   async deleteProfile(id: string): Promise<void> {
     const { error } = await supabaseAdmin.from(TABLE).delete().eq('id', id);
     if (error) throw error;

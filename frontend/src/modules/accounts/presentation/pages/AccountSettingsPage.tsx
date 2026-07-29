@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, Card, Field, Grid, Heading, HStack, IconButton, Input, SimpleGrid, Spinner, Text, VStack } from '@chakra-ui/react';
+import { Alert, Box, Button, Card, Field, Grid, Heading, HStack, IconButton, Input, SimpleGrid, Spinner, Text, VStack } from '@chakra-ui/react';
 import { LuEye, LuEyeOff, LuKeyRound, LuSave } from 'react-icons/lu';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { TextField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
 import { authApi } from '../../../auth/infrastructure/auth-api';
+import { loadProfile } from '../../../auth/application/auth-store';
+import { useAppDispatch, useAppSelector } from '../../../../redux/hooks';
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  validateStrongPassword,
+} from '../../../auth/domain/password-policy';
 
 const AccountSettingsPage = () => {
+  const dispatch = useAppDispatch();
+  const mustChangePassword = useAppSelector((state) => state.auth.profile?.mustChangePassword ?? false);
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
@@ -16,6 +25,7 @@ const AccountSettingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -61,8 +71,13 @@ const AccountSettingsPage = () => {
   const handlePasswordSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setPasswordError(null);
-    if (newPassword.length < 8) {
-      setPasswordError('Password must contain at least 8 characters.');
+    if (!currentPassword) {
+      setPasswordError('Enter your current password.');
+      return;
+    }
+    const strongPasswordError = validateStrongPassword(newPassword);
+    if (strongPasswordError) {
+      setPasswordError(strongPasswordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -71,7 +86,10 @@ const AccountSettingsPage = () => {
     }
     setPasswordSaving(true);
     try {
-      await authApi.updatePassword(newPassword);
+      await authApi.updatePassword(currentPassword, newPassword);
+      await authApi.confirmPasswordChanged();
+      await dispatch(loadProfile()).unwrap();
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       showToast.success('Password updated');
@@ -106,6 +124,18 @@ const AccountSettingsPage = () => {
         title="Account Settings"
         description="Update your profile details and password."
       />
+
+      {mustChangePassword && (
+        <Alert.Root status="warning" maxW="980px" mb={6} borderRadius="md" role="alert">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>Replace your temporary password</Alert.Title>
+            <Alert.Description>
+              You cannot use the rest of the system until you set a strong private password below.
+            </Alert.Description>
+          </Alert.Content>
+        </Alert.Root>
+      )}
 
       <SimpleGrid columns={{ base: 1, md: 3 }} gap={4} maxW="980px" mb={6}>
         {[
@@ -147,16 +177,37 @@ const AccountSettingsPage = () => {
               <LuKeyRound aria-hidden="true" />
               <Heading as="h2" fontSize="lg" fontWeight="600">Password</Heading>
             </HStack>
-            <Text color="text.secondary" fontSize="sm" mt={2} mb={6}>Use at least 8 characters for your new password.</Text>
+            <Text color="text.secondary" fontSize="sm" mt={2} mb={6}>
+              Use 12–72 characters with upper- and lowercase letters, a number, and one of !@#$%^&amp;*.
+            </Text>
             <VStack align="stretch" gap={5}>
+              <Field.Root invalid={!!passwordError} width="full">
+                <Field.Label fontFamily="heading" fontWeight="500">Current password</Field.Label>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(event) => {
+                    setCurrentPassword(event.target.value);
+                    setPasswordError(null);
+                  }}
+                  autoComplete="current-password"
+                  minH="44px"
+                  borderColor="border.strong"
+                />
+              </Field.Root>
               <Field.Root invalid={!!passwordError} width="full">
                 <Field.Label fontFamily="heading" fontWeight="500">New password</Field.Label>
                 <Box position="relative" width="full">
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
+                    onChange={(event) => {
+                      setNewPassword(event.target.value);
+                      setPasswordError(null);
+                    }}
                     autoComplete="new-password"
+                    minLength={PASSWORD_MIN_LENGTH}
+                    maxLength={PASSWORD_MAX_LENGTH}
                     minH="44px"
                     width="full"
                     pr="48px"
@@ -182,14 +233,19 @@ const AccountSettingsPage = () => {
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    setPasswordError(null);
+                  }}
                   autoComplete="new-password"
+                  minLength={PASSWORD_MIN_LENGTH}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   minH="44px"
                   borderColor="border.strong"
                 />
                 {passwordError && <Field.ErrorText>{passwordError}</Field.ErrorText>}
               </Field.Root>
-              <Button type="submit" alignSelf="flex-start" colorPalette="green" variant="outline" loading={passwordSaving} disabled={!newPassword || !confirmPassword}>
+              <Button type="submit" alignSelf="flex-start" colorPalette="green" variant="outline" loading={passwordSaving} disabled={!currentPassword || !newPassword || !confirmPassword}>
                 <LuKeyRound />
                 Update Password
               </Button>

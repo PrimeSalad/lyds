@@ -19,6 +19,7 @@ test.describe('Record registry category scope', () => {
       'All Child Laborer Categories',
       'Child Laborer Records 2026',
     ]);
+    await expect(page.getByRole('columnheader', { name: 'Category', exact: true })).toHaveCount(0);
 
     await year.selectOption('2025');
     await expect(category.locator('option')).toHaveCount(2);

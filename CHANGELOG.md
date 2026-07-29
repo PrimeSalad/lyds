@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Removed the redundant blank Category column from the Child Laborer Records table while retaining its registry-scoped year and category filters.
 - Separated Youth and Child Laborer category scopes across both record lists and forms: filing-year options now come only from matching registry categories, category options follow the selected available year, mixed registry payloads are rejected defensively, and fabricated year lists were removed.
 - Replaced decorative dashboard icon tiles and marketing-style hero panels with a shared, compact registry summary; Youth and Child Laborer dashboards now use the same icon-free KPI cards, five-column grid, spacing, radii, panel padding, and loading geometry.
 - Rebuilt the Youth Registry Dashboard to match the Child Laborer analytics hierarchy with a filing-year scope, concise registry summary, percentage KPIs, workflow, trend, demographics, data quality, barangay coverage, and decision brief; removed duplicate role and account controls from the top bar and consolidated the sidebar to one Dashboard destination.

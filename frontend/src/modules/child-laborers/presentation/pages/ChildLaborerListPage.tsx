@@ -207,7 +207,6 @@ const ChildLaborerListPage = () => {
 
   const columns = useMemo<Column<ChildLaborerRecord>[]>(() => [
     { key: 'row_number', header: 'No.', width: '70px', align: 'center' },
-    { key: 'category_name', header: 'Category', width: '210px' },
     { key: 'barangay_name', header: 'Barangay', sortable: true, width: '160px' },
     { key: 'child_name', header: 'Surname', sortable: true, width: '150px', render: (record) => record.last_name },
     { key: 'first_name', header: 'First Name', width: '150px' },

@@ -70,6 +70,8 @@ export const listChildLaborersQuerySchema = z.object({
 export const childLaborerSummaryQuerySchema = z.object({
   filingYear: z.coerce.number().int().min(2000).max(2100).optional(),
   barangayId: z.string().uuid().optional(),
+  status: z.enum(childLaborerStatuses).optional(),
+  search: z.string().trim().max(100).optional(),
 });
 
 export const childLaborerExportQuerySchema = z.object({

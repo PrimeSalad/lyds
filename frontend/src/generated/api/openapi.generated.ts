@@ -576,6 +576,8 @@ export interface paths {
                 query?: {
                     filingYear?: number;
                     barangayId?: string;
+                    status?: components["schemas"]["ChildLaborerStatus"];
+                    search?: string;
                 };
                 header?: never;
                 path?: never;
@@ -583,7 +585,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Child laborer totals by status and school attendance */
+                /** @description Filtered child laborer totals, distributions, and data-quality indicators */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1841,6 +1843,20 @@ export interface components {
             data: components["schemas"]["ChildLaborerRecord"][];
             meta: components["schemas"]["PaginationMeta"];
         };
+        ChildLaborerBreakdownItem: {
+            key: string;
+            label: string;
+            count: number;
+            percentage: number;
+        };
+        ChildLaborerDataQuality: {
+            /** @description Completion across grade, parent or guardian occupation, and specified nature-of-work fields. */
+            completeness_percentage: number;
+            complete_records: number;
+            records_with_grade: number;
+            records_with_parent_occupation: number;
+            records_with_specified_work: number;
+        };
         ChildLaborerSummary: {
             total_records: number;
             attending_school: number;
@@ -1850,6 +1866,11 @@ export interface components {
             status_counts: {
                 [key: string]: number;
             };
+            gender_distribution: components["schemas"]["ChildLaborerBreakdownItem"][];
+            age_distribution: components["schemas"]["ChildLaborerBreakdownItem"][];
+            barangay_distribution: components["schemas"]["ChildLaborerBreakdownItem"][];
+            work_distribution: components["schemas"]["ChildLaborerBreakdownItem"][];
+            data_quality: components["schemas"]["ChildLaborerDataQuality"];
         };
         ChildLaborerSummaryResponse: {
             data: components["schemas"]["ChildLaborerSummary"];

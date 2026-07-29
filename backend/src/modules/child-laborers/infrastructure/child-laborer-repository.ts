@@ -9,6 +9,7 @@ import {
   childLaborerOrderClauses,
   type ChildLaborerSort,
 } from './child-laborer-query';
+import { buildChildLaborerSummary } from '../domain/child-laborer-summary';
 import { toChildLaborerPresentation } from './child-laborer-presenter';
 
 const TABLE = 'child_laborer_records';
@@ -56,16 +57,37 @@ const listQuery = (filters: ChildLaborerFilters) => {
   return query;
 };
 
-const countRows = async (
-  filters: Pick<ChildLaborerFilters, 'filingYear' | 'barangayId'>,
-  configure: (query: any) => any,
-) => {
-  let query = supabaseAdmin.from(TABLE).select('id', { count: 'exact', head: true });
-  if (filters.filingYear) query = query.eq('filing_year', filters.filingYear);
-  if (filters.barangayId) query = query.eq('barangay_id', filters.barangayId);
-  const { count, error } = await configure(query);
-  if (error) throw new Error(error.message);
-  return count ?? 0;
+const summaryQuery = (filters: ChildLaborerFilters) => applyFilters(
+  supabaseAdmin.from(TABLE).select(`
+    filing_year,
+    barangay_id,
+    birth_date,
+    gender,
+    attending_school,
+    highest_grade_completed,
+    nature_of_work,
+    parent_guardian_occupation,
+    record_status,
+    barangay:barangays!barangay_id!inner(name)
+  `),
+  filters,
+).order('id', { ascending: true });
+
+const listForSummary = async (filters: ChildLaborerFilters) => {
+  const records: any[] = [];
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await summaryQuery(filters).range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    const page = data ?? [];
+    records.push(...page);
+    if (page.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return records;
 };
 
 export const childLaborerRepository = {
@@ -171,29 +193,8 @@ export const childLaborerRepository = {
     return toChildLaborerPresentation(data);
   },
 
-  async summary(filters: Pick<ChildLaborerFilters, 'filingYear' | 'barangayId'>) {
-    const activeStatuses: ChildLaborerStatus[] = ['IDENTIFIED', 'VALIDATED', 'REFERRED', 'MONITORED'];
-    const statuses: ChildLaborerStatus[] = [
-      'IDENTIFIED', 'VALIDATED', 'REFERRED', 'MONITORED', 'CLOSED', 'ARCHIVED',
-    ];
-
-    const [totalRecords, attendingSchool, notAttendingSchool, activeCases, closedCases, ...statusCounts] = await Promise.all([
-      countRows(filters, (query) => query.neq('record_status', 'ARCHIVED')),
-      countRows(filters, (query) => query.neq('record_status', 'ARCHIVED').eq('attending_school', true)),
-      countRows(filters, (query) => query.neq('record_status', 'ARCHIVED').eq('attending_school', false)),
-      countRows(filters, (query) => query.in('record_status', activeStatuses)),
-      countRows(filters, (query) => query.eq('record_status', 'CLOSED')),
-      ...statuses.map((status) => countRows(filters, (query) => query.eq('record_status', status))),
-    ]);
-
-    return {
-      total_records: totalRecords,
-      attending_school: attendingSchool,
-      not_attending_school: notAttendingSchool,
-      active_cases: activeCases,
-      closed_cases: closedCases,
-      status_counts: Object.fromEntries(statuses.map((status, index) => [status, statusCounts[index]])),
-    };
+  async summary(filters: Pick<ChildLaborerFilters, 'filingYear' | 'barangayId' | 'status' | 'search'>) {
+    return buildChildLaborerSummary(await listForSummary(filters));
   },
 };
 

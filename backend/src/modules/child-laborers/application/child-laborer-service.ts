@@ -159,12 +159,19 @@ export const childLaborerService = {
   },
 
   async summary(
-    input: { filingYear?: number; barangayId?: string },
+    input: {
+      filingYear?: number;
+      barangayId?: string;
+      status?: ChildLaborerFilters['status'];
+      search?: string;
+    },
     context: AuthContext,
   ) {
     return await childLaborerRepository.summary({
       filingYear: input.filingYear,
       barangayId: scopedBarangayId(input.barangayId, context),
+      status: input.status,
+      search: input.search,
     });
   },
 

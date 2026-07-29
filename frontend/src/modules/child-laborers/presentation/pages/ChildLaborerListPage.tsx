@@ -75,7 +75,7 @@ const ChildLaborerListPage = () => {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
   const [sort, setSort] = useState<{ key: ChildLaborerSortField; direction: 'asc' | 'desc' }>({
-    key: 'child_name',
+    key: 'barangay_name',
     direction: 'asc',
   });
 

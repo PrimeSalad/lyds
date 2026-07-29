@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replaced the authentication gate's endless loading state with cold-start guidance, a bounded API wait, session-preserving failure feedback, and an explicit retry action; report analytics also tolerate frontend/backend deployment overlap.
+- Rebuilt Child Laborer Reports as a filter-synchronized analytics dashboard with decision KPIs, school and gender charts, status, age, barangay, and work distributions, reporting-completeness indicators, accessible text values, responsive loading/error states, and the detailed registry beneath the summaries.
+- Defaulted Child Laborer Records to barangay A–Z, then surname and first name A–Z within each barangay.
 - Increased account passwords to 12–72 characters with required upper- and lowercase letters, a number, and an approved special character; password changes now require the current password.
 - Permanent account deletion now removes the account's never-approved youth records, import data, and related audit entries before deleting its login and profile; approved youth records continue to block deletion.
 - Published the production frontend on Vercel and API on Render, with the Vite output directory, SPA rewrites, production API endpoint, health checks, and allowed frontend origin configured for repeatable deployments.

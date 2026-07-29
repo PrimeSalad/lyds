@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createChildLaborerSchema, listChildLaborersQuerySchema } from './schema';
+import {
+  childLaborerSummaryQuerySchema,
+  createChildLaborerSchema,
+  listChildLaborersQuerySchema,
+} from './schema';
 
 const validInput = {
   filing_year: 2026,
@@ -37,6 +41,18 @@ describe('child laborer HTTP schemas', () => {
       filingYear: 2026,
       page: 2,
       pageSize: 25,
+    });
+  });
+
+  it('accepts report filters for status and search', () => {
+    expect(childLaborerSummaryQuerySchema.parse({
+      filingYear: '2026',
+      status: 'VALIDATED',
+      search: '  fishing  ',
+    })).toEqual({
+      filingYear: 2026,
+      status: 'VALIDATED',
+      search: 'fishing',
     });
   });
 });

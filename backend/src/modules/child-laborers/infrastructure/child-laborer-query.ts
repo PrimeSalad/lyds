@@ -14,6 +14,7 @@ export const childLaborerOrderClauses = (sort?: ChildLaborerSort): OrderClause[]
   if (!sort) {
     return [
       { column: 'filing_year', ascending: false },
+      { column: 'barangay(name)', ascending: true },
       { column: 'last_name', ascending: true },
       { column: 'first_name', ascending: true },
       { column: 'id', ascending: true },

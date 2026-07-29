@@ -268,7 +268,38 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
           not_attending_school: 0,
           active_cases: 1,
           closed_cases: 0,
-          status_counts: { MONITORED: 1 },
+          status_counts: {
+            IDENTIFIED: 0,
+            VALIDATED: 0,
+            REFERRED: 0,
+            MONITORED: 1,
+            CLOSED: 0,
+            ARCHIVED: 0,
+          },
+          gender_distribution: [
+            { key: 'MALE', label: 'Male', count: 0, percentage: 0 },
+            { key: 'FEMALE', label: 'Female', count: 1, percentage: 100 },
+            { key: 'NOT_SPECIFIED', label: 'Not specified', count: 0, percentage: 0 },
+          ],
+          age_distribution: [
+            { key: 'UNDER_10', label: 'Under 10', count: 0, percentage: 0 },
+            { key: 'AGE_10_14', label: '10–14', count: 1, percentage: 100 },
+            { key: 'AGE_15_17', label: '15–17', count: 0, percentage: 0 },
+            { key: 'AGE_18_PLUS', label: '18 and above', count: 0, percentage: 0 },
+          ],
+          barangay_distribution: [
+            { key: barangay.id, label: barangay.name, count: 1, percentage: 100 },
+          ],
+          work_distribution: [
+            { key: 'seasonal farm work', label: 'Seasonal farm work', count: 1, percentage: 100 },
+          ],
+          data_quality: {
+            completeness_percentage: 100,
+            complete_records: 1,
+            records_with_grade: 1,
+            records_with_parent_occupation: 1,
+            records_with_specified_work: 1,
+          },
         },
       });
       return;

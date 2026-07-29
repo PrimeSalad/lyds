@@ -9,6 +9,27 @@ import type {
 } from '../../../generated/api/api-types';
 import { apiClient } from '../../../infrastructure/api-client';
 
+type ChildLaborerSummaryPayload = Partial<ChildLaborerSummary> & Pick<
+  ChildLaborerSummary,
+  'total_records' | 'attending_school' | 'not_attending_school' | 'active_cases' | 'closed_cases'
+>;
+
+const normalizeSummary = (summary: ChildLaborerSummaryPayload): ChildLaborerSummary => ({
+  ...summary,
+  status_counts: summary.status_counts ?? {},
+  gender_distribution: summary.gender_distribution ?? [],
+  age_distribution: summary.age_distribution ?? [],
+  barangay_distribution: summary.barangay_distribution ?? [],
+  work_distribution: summary.work_distribution ?? [],
+  data_quality: summary.data_quality ?? {
+    completeness_percentage: 0,
+    complete_records: 0,
+    records_with_grade: 0,
+    records_with_parent_occupation: 0,
+    records_with_specified_work: 0,
+  },
+});
+
 export type ChildLaborerSortField =
   | 'child_name'
   | 'barangay_name'
@@ -68,11 +89,19 @@ export const childLaborerApi = {
     method: 'POST',
   }),
 
-  summary: (params: { filingYear?: number; barangayId?: string }) => {
+  summary: async (params: {
+    filingYear?: number;
+    barangayId?: string;
+    status?: ChildLaborerStatus;
+    search?: string;
+  }) => {
     const query = new URLSearchParams();
     if (params.filingYear) query.set('filingYear', String(params.filingYear));
     if (params.barangayId) query.set('barangayId', params.barangayId);
-    return apiClient.request<{ data: ChildLaborerSummary }>(`/child-laborers/summary?${query}`);
+    if (params.status) query.set('status', params.status);
+    if (params.search) query.set('search', params.search);
+    const response = await apiClient.request<{ data: ChildLaborerSummaryPayload }>(`/child-laborers/summary?${query}`);
+    return { data: normalizeSummary(response.data) };
   },
 
   export: (params: {

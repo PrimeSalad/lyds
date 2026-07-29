@@ -351,9 +351,18 @@ paths:
           schema:
             type: string
             format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ChildLaborerStatus'
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
       responses:
         '200':
-          description: Child laborer totals by status and school attendance
+          description: Filtered child laborer totals, distributions, and data-quality indicators
           content:
             application/json:
               schema:
@@ -1268,9 +1277,61 @@ components:
             $ref: '#/components/schemas/ChildLaborerRecord'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
+    ChildLaborerBreakdownItem:
+      type: object
+      required: [key, label, count, percentage]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+    ChildLaborerDataQuality:
+      type: object
+      required:
+        - completeness_percentage
+        - complete_records
+        - records_with_grade
+        - records_with_parent_occupation
+        - records_with_specified_work
+      properties:
+        completeness_percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Completion across grade, parent or guardian occupation, and specified nature-of-work fields.
+        complete_records:
+          type: integer
+          minimum: 0
+        records_with_grade:
+          type: integer
+          minimum: 0
+        records_with_parent_occupation:
+          type: integer
+          minimum: 0
+        records_with_specified_work:
+          type: integer
+          minimum: 0
     ChildLaborerSummary:
       type: object
-      required: [total_records, attending_school, not_attending_school, active_cases, closed_cases, status_counts]
+      required:
+        - total_records
+        - attending_school
+        - not_attending_school
+        - active_cases
+        - closed_cases
+        - status_counts
+        - gender_distribution
+        - age_distribution
+        - barangay_distribution
+        - work_distribution
+        - data_quality
       properties:
         total_records:
           type: integer
@@ -1292,6 +1353,24 @@ components:
           additionalProperties:
             type: integer
             minimum: 0
+        gender_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildLaborerBreakdownItem'
+        age_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildLaborerBreakdownItem'
+        barangay_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildLaborerBreakdownItem'
+        work_distribution:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChildLaborerBreakdownItem'
+        data_quality:
+          $ref: '#/components/schemas/ChildLaborerDataQuality'
     ChildLaborerSummaryResponse:
       type: object
       required: [data]

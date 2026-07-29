@@ -36,7 +36,7 @@ describe('buildChildLaborerSummary', () => {
         record_status: 'CLOSED',
         highest_grade_completed: null,
         parent_guardian_occupation: null,
-        nature_of_work: 'Not specified in source workbook',
+        nature_of_work: 'Not Reported',
       }),
     ]);
 

@@ -52,4 +52,14 @@ describe('buildChildLaborerSummary', () => {
     expect(summary.barangay_distribution).toHaveLength(2);
     expect(summary.work_distribution.map((item) => item.label)).toEqual(['Artisanal Fishing', 'Copra Farming']);
   });
+
+  it('keeps the canonical Not Reported label out of completed work information', () => {
+    const summary = buildChildLaborerSummary([record({ nature_of_work: 'Not Reported' })]);
+
+    expect(summary.data_quality).toMatchObject({
+      completeness_percentage: 66.7,
+      complete_records: 0,
+      records_with_specified_work: 0,
+    });
+  });
 });

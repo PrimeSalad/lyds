@@ -20,6 +20,10 @@ const genderLabels: Record<ChildLaborerGender, string> = {
   FEMALE: 'Female',
   NOT_SPECIFIED: 'Not specified',
 };
+const unreportedWorkLabels = new Set([
+  'not reported',
+  'not specified in source workbook',
+]);
 const ageGroups = [
   { key: 'UNDER_10', label: 'Under 10', includes: (age: number) => age < 10 },
   { key: 'AGE_10_14', label: '10–14', includes: (age: number) => age >= 10 && age <= 14 },
@@ -97,7 +101,7 @@ export const buildChildLaborerSummary = (records: ChildLaborerRecord[]): ChildLa
     const hasGrade = Boolean(record.highest_grade_completed?.trim());
     const hasParentOccupation = Boolean(record.parent_guardian_occupation?.trim());
     const work = normalizedLabel(record.nature_of_work);
-    const hasSpecifiedWork = Boolean(work) && work !== 'not specified in source workbook';
+    const hasSpecifiedWork = Boolean(work) && !unreportedWorkLabels.has(work);
     if (hasGrade) recordsWithGrade += 1;
     if (hasParentOccupation) recordsWithParentOccupation += 1;
     if (hasSpecifiedWork) recordsWithSpecifiedWork += 1;

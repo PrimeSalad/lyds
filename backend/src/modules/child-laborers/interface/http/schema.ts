@@ -4,6 +4,7 @@ import { childLaborerGenders, childLaborerStatuses } from '../../domain/child-la
 const optionalText = (max: number) => z.string().trim().max(max).optional().default('');
 
 const childLaborerFields = z.object({
+  category_id: z.string().uuid(),
   filing_year: z.number().int().min(2000).max(2100),
   barangay_id: z.string().uuid().optional(),
   first_name: z.string().trim().min(1).max(100),
@@ -20,6 +21,7 @@ const childLaborerFields = z.object({
   parent_guardian_occupation: optionalText(300),
   record_status: z.enum(childLaborerStatuses).default('IDENTIFIED'),
   remarks: optionalText(1000),
+  custom_values: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 const validateAnnualRecord = (
@@ -58,6 +60,7 @@ export const updateChildLaborerSchema = childLaborerFields.extend({
 }).superRefine(validateAnnualRecord);
 
 export const listChildLaborersQuerySchema = z.object({
+  categoryId: z.string().uuid().optional(),
   filingYear: z.coerce.number().int().min(2000).max(2100).optional(),
   barangayId: z.string().uuid().optional(),
   status: z.enum(childLaborerStatuses).optional(),
@@ -76,6 +79,7 @@ export const listChildLaborersQuerySchema = z.object({
 });
 
 export const childLaborerSummaryQuerySchema = z.object({
+  categoryId: z.string().uuid().optional(),
   filingYear: z.coerce.number().int().min(2000).max(2100).optional(),
   barangayId: z.string().uuid().optional(),
   status: z.enum(childLaborerStatuses).optional(),
@@ -83,6 +87,7 @@ export const childLaborerSummaryQuerySchema = z.object({
 });
 
 export const childLaborerExportQuerySchema = z.object({
+  categoryId: z.string().uuid().optional(),
   format: z.enum(['csv', 'xlsx']).optional().default('xlsx'),
   filingYear: z.coerce.number().int().min(2000).max(2100),
   barangayId: z.string().uuid().optional(),

@@ -254,7 +254,7 @@ const YouthRecordFormPage = () => {
           educationalAttainmentRes,
           workStatusRes,
         ] = await Promise.all([
-          categoryApi.list(),
+          categoryApi.list('YOUTH_PROFILE'),
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           referenceDataApi.listOptions('SEX_ASSIGNED_AT_BIRTH'),
           referenceDataApi.listOptions('CIVIL_STATUS'),

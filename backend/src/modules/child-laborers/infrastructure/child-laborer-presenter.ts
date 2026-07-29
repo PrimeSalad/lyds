@@ -17,6 +17,7 @@ export const childLaborerName = (record: {
 export const toChildLaborerPresentation = (record: any, rowNumber?: number) => ({
   ...record,
   barangay_name: relationName(record.barangay),
+  category_name: relationName(record.category),
   child_name: childLaborerName(record),
   age: computeChildAgeForFilingYear(record.birth_date, record.filing_year),
   ...(rowNumber ? { row_number: rowNumber } : {}),

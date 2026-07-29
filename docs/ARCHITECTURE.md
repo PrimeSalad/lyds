@@ -68,7 +68,7 @@ docs/openapi.yaml             API contract source of truth
 
 ## Child laborer registry and reporting flow
 
-- Child laborer records are independent annual rows keyed by filing year and barangay; they do not overload KK Youth categories.
+- Categories are registry-scoped annual datasets: `YOUTH_PROFILE` categories belong to KK Youth profiles, while `CHILD_LABORER` categories belong to protected child laborer records. Child laborer rows retain their own workflow and reporting model while using `category_id` for annual scope and custom fields.
 - The API calculates age from the birthday at December 31 of the filing year, checks same-year duplicate identity, and uses optimistic versions to avoid lost updates.
 - Records progress through identified, validated, referred, monitored, and closed states. Archive is a retained state rather than a destructive delete.
 - Administrators can work across barangays; SK officials are limited to the active assigned barangay in both application services and database RLS.

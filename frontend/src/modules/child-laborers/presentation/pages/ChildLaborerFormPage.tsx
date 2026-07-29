@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Card, Grid, GridItem, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, type Control, type FieldValues } from 'react-hook-form';
 import { LuArrowLeft, LuSave, LuShieldCheck } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router';
@@ -11,6 +11,8 @@ import { SectionHeader } from '../../../../shared/components/SectionHeader';
 import { SelectField, TextareaField, TextField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import { CategoryCustomFields } from '../../../categories/presentation/components/CategoryCustomFields';
+import { categoryApi, type Category, type CategoryField } from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import {
   childLaborerApi,
@@ -21,9 +23,6 @@ import {
 } from '../../infrastructure/child-laborer-api';
 
 const currentYear = new Date().getFullYear();
-const filingYearOptions = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index)
-  .map((year) => ({ value: String(year), label: String(year) }));
-
 const workflowOptions: Array<{ value: ChildLaborerStatus; label: string }> = [
   { value: 'IDENTIFIED', label: 'Identified — newly recorded' },
   { value: 'VALIDATED', label: 'Validated — details confirmed' },
@@ -33,6 +32,7 @@ const workflowOptions: Array<{ value: ChildLaborerStatus; label: string }> = [
 ];
 
 type ChildLaborerFormValues = {
+  category_id: string;
   filing_year: string;
   barangay_id: string;
   first_name: string;
@@ -49,9 +49,11 @@ type ChildLaborerFormValues = {
   parent_guardian_occupation: string;
   record_status: Exclude<ChildLaborerStatus, 'ARCHIVED'>;
   remarks: string;
+  custom_values: Record<string, unknown>;
 };
 
 const defaultValues: ChildLaborerFormValues = {
+  category_id: '',
   filing_year: String(currentYear),
   barangay_id: '',
   first_name: '',
@@ -68,6 +70,7 @@ const defaultValues: ChildLaborerFormValues = {
   parent_guardian_occupation: '',
   record_status: 'IDENTIFIED',
   remarks: '',
+  custom_values: {},
 };
 
 const ChildLaborerFormPage = () => {
@@ -76,6 +79,8 @@ const ChildLaborerFormPage = () => {
   const isEditing = Boolean(recordId);
   const profile = useSelector((state: RootState) => state.auth.profile);
   const isAdmin = profile?.role === 'ADMIN';
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [recordVersion, setRecordVersion] = useState(1);
   const [fetching, setFetching] = useState(isEditing);
@@ -89,10 +94,12 @@ const ChildLaborerFormPage = () => {
     watch,
     reset,
     setError,
+    setValue,
     formState: { isDirty },
   } = useForm<ChildLaborerFormValues>({ defaultValues });
 
   const filingYear = Number(watch('filing_year'));
+  const selectedCategoryId = watch('category_id');
   const birthDate = watch('birth_date');
   const recordStatus = watch('record_status');
   const age = useMemo(() => {
@@ -103,17 +110,45 @@ const ChildLaborerFormPage = () => {
   }, [birthDate, filingYear]);
 
   useEffect(() => {
+    if (!selectedCategoryId) {
+      setCategoryFields([]);
+      return;
+    }
+
+    void categoryApi.getById(selectedCategoryId)
+      .then((response) => {
+        setCategoryFields(response.data.fields);
+        setValue('filing_year', String(response.data.filing_year), { shouldDirty: false });
+      })
+      .catch(() => {
+        setCategoryFields([]);
+        showToast.error('Could not load category fields');
+      });
+  }, [selectedCategoryId, setValue]);
+
+  useEffect(() => {
     const load = async () => {
       try {
-        const [barangayData, recordResult] = await Promise.all([
+        const [barangayData, categoryResult, recordResult] = await Promise.all([
           isAdmin ? barangayApi.list() : Promise.resolve([]),
+          categoryApi.list('CHILD_LABORER'),
           recordId ? childLaborerApi.get(recordId) : Promise.resolve(null),
         ]);
         setBarangays(barangayData);
+        const categoryData: Category[] = [...categoryResult.data];
+        if (recordResult && !categoryData.some((category) => category.id === recordResult.data.category_id)) {
+          const recordCategory = await categoryApi.getById(recordResult.data.category_id);
+          categoryData.push(recordCategory.data);
+        }
+        const availableCategories = categoryData
+          .filter((category) => category.status === 'PUBLISHED')
+          .sort((left, right) => right.filing_year - left.filing_year || left.name.localeCompare(right.name));
+        setCategories(categoryData);
         if (recordResult) {
           const record = recordResult.data;
           setRecordVersion(record.version);
           reset({
+            category_id: record.category_id,
             filing_year: String(record.filing_year),
             barangay_id: record.barangay_id,
             first_name: record.first_name,
@@ -130,6 +165,13 @@ const ChildLaborerFormPage = () => {
             parent_guardian_occupation: record.parent_guardian_occupation ?? '',
             record_status: record.record_status === 'ARCHIVED' ? 'IDENTIFIED' : record.record_status,
             remarks: record.remarks ?? '',
+            custom_values: record.custom_values ?? {},
+          });
+        } else if (availableCategories[0]) {
+          reset({
+            ...defaultValues,
+            category_id: availableCategories[0].id,
+            filing_year: String(availableCategories[0].filing_year),
           });
         }
       } catch (error) {
@@ -160,6 +202,7 @@ const ChildLaborerFormPage = () => {
     setSaving(true);
     setServerError(null);
     const input: CreateChildLaborerInput = {
+      category_id: values.category_id,
       filing_year: Number(values.filing_year),
       ...(isAdmin ? { barangay_id: values.barangay_id } : {}),
       first_name: values.first_name.trim(),
@@ -176,6 +219,9 @@ const ChildLaborerFormPage = () => {
       parent_guardian_occupation: values.parent_guardian_occupation.trim(),
       record_status: values.record_status,
       remarks: values.remarks.trim(),
+      custom_values: Object.fromEntries(Object.entries(values.custom_values).filter(([, value]) => (
+        value !== '' && value !== null && value !== undefined
+      ))),
     };
 
     try {
@@ -225,14 +271,30 @@ const ChildLaborerFormPage = () => {
         <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
           <Card.Body p={{ base: 4, md: 6 }}>
           <SectionHeader mt={0}>Annual record scope</SectionHeader>
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={5}>
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={5}>
             <Controller
-              name="filing_year"
+              name="category_id"
               control={control}
-              rules={{ required: 'Filing year is required.' }}
+              rules={{ required: 'Category is required.' }}
               render={({ field, fieldState }) => (
-                <SelectField {...field} label="Filing Year" required options={filingYearOptions} error={fieldState.error?.message} />
+                <SelectField
+                  {...field}
+                  label="Category"
+                  required
+                  placeholder="Select category"
+                  options={categories
+                    .filter((category) => category.status === 'PUBLISHED' || category.id === selectedCategoryId)
+                    .map((category) => ({ value: category.id, label: category.name }))}
+                  error={fieldState.error?.message}
+                />
               )}
+            />
+            <TextField
+              label="Filing Year"
+              value={filingYear || ''}
+              onChange={() => undefined}
+              readOnly
+              helpText="Defined by the selected category."
             />
             {isAdmin ? (
               <Controller
@@ -323,6 +385,11 @@ const ChildLaborerFormPage = () => {
               )} />
             </GridItem>
           </Grid>
+
+          <CategoryCustomFields
+            fields={categoryFields}
+            control={control as unknown as Control<FieldValues>}
+          />
 
           <SectionHeader>Status and remarks</SectionHeader>
           <Grid templateColumns={{ base: '1fr', md: 'minmax(260px, 1fr) 2fr' }} gap={5}>

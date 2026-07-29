@@ -44,7 +44,7 @@ const ReviewQueuePage = () => {
 
   useEffect(() => {
     if (!isAdmin) return;
-    categoryApi.list()
+    categoryApi.list('YOUTH_PROFILE')
       .then((response) => {
         const years = [...new Set(response.data
           .filter((category) => category.record_type === 'YOUTH_PROFILE')

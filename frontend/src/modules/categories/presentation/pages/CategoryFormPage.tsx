@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { Box, Button, HStack, VStack } from '@chakra-ui/react';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { Box, Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { TextField, SelectField, TextareaField, CheckboxField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
-import { categoryApi } from '../../infrastructure/category-api';
+import { categoryApi, type CategoryRecordType } from '../../infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 
 const CategoryFormPage = () => {
   const navigate = useNavigate();
   const { categoryId } = useParams();
+  const [searchParams] = useSearchParams();
   const isEditing = !!categoryId;
+  const initialRecordType: CategoryRecordType = searchParams.get('type') === 'child-laborer'
+    ? 'CHILD_LABORER'
+    : 'YOUTH_PROFILE';
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [recordType, setRecordType] = useState('YOUTH_PROFILE');
+  const [recordType, setRecordType] = useState<CategoryRecordType>(initialRecordType);
   const [filingYear, setFilingYear] = useState(new Date().getFullYear());
   const [permissionMode, setPermissionMode] = useState('SK_FILLABLE');
   const [allowSkExport, setAllowSkExport] = useState(true);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
+  const categoryListPath = recordType === 'CHILD_LABORER'
+    ? '/categories?type=child-laborer'
+    : '/categories';
 
   useEffect(() => {
     if (categoryId) {
@@ -53,16 +60,21 @@ const CategoryFormPage = () => {
         code: code.trim().toUpperCase().replace(/\s+/g, '_'),
         name: name.trim(),
         description: description.trim() || null,
-        record_type: recordType.trim() || 'YOUTH_PROFILE',
+          record_type: recordType,
         filing_year: filingYear,
         permission_mode: permissionMode,
         allow_sk_export: allowSkExport,
       };
 
       if (isEditing) {
-        await categoryApi.update(categoryId!, payload);
+        await categoryApi.update(categoryId!, {
+          name: payload.name,
+          description: payload.description,
+          permission_mode: payload.permission_mode,
+          allow_sk_export: payload.allow_sk_export,
+        });
         showToast.success('Category updated');
-        navigate('/categories');
+        navigate(categoryListPath);
       } else {
         const res = await categoryApi.create(payload);
         showToast.success('Category created. Add fields for this category.');
@@ -75,13 +87,22 @@ const CategoryFormPage = () => {
     }
   };
 
-  if (fetching) return null;
+  if (fetching) {
+    return (
+      <DashboardLayout>
+        <VStack py={16} gap={3} role="status">
+          <Spinner color="primary.600" />
+          <Text color="text.muted">Loading category…</Text>
+        </VStack>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <PageHeader
-        title={isEditing ? 'Edit Category' : 'Add Category'}
-        description="Define category metadata and SK access permissions."
+        title={isEditing ? `Edit ${recordType === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth Registry'} Category` : `Add ${recordType === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth Registry'} Category`}
+        description="Define the annual dataset, access permissions, and custom record fields."
       />
 
       <Box as="form" onSubmit={handleSubmit} maxW="640px" bg="white" border="1px solid" borderColor="border" borderRadius="lg" p={{ base: 4, md: 6 }}>
@@ -110,13 +131,17 @@ const CategoryFormPage = () => {
             onChange={setDescription}
             placeholder="Description..."
           />
-          <TextField
-            label="Record Type"
+          <SelectField
+            label="Registry"
             name="recordType"
             value={recordType}
-            onChange={setRecordType}
+            onChange={(value) => setRecordType(value as CategoryRecordType)}
             required
-            placeholder="YOUTH_PROFILE"
+            disabled={isEditing}
+            options={[
+              { value: 'YOUTH_PROFILE', label: 'Youth Registry' },
+              { value: 'CHILD_LABORER', label: 'Child Laborer Records' },
+            ]}
           />
           <TextField
             label="Filing Year"
@@ -125,6 +150,7 @@ const CategoryFormPage = () => {
             value={String(filingYear)}
             onChange={(val) => setFilingYear(Number(val))}
             required
+            disabled={isEditing}
             placeholder="e.g. 2026"
           />
           <SelectField
@@ -150,7 +176,7 @@ const CategoryFormPage = () => {
             <Button type="submit" colorPalette="green" loading={loading}>
               {isEditing ? 'Update' : 'Create'}
             </Button>
-            <Button variant="outline" onClick={() => navigate('/categories')}>
+            <Button variant="outline" onClick={() => navigate(categoryListPath)}>
               Cancel
             </Button>
           </HStack>

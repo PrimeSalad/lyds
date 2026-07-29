@@ -1,4 +1,4 @@
-export const CHILD_LABORER_SELECT = '*, barangay:barangays!barangay_id!inner(name)';
+export const CHILD_LABORER_SELECT = '*, barangay:barangays!barangay_id!inner(name), category:categories!category_id!inner(name, filing_year)';
 
 export type ChildLaborerSort = {
   field: 'child_name' | 'barangay_name' | 'birth_date' | 'gender' | 'record_status' | 'created_at';

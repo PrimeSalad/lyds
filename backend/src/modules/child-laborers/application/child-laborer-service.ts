@@ -1,6 +1,7 @@
 import { createApiError } from '../../../config/api-error';
 import type { AuthenticatedRequest } from '../../../middleware/auth';
 import { auditService } from '../../audit-logs/infrastructure/audit-service';
+import { categoryRepository } from '../../categories/infrastructure/repositories/category-repository';
 import type { ChildLaborerWriteInput } from '../domain/child-laborer';
 import {
   normalizeChildLaborerRemarks,
@@ -37,8 +38,50 @@ const ensureRecordAccess = (record: { barangay_id: string }, context: AuthContex
 
 const blankToNull = (value: string | undefined) => value?.trim() || null;
 
-const writeInput = (input: CreateInput | UpdateInput, barangayId: string): ChildLaborerWriteInput => ({
-  filing_year: input.filing_year,
+const inputValueMissing = (value: unknown) => (
+  value === undefined
+  || value === null
+  || value === ''
+  || (Array.isArray(value) && value.length === 0)
+);
+
+const resolveCategory = async (
+  input: Pick<CreateInput, 'category_id' | 'filing_year' | 'custom_values'>,
+  context: AuthContext,
+  existingCategoryId?: string,
+) => {
+  const category = await categoryRepository.getCategoryById(input.category_id);
+  if (!category || category.record_type !== 'CHILD_LABORER') {
+    throw createApiError(422, 'CHILD_LABORER_CATEGORY_REQUIRED', 'Select a child laborer category.');
+  }
+  if (category.filing_year !== input.filing_year) {
+    throw createApiError(422, 'CATEGORY_YEAR_MISMATCH', `This category is for filing year ${category.filing_year}.`);
+  }
+  if (category.id !== existingCategoryId && category.status !== 'PUBLISHED') {
+    throw createApiError(422, 'CATEGORY_NOT_PUBLISHED', 'Select a published child laborer category.');
+  }
+  if (context.role === 'SK_OFFICIAL' && !['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode)) {
+    throw createApiError(403, 'CATEGORY_PERMISSION_DENIED', 'This category does not accept barangay records.');
+  }
+
+  const missingField = category.fields.find((field) => (
+    field.is_active
+    && field.is_required
+    && inputValueMissing(input.custom_values[field.field_key])
+  ));
+  if (missingField) {
+    throw createApiError(422, 'CATEGORY_FIELD_REQUIRED', `${missingField.label} is required.`);
+  }
+  return category;
+};
+
+const writeInput = (
+  input: CreateInput | UpdateInput,
+  barangayId: string,
+  filingYear: number,
+): ChildLaborerWriteInput => ({
+  category_id: input.category_id,
+  filing_year: filingYear,
   barangay_id: barangayId,
   first_name: input.first_name.trim(),
   middle_name: blankToNull(input.middle_name),
@@ -54,6 +97,7 @@ const writeInput = (input: CreateInput | UpdateInput, barangayId: string): Child
   parent_guardian_occupation: normalizeParentGuardianOccupation(input.parent_guardian_occupation),
   record_status: input.record_status,
   remarks: normalizeChildLaborerRemarks(input.remarks),
+  custom_values: input.custom_values,
 });
 
 const checkDuplicate = async (input: ChildLaborerWriteInput, excludeId?: string) => {
@@ -75,6 +119,7 @@ const checkDuplicate = async (input: ChildLaborerWriteInput, excludeId?: string)
 };
 
 const filtersFromList = (input: ListInput, context: AuthContext): ChildLaborerFilters => ({
+  categoryId: input.categoryId,
   filingYear: input.filingYear,
   barangayId: scopedBarangayId(input.barangayId, context),
   status: input.status,
@@ -99,11 +144,12 @@ export const childLaborerService = {
   },
 
   async create(input: CreateInput, context: AuthContext) {
+    const category = await resolveCategory(input, context);
     const barangayId = scopedBarangayId(input.barangay_id, context);
     if (!barangayId) {
       throw createApiError(422, 'BARANGAY_REQUIRED', 'Select a barangay for this record.');
     }
-    const recordInput = writeInput(input, barangayId);
+    const recordInput = writeInput(input, barangayId, category.filing_year);
     await checkDuplicate(recordInput);
     return await childLaborerRepository.create({
       ...recordInput,
@@ -120,9 +166,11 @@ export const childLaborerService = {
       throw createApiError(409, 'ARCHIVED_RECORD', 'Restore this record before editing it.');
     }
 
+    const category = await resolveCategory(input, context, existing.category_id);
+
     const barangayId = scopedBarangayId(input.barangay_id ?? existing.barangay_id, context);
     if (!barangayId) throw createApiError(422, 'BARANGAY_REQUIRED', 'Select a barangay for this record.');
-    const recordInput = writeInput(input, barangayId);
+    const recordInput = writeInput(input, barangayId, category.filing_year);
     await checkDuplicate(recordInput, id);
     const updated = await childLaborerRepository.update(
       id,
@@ -165,6 +213,7 @@ export const childLaborerService = {
 
   async summary(
     input: {
+      categoryId?: string;
       filingYear?: number;
       barangayId?: string;
       status?: ChildLaborerFilters['status'];
@@ -173,6 +222,7 @@ export const childLaborerService = {
     context: AuthContext,
   ) {
     return await childLaborerRepository.summary({
+      categoryId: input.categoryId,
       filingYear: input.filingYear,
       barangayId: scopedBarangayId(input.barangayId, context),
       status: input.status,
@@ -182,6 +232,7 @@ export const childLaborerService = {
 
   async export(
     input: {
+      categoryId?: string;
       format: 'csv' | 'xlsx';
       filingYear: number;
       barangayId?: string;
@@ -192,6 +243,7 @@ export const childLaborerService = {
   ) {
     const barangayId = scopedBarangayId(input.barangayId, context);
     const records = await childLaborerRepository.listForExport({
+      categoryId: input.categoryId,
       filingYear: input.filingYear,
       barangayId,
       status: input.status,
@@ -210,6 +262,7 @@ export const childLaborerService = {
       barangay_id: barangayId ?? undefined,
       metadata: {
         filing_year: input.filingYear,
+        category_id: input.categoryId,
         record_status: input.status,
         search: input.search,
         format: input.format,

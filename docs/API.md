@@ -25,7 +25,7 @@ All groups except process health require a valid bearer token with a verified `a
 | `/imports` | Template, validation, batches, commit, error files | Barangay-scoped |
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
 | `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
-| `/categories` | Filing categories and custom fields | Reads scoped; writes admin-only |
+| `/categories` | Registry-scoped annual categories and custom fields (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads scoped; writes admin-only |
 | `/reference-data` | Reference groups and options | Reads signed-in; writes admin-only |
 | `/barangays` | Barangay directory and status | Admin-only |
 | `/accounts` | Account creation, temporary password and 2FA reset, status, assignment, and guarded permanent deletion with unapproved-data cleanup | AAL2 admin-only |
@@ -54,7 +54,9 @@ A record can be marked `VALIDATED` only when remarks document the validation. Re
 
 Child laborer writes also normalize known imported variants into professional, canonical wording for nature of work and parent/guardian occupation. Equivalent field notes are standardized as complete sentences, while blank remarks remain blank and do not become validation evidence.
 
-`GET /child-laborers/summary` accepts the same filing year, barangay, status, and search scope used by the report registry. It summarizes the complete filtered dataset—not only the visible table page—with school attendance, workflow status, gender, filing-year age bands, barangay concentration, leading canonical nature-of-work categories, and reporting-quality indicators. The completeness percentage measures the presence of highest grade, parent or guardian occupation, and a specified nature of work across all matched records; `Not Reported` remains incomplete.
+`GET /child-laborers/summary` accepts the same category, filing year, barangay, status, and search scope used by the report registry. It summarizes the complete filtered dataset—not only the visible table page—with school attendance, workflow status, gender, filing-year age bands, barangay concentration, leading canonical nature-of-work categories, and reporting-quality indicators. The completeness percentage measures the presence of highest grade, parent or guardian occupation, and a specified nature of work across all matched records; `Not Reported` remains incomplete.
+
+Every child laborer write requires a published `CHILD_LABORER` category. The category owns the filing year and can define additional custom fields; the API rejects cross-registry categories, year mismatches, unavailable SK permissions, and missing required custom values.
 
 The export endpoint requires a filing year and produces either CSV or the print-ready official XLSX column layout. User-entered spreadsheet cells are neutralized when they begin with formula control characters. SK accounts are always restricted to their active barangay assignment even if a different `barangayId` is supplied.
 

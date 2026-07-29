@@ -240,6 +240,11 @@ paths:
         the selected filing year so annual consolidations remain reproducible.
       parameters:
         - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
           name: filingYear
           schema:
             type: integer
@@ -341,6 +346,11 @@ paths:
       summary: Summarize yearly child laborer records
       parameters:
         - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
           name: filingYear
           schema:
             type: integer
@@ -372,6 +382,11 @@ paths:
       tags: [app]
       summary: Export the yearly child laborer consolidation
       parameters:
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
         - in: query
           name: format
           schema:
@@ -638,6 +653,12 @@ paths:
       tags: [app]
       summary: List categories with live totals
       description: Returns visible categories with access-scoped non-deleted record counts and active field counts.
+      parameters:
+        - in: query
+          name: recordType
+          description: Limits categories to one registry.
+          schema:
+            $ref: '#/components/schemas/CategoryRecordType'
       responses:
         '200':
           description: Category list
@@ -662,7 +683,7 @@ paths:
     delete:
       tags: [app]
       summary: Delete an archived category
-      description: Soft-deletes an archived category so historical youth records can keep their category reference.
+      description: Soft-deletes an archived category while historical youth or child laborer records retain their category reference.
       responses:
         '204':
           description: Category deleted
@@ -1109,6 +1130,7 @@ components:
     CreateChildLaborerInput:
       type: object
       required:
+        - category_id
         - filing_year
         - first_name
         - last_name
@@ -1117,6 +1139,10 @@ components:
         - attending_school
         - nature_of_work
       properties:
+        category_id:
+          type: string
+          format: uuid
+          description: Published CHILD_LABORER category that defines the filing year and optional custom fields.
         filing_year:
           type: integer
           minimum: 2000
@@ -1171,6 +1197,10 @@ components:
           type: string
           maxLength: 1000
           description: Required when record_status is VALIDATED; validation percentages are based on current record statuses backed by remarks.
+        custom_values:
+          type: object
+          additionalProperties: true
+          default: {}
     UpdateChildLaborerInput:
       allOf:
         - $ref: '#/components/schemas/CreateChildLaborerInput'
@@ -1184,6 +1214,8 @@ components:
       type: object
       required:
         - id
+        - category_id
+        - category_name
         - filing_year
         - barangay_id
         - barangay_name
@@ -1203,6 +1235,7 @@ components:
         - parent_guardian_occupation
         - record_status
         - remarks
+        - custom_values
         - version
         - created_at
         - updated_at
@@ -1210,6 +1243,11 @@ components:
         id:
           type: string
           format: uuid
+        category_id:
+          type: string
+          format: uuid
+        category_name:
+          type: string
         row_number:
           type: integer
           minimum: 1
@@ -1254,6 +1292,9 @@ components:
           $ref: '#/components/schemas/ChildLaborerStatus'
         remarks:
           type: [string, "null"]
+        custom_values:
+          type: object
+          additionalProperties: true
         version:
           type: integer
         created_at:
@@ -1580,6 +1621,9 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/YouthRecordDetail'
+    CategoryRecordType:
+      type: string
+      enum: [YOUTH_PROFILE, CHILD_LABORER]
     CategorySummary:
       type: object
       required:
@@ -1604,7 +1648,7 @@ components:
         description:
           type: [string, "null"]
         record_type:
-          type: string
+          $ref: '#/components/schemas/CategoryRecordType'
         filing_year:
           type: integer
         status:

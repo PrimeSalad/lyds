@@ -460,6 +460,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    categoryId?: string;
                     filingYear?: number;
                     barangayId?: string;
                     status?: components["schemas"]["ChildLaborerStatus"];
@@ -574,6 +575,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    categoryId?: string;
                     filingYear?: number;
                     barangayId?: string;
                     status?: components["schemas"]["ChildLaborerStatus"];
@@ -615,6 +617,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
+                    categoryId?: string;
                     format?: "csv" | "xlsx";
                     filingYear: number;
                     barangayId?: string;
@@ -1088,7 +1091,10 @@ export interface paths {
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Limits categories to one registry. */
+                    recordType?: components["schemas"]["CategoryRecordType"];
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -1137,7 +1143,7 @@ export interface paths {
         post?: never;
         /**
          * Delete an archived category
-         * @description Soft-deletes an archived category so historical youth records can keep their category reference.
+         * @description Soft-deletes an archived category while historical youth or child laborer records retain their category reference.
          */
         delete: {
             parameters: {
@@ -1778,6 +1784,11 @@ export interface components {
         /** @enum {string} */
         ChildLaborerGender: "MALE" | "FEMALE" | "NOT_SPECIFIED";
         CreateChildLaborerInput: {
+            /**
+             * Format: uuid
+             * @description Published CHILD_LABORER category that defines the filing year and optional custom fields.
+             */
+            category_id: string;
             filing_year: number;
             /**
              * Format: uuid
@@ -1802,6 +1813,10 @@ export interface components {
             record_status: components["schemas"]["ChildLaborerStatus"];
             /** @description Required when record_status is VALIDATED; validation percentages are based on current record statuses backed by remarks. */
             remarks?: string;
+            /** @default {} */
+            custom_values: {
+                [key: string]: unknown;
+            };
         };
         UpdateChildLaborerInput: components["schemas"]["CreateChildLaborerInput"] & {
             version: number;
@@ -1809,6 +1824,9 @@ export interface components {
         ChildLaborerRecord: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            category_id: string;
+            category_name: string;
             row_number?: number;
             filing_year: number;
             /** Format: uuid */
@@ -1831,6 +1849,9 @@ export interface components {
             parent_guardian_occupation: string | null;
             record_status: components["schemas"]["ChildLaborerStatus"];
             remarks: string | null;
+            custom_values: {
+                [key: string]: unknown;
+            };
             version: number;
             /** Format: date-time */
             created_at: string;
@@ -1995,13 +2016,15 @@ export interface components {
         YouthRecordDetailResponse: {
             data: components["schemas"]["YouthRecordDetail"];
         };
+        /** @enum {string} */
+        CategoryRecordType: "YOUTH_PROFILE" | "CHILD_LABORER";
         CategorySummary: {
             /** Format: uuid */
             id: string;
             code: string;
             name: string;
             description?: string | null;
-            record_type: string;
+            record_type: components["schemas"]["CategoryRecordType"];
             filing_year: number;
             /** @enum {string} */
             status: "DRAFT" | "PUBLISHED" | "ARCHIVED";

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Badge, Box, Button, Card, Field, Flex, Grid, HStack, Icon, NativeSelect, SimpleGrid, Skeleton, Text, VStack } from '@chakra-ui/react';
+import { Badge, Box, Button, Card, Flex, Grid, GridItem, Heading, HStack, Icon, SimpleGrid, Skeleton, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router';
 import type { IconType } from 'react-icons';
 import {
   LuArrowRight,
-  LuCalendarDays,
+  LuChartNoAxesCombined,
   LuCircleCheckBig,
   LuClock3,
   LuFileCheck2,
@@ -20,7 +20,7 @@ import { TopBar } from '../components/TopBar';
 import { AnnouncementFeed } from '../../../announcements/presentation/components/AnnouncementFeed';
 import { SkipLink } from '../../../../ui/components/skip-link';
 import { PageHeader } from '../../../../shared/components/PageHeader';
-import { reportApi, type DashboardAnalytics } from '../../../reports/infrastructure/report-api';
+import { reportApi, type DashboardAnalytics, type DemographicBreakdown } from '../../../reports/infrastructure/report-api';
 import { categoryApi } from '../../../categories/infrastructure/category-api';
 import { childLaborerApi, type ChildLaborerSummary } from '../../../child-laborers/infrastructure/child-laborer-api';
 import { ChildLaborerAnalytics } from '../../../child-laborers/presentation/components/ChildLaborerAnalytics';
@@ -79,7 +79,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
 const formatNumber = (value: number) => value.toLocaleString('en-PH');
 const currentYear = new Date().getFullYear();
-const childLaborerYears = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index);
+const fallbackFilingYears = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index);
 const formatDateTime = (value: string) => new Intl.DateTimeFormat('en-PH', {
   month: 'short',
   day: 'numeric',
@@ -105,7 +105,7 @@ const statusPalettes: Record<string, string> = {
 
 type MetricCardProps = {
   label: string;
-  value: number;
+  value: number | string;
   helper: string;
   icon: IconType;
   loading: boolean;
@@ -127,7 +127,7 @@ const MetricCard = ({ label, value, helper, icon, loading, tone = 'default' }: M
             <Text fontSize="sm" color="text.secondary" fontWeight="600">{label}</Text>
             <Skeleton loading={loading} mt={2} width={loading ? '72px' : 'auto'} minW={loading ? '72px' : 0}>
               <Text fontSize={{ base: '1.5rem', md: '1.75rem' }} whiteSpace="nowrap" lineHeight="1.1" fontWeight="750" fontFamily="heading" fontVariantNumeric="tabular-nums">
-                {formatNumber(value)}
+                {typeof value === 'number' ? formatNumber(value) : value}
               </Text>
             </Skeleton>
           </Box>
@@ -143,10 +143,136 @@ const MetricCard = ({ label, value, helper, icon, loading, tone = 'default' }: M
 
 const SectionHeading = ({ title, description }: { title: string; description: string }) => (
   <Box>
-    <Text fontFamily="heading" fontWeight="650" color="text.primary">{title}</Text>
+    <Heading as="h2" size="sm" fontFamily="heading" fontWeight="650" color="text.primary">{title}</Heading>
     <Text mt={1} fontSize="sm" color="text.muted">{description}</Text>
   </Box>
 );
+
+const YouthSnapshot = ({ data, year, scopeLabel }: {
+  data: DashboardAnalytics;
+  year: number;
+  scopeLabel: string;
+}) => {
+  const total = data.summary.totalRecords;
+  const approvalRate = total === 0 ? 0 : (data.summary.approved / total) * 100;
+  const summaryText = total === 0
+    ? `No youth registry records are filed for ${year} in this scope.`
+    : `${formatNumber(total)} youth profile${total === 1 ? '' : 's'} across ${formatNumber(data.coverage.barangaysWithRecords)} barangay${data.coverage.barangaysWithRecords === 1 ? '' : 's'}. ${formatNumber(data.summary.approved)} approved (${approvalRate.toFixed(1)}%) and ${formatNumber(data.summary.submitted)} awaiting review.`;
+
+  return (
+    <Card.Root bg="primary.900" color="white" borderRadius="lg" overflow="hidden" boxShadow="panel">
+      <Card.Body p={{ base: 5, md: 7 }}>
+        <Grid templateColumns={{ base: '1fr', lg: 'minmax(0, 1.45fr) minmax(220px, 0.55fr)' }} gap={6} alignItems="center">
+          <Box>
+            <HStack gap={2} wrap="wrap" mb={4}>
+              <Badge colorPalette="green" variant="solid">{year} registry snapshot</Badge>
+              <Badge variant="outline" borderColor="whiteAlpha.500" color="white">{scopeLabel}</Badge>
+            </HStack>
+            <Heading as="h2" fontFamily="heading" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="700" lineHeight="1.25" color="white">
+              Youth registry intelligence for local planning
+            </Heading>
+            <Text mt={3} maxW="720px" color="whiteAlpha.800" fontSize={{ base: 'sm', md: 'md' }} lineHeight="1.7">
+              {summaryText}
+            </Text>
+          </Box>
+          <Flex justify={{ base: 'flex-start', lg: 'center' }}>
+            <Flex boxSize={{ base: '76px', md: '92px' }} align="center" justify="center" borderRadius="2xl" bg="whiteAlpha.150" borderWidth="1px" borderColor="whiteAlpha.300">
+              <LuChartNoAxesCombined size={42} aria-hidden="true" />
+            </Flex>
+          </Flex>
+        </Grid>
+      </Card.Body>
+    </Card.Root>
+  );
+};
+
+const DemographicPanel = ({ title, description, items }: {
+  title: string;
+  description: string;
+  items: DemographicBreakdown[];
+}) => {
+  const maximum = Math.max(1, ...items.map((item) => item.count));
+  return (
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+      <Card.Header p={{ base: 4, md: 5 }} pb={2}>
+        <SectionHeading title={title} description={description} />
+      </Card.Header>
+      <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }}>
+        {items.length === 0 ? (
+          <Text py={8} textAlign="center" color="text.muted" fontSize="sm">No categorized records for this filing year.</Text>
+        ) : (
+          <VStack align="stretch" gap={3}>
+            {items.slice(0, 8).map((item) => (
+              <Box key={item.label}>
+                <Flex justify="space-between" gap={4} mb={1.5}>
+                  <Text fontSize="sm" color="text.secondary">{item.label}</Text>
+                  <Text fontSize="sm" fontWeight="700" fontVariantNumeric="tabular-nums">
+                    {formatNumber(item.count)} <Text as="span" color="text.muted" fontWeight="400">({item.percentage.toFixed(1)}%)</Text>
+                  </Text>
+                </Flex>
+                <Box height="8px" bg="surface.muted" borderRadius="full" overflow="hidden">
+                  <Box height="full" width={`${(item.count / maximum) * 100}%`} bg="primary.600" borderRadius="full" />
+                </Box>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Card.Body>
+    </Card.Root>
+  );
+};
+
+const YouthDecisionBrief = ({ data }: { data: DashboardAnalytics }) => {
+  const uncoveredBarangays = Math.max(0, data.coverage.totalBarangays - data.coverage.barangaysWithRecords);
+  const items = [
+    {
+      icon: LuClock3,
+      title: `${formatNumber(data.summary.submitted)} profile${data.summary.submitted === 1 ? '' : 's'} awaiting review`,
+      text: 'Prioritize submitted profiles so current-year participation data can move into the approved registry.',
+      bg: 'warning.light',
+      color: 'warning',
+    },
+    {
+      icon: LuFileCheck2,
+      title: `${data.dataQuality.completionRate.toFixed(1)}% core profile completion`,
+      text: `${formatNumber(data.dataQuality.incompleteCore)} profiles still need required demographic or classification details.`,
+      bg: 'info.light',
+      color: 'info',
+    },
+    {
+      icon: LuMapPin,
+      title: uncoveredBarangays === 0 ? 'Every barangay is represented' : `${formatNumber(uncoveredBarangays)} barangay${uncoveredBarangays === 1 ? '' : 's'} without records`,
+      text: uncoveredBarangays === 0
+        ? 'Maintain complete annual submissions while review and cleanup continue.'
+        : 'Coordinate annual registration with barangays that do not yet have a profile in this filing year.',
+      bg: 'primary.50',
+      color: 'primary.700',
+    },
+  ];
+
+  return (
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+      <Card.Header p={{ base: 4, md: 5 }} pb={2}>
+        <SectionHeading title="Decision brief" description="A concise reading of the current youth registry." />
+      </Card.Header>
+      <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }}>
+        <VStack align="stretch" gap={3}>
+          {items.map((item) => (
+            <HStack key={item.title} align="flex-start" gap={3} p={3} borderRadius="md" bg={item.bg}>
+              <Flex boxSize="36px" align="center" justify="center" flexShrink={0} borderRadius="md" bg="surface" color={item.color}>
+                <Icon as={item.icon} boxSize="18px" aria-hidden="true" />
+              </Flex>
+              <Box>
+                <Text fontSize="sm" fontWeight="700">{item.title}</Text>
+                <Text mt={1} fontSize="xs" color="text.secondary" lineHeight="1.55">{item.text}</Text>
+              </Box>
+            </HStack>
+          ))}
+        </VStack>
+      </Card.Body>
+    </Card.Root>
+  );
+};
 
 const StatusPanel = ({ data }: { data: DashboardAnalytics }) => (
   <Card.Root borderColor="border" borderRadius="md" height="full">
@@ -262,29 +388,18 @@ const DataQualityPanel = ({ data, onOpenRecords }: { data: DashboardAnalytics; o
 
 type BarangayPanelProps = {
   data: DashboardAnalytics;
-  filingYears: number[];
-  selectedYear: string;
-  appliedYear: string;
-  loading: boolean;
-  error: string | null;
-  onYearChange: (year: string) => void;
+  filingYear: number;
   onOpenReports: () => void;
 };
 
 const BarangayPanel = ({
   data,
-  filingYears,
-  selectedYear,
-  appliedYear,
-  loading,
-  error,
-  onYearChange,
+  filingYear,
   onOpenReports,
 }: BarangayPanelProps) => (
   <Card.Root borderColor="border" borderRadius="lg" height="full" overflow="hidden" boxShadow="panel">
     <Card.Header p={{ base: 4, md: 5 }} borderBottomWidth="1px" borderColor="border">
-      <Flex justify="space-between" gap={5} align={{ base: 'stretch', md: 'flex-end' }} direction={{ base: 'column', md: 'row' }}>
-        <HStack gap={3} align="flex-start">
+      <HStack gap={3} align="flex-start">
           <Flex
             boxSize="40px"
             flexShrink={0}
@@ -302,34 +417,9 @@ const BarangayPanel = ({
               Compare registered youth across every barangay by filing year.
             </Text>
           </Box>
-        </HStack>
-        <Field.Root width={{ base: 'full', md: '168px' }} flexShrink={0}>
-          <Field.Label htmlFor="coverage-filing-year" fontFamily="heading" fontSize="xs" fontWeight="500" color="text.secondary">
-            <LuCalendarDays aria-hidden="true" /> Filing year
-          </Field.Label>
-          <NativeSelect.Root width="full">
-            <NativeSelect.Field
-              id="coverage-filing-year"
-              aria-label="Filter barangay coverage by filing year"
-              minH="44px"
-              value={selectedYear}
-              onChange={(event) => onYearChange(event.target.value)}
-            >
-              <option value="">All years</option>
-              {filingYears.map((year) => <option key={year} value={year}>{year}</option>)}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-      </Flex>
-      {loading && <Text mt={3} fontSize="sm" color="text.muted" role="status">Updating coverage…</Text>}
-      {error && (
-        <Box mt={3} px={3} py={2.5} bg="danger.light" borderWidth="1px" borderColor="red.200" borderRadius="md">
-          <Text fontSize="sm" color="danger" role="alert">{error}</Text>
-        </Box>
-      )}
+      </HStack>
     </Card.Header>
-    <Card.Body p={0} aria-busy={loading}>
+    <Card.Body p={0}>
       <Box p={{ base: 4, md: 5 }} bg="surface.muted" borderBottomWidth="1px" borderColor="border">
         <Flex justify="space-between" align="flex-start" gap={4}>
           <Box>
@@ -345,7 +435,7 @@ const BarangayPanel = ({
             <Text fontFamily="heading" fontSize="xl" fontWeight="700" color={data.coverage.percentage === 100 ? 'success' : 'warning'} fontVariantNumeric="tabular-nums">
               {data.coverage.percentage.toFixed(1)}%
             </Text>
-            <Badge colorPalette="gray" variant="subtle">{appliedYear || 'All years'}</Badge>
+            <Badge colorPalette="gray" variant="subtle">{filingYear}</Badge>
           </VStack>
         </Flex>
         <Box mt={4} height="8px" bg="border" borderRadius="full" overflow="hidden">
@@ -487,15 +577,11 @@ export const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [coverageAnalytics, setCoverageAnalytics] = useState<DashboardAnalytics | null>(null);
-  const [coverageYears, setCoverageYears] = useState<number[]>([]);
-  const [coverageYear, setCoverageYear] = useState('');
-  const [appliedCoverageYear, setAppliedCoverageYear] = useState('');
-  const [coverageLoading, setCoverageLoading] = useState(false);
-  const [coverageError, setCoverageError] = useState<string | null>(null);
-  const coverageRequestId = useRef(0);
+  const [youthYears, setYouthYears] = useState<number[]>([currentYear]);
+  const [youthYear, setYouthYear] = useState(currentYear);
   const childLaborerRequestId = useRef(0);
   const [childLaborerYear, setChildLaborerYear] = useState(currentYear);
+  const [childLaborerYears, setChildLaborerYears] = useState<number[]>(fallbackFilingYears);
   const [childLaborerSummary, setChildLaborerSummary] = useState<ChildLaborerSummary | null>(null);
   const [childLaborerLoading, setChildLaborerLoading] = useState(false);
   const [childLaborerRefreshing, setChildLaborerRefreshing] = useState(false);
@@ -506,7 +592,7 @@ export const DashboardPage = () => {
     else setLoading(true);
     setError(null);
     try {
-      const response = await reportApi.getDashboard();
+      const response = await reportApi.getDashboard({ filingYear: youthYear });
       setAnalytics(response.data);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Dashboard analytics could not be loaded.');
@@ -514,62 +600,47 @@ export const DashboardPage = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [youthYear]);
 
   useEffect(() => {
     void loadAnalytics();
   }, [loadAnalytics]);
 
   useEffect(() => {
-    if (!isAdmin) return;
     categoryApi.list()
       .then((response) => {
-        const years = [...new Set(response.data
-          .filter((category) => category.record_type === 'YOUTH_PROFILE')
+        const youthCategories = response.data.filter((category) => category.record_type === 'YOUTH_PROFILE');
+        const childCategories = response.data.filter((category) => category.record_type === 'CHILD_LABORER');
+        const years = [...new Set(youthCategories
           .map((category) => category.filing_year)
           .filter((year): year is number => Number.isInteger(year)))]
           .sort((left, right) => right - left);
-        setCoverageYears(years);
+        const childYears = [...new Set(childCategories
+          .map((category) => category.filing_year)
+          .filter((year): year is number => Number.isInteger(year)))]
+          .sort((left, right) => right - left);
         if (years.length > 0) {
-          const currentYear = new Date().getFullYear();
-          setCoverageYear(String(years.includes(currentYear) ? currentYear : years[0]));
+          setYouthYears(years);
+          const preferredYouth = [...youthCategories].sort((left, right) => (
+            Number((right.record_count ?? 0) > 0) - Number((left.record_count ?? 0) > 0)
+            || right.filing_year - left.filing_year
+          ))[0];
+          setYouthYear(preferredYouth?.filing_year ?? years[0]);
+        }
+        if (childYears.length > 0) {
+          setChildLaborerYears(childYears);
+          const preferredChild = [...childCategories].sort((left, right) => (
+            Number((right.record_count ?? 0) > 0) - Number((left.record_count ?? 0) > 0)
+            || right.filing_year - left.filing_year
+          ))[0];
+          setChildLaborerYear(preferredChild?.filing_year ?? childYears[0]);
         }
       })
       .catch(() => {
-        setCoverageYears([]);
+        setYouthYears([currentYear]);
+        setChildLaborerYears(fallbackFilingYears);
       });
-  }, [isAdmin]);
-
-  const loadCoverage = useCallback(async (filingYear: string) => {
-    const requestId = ++coverageRequestId.current;
-    if (!filingYear) {
-      setCoverageAnalytics(null);
-      setAppliedCoverageYear('');
-      setCoverageError(null);
-      setCoverageLoading(false);
-      return;
-    }
-    setCoverageLoading(true);
-    setCoverageError(null);
-    try {
-      const response = await reportApi.getDashboard({ filingYear: Number(filingYear) });
-      if (requestId === coverageRequestId.current) {
-        setCoverageAnalytics(response.data);
-        setAppliedCoverageYear(filingYear);
-      }
-    } catch (requestError) {
-      if (requestId === coverageRequestId.current) {
-        setCoverageError(requestError instanceof Error ? requestError.message : 'Coverage could not be updated.');
-      }
-    } finally {
-      if (requestId === coverageRequestId.current) setCoverageLoading(false);
-    }
   }, []);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    void loadCoverage(coverageYear);
-  }, [coverageYear, isAdmin, loadCoverage]);
 
   const loadChildLaborerAnalytics = useCallback(async (refresh = false) => {
     const requestId = ++childLaborerRequestId.current;
@@ -602,17 +673,16 @@ export const DashboardPage = () => {
   }, [dashboardView, loadChildLaborerAnalytics]);
 
   const summary = analytics?.summary;
-  const coverageData = coverageAnalytics ?? analytics;
+  const coverageData = analytics;
+  const youthTotal = summary?.totalRecords ?? 0;
+  const youthPercentage = (count: number) => `${(youthTotal === 0 ? 0 : (count / youthTotal) * 100).toFixed(1)}%`;
 
   const refreshDashboard = async () => {
     if (dashboardView === 'CHILD_LABORERS') {
       await loadChildLaborerAnalytics(true);
       return;
     }
-    await Promise.all([
-      loadAnalytics(true),
-      isAdmin && coverageYear ? loadCoverage(coverageYear) : Promise.resolve(),
-    ]);
+    await loadAnalytics(true);
   };
 
   const changeDashboardView = (view: DashboardView) => {
@@ -624,14 +694,17 @@ export const DashboardPage = () => {
 
   const refreshingCurrentView = dashboardView === 'CHILD_LABORERS'
     ? childLaborerRefreshing || childLaborerLoading
-    : refreshing || coverageLoading;
+    : refreshing;
+
+  const activeFilingYear = dashboardView === 'CHILD_LABORERS' ? childLaborerYear : youthYear;
+  const activeFilingYears = dashboardView === 'CHILD_LABORERS' ? childLaborerYears : youthYears;
 
   return (
     <DashboardLayout>
       <PageHeader
         title={dashboardView === 'CHILD_LABORERS'
           ? 'Child Laborer Dashboard'
-          : isAdmin ? 'Admin Dashboard' : 'Dashboard'}
+          : 'Youth Registry Dashboard'}
         description={dashboardView === 'CHILD_LABORERS'
           ? 'Current child labor records, validation progress, demographics, education status, and reported work.'
           : isAdmin
@@ -647,10 +720,10 @@ export const DashboardPage = () => {
 
       <DashboardViewSwitcher
         view={dashboardView}
-        childLaborerYear={childLaborerYear}
-        childLaborerYears={childLaborerYears}
+        filingYear={activeFilingYear}
+        filingYears={activeFilingYears}
         onViewChange={changeDashboardView}
-        onChildLaborerYearChange={setChildLaborerYear}
+        onFilingYearChange={dashboardView === 'CHILD_LABORERS' ? setChildLaborerYear : setYouthYear}
         onOpenRecords={() => navigate(dashboardView === 'CHILD_LABORERS' ? '/child-laborers' : '/youth-records')}
       />
 
@@ -680,20 +753,18 @@ export const DashboardPage = () => {
             <DashboardSkeleton />
           ) : analytics ? (
             <>
-              <SimpleGrid columns={{ base: 1, sm: 2, xl: isAdmin ? 5 : 4 }} gap={4}>
-                <MetricCard label="Youth records" value={summary?.totalRecords ?? 0} helper={`${summary?.thisMonth ?? 0} added this month`} icon={LuUsersRound} loading={loading} />
-                <MetricCard label="Pending review" value={summary?.submitted ?? 0} helper="Submitted and awaiting action" icon={LuClock3} loading={loading} tone="warning" />
-                <MetricCard label="Approved" value={summary?.approved ?? 0} helper="Completed review workflow" icon={LuCircleCheckBig} loading={loading} tone="success" />
-                <MetricCard label="Active drafts" value={summary?.draft ?? 0} helper={`${summary?.returned ?? 0} returned for revision`} icon={LuFileCheck2} loading={loading} />
-                {isAdmin && coverageData && (
-                  <MetricCard
-                    label="Barangay coverage"
-                    value={coverageData.coverage.barangaysWithRecords}
-                    helper={`of ${coverageData.coverage.totalBarangays} barangays${appliedCoverageYear ? ` · ${appliedCoverageYear}` : ' · all years'}`}
-                    icon={LuMapPin}
-                    loading={loading || coverageLoading}
-                  />
-                )}
+              <YouthSnapshot
+                data={analytics}
+                year={youthYear}
+                scopeLabel={isAdmin ? 'All barangays' : 'Assigned barangay'}
+              />
+
+              <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4} mt={5}>
+                <MetricCard label="Records represented" value={youthTotal} helper={`${summary?.thisMonth ?? 0} added this month`} icon={LuUsersRound} loading={loading} />
+                <MetricCard label="Approved records" value={youthPercentage(summary?.approved ?? 0)} helper={`${formatNumber(summary?.approved ?? 0)} completed reviews`} icon={LuCircleCheckBig} loading={loading} tone="success" />
+                <MetricCard label="Pending review" value={youthPercentage(summary?.submitted ?? 0)} helper={`${formatNumber(summary?.submitted ?? 0)} awaiting action`} icon={LuClock3} loading={loading} tone="warning" />
+                <MetricCard label="Profile completion" value={`${analytics.dataQuality.completionRate.toFixed(1)}%`} helper={`${formatNumber(analytics.dataQuality.incompleteCore)} incomplete profiles`} icon={LuFileCheck2} loading={loading} />
+                <MetricCard label="Barangays represented" value={analytics.coverage.barangaysWithRecords} helper={isAdmin ? `of ${analytics.coverage.totalBarangays} barangays` : 'Assigned barangay scope'} icon={LuMapPin} loading={loading} />
               </SimpleGrid>
 
               <Grid templateColumns={{ base: '1fr', xl: 'minmax(0, 1.45fr) minmax(320px, 0.75fr)' }} gap={5} mt={5} alignItems="stretch">
@@ -705,24 +776,38 @@ export const DashboardPage = () => {
                 <TrendPanel data={analytics} />
               </Box>
 
-              <Grid templateColumns={{ base: '1fr', lg: isAdmin ? 'minmax(0, 1.15fr) minmax(320px, 0.85fr)' : '1fr' }} gap={5} mt={5} alignItems="start">
-                {isAdmin && coverageData && (
-                  <BarangayPanel
-                    data={coverageData}
-                    filingYears={coverageYears}
-                    selectedYear={coverageYear}
-                    appliedYear={appliedCoverageYear}
-                    loading={coverageLoading}
-                    error={coverageError}
-                    onYearChange={setCoverageYear}
-                    onOpenReports={() => navigate('/reports')}
-                  />
-                )}
-                <VStack align="stretch" gap={5}>
-                  <RecentRecordsPanel data={analytics} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
-                  <AnnouncementFeed />
-                </VStack>
+              <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5} mt={5} alignItems="stretch">
+                <DemographicPanel
+                  title="Youth age profile"
+                  description="Age-group composition for the selected filing year."
+                  items={analytics.demographics.ageGroups}
+                />
+                <DemographicPanel
+                  title="Youth classification"
+                  description="Registry composition by reported youth classification."
+                  items={analytics.demographics.youthClassifications}
+                />
               </Grid>
+
+              <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} mt={5} alignItems="start">
+                {isAdmin && coverageData && (
+                  <GridItem colSpan={{ base: 1, xl: 7 }}>
+                    <BarangayPanel
+                      data={coverageData}
+                      filingYear={youthYear}
+                      onOpenReports={() => navigate('/reports')}
+                    />
+                  </GridItem>
+                )}
+                <GridItem colSpan={{ base: 1, xl: isAdmin ? 5 : 12 }}>
+                  <VStack align="stretch" gap={5}>
+                    <YouthDecisionBrief data={analytics} />
+                    <RecentRecordsPanel data={analytics} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
+                  </VStack>
+                </GridItem>
+              </Grid>
+
+              <Box mt={5}><AnnouncementFeed /></Box>
 
               <Text mt={4} textAlign="right" color="text.muted" fontSize="xs">
                 Updated {formatDateTime(analytics.generatedAt)}

@@ -79,7 +79,7 @@ const YouthRecordListPage = () => {
       try {
         const [barangayData, categoryResponse] = await Promise.all([
           isAdmin ? barangayApi.list() : Promise.resolve([]),
-          categoryApi.list(),
+          categoryApi.list('YOUTH_PROFILE'),
         ]);
         setBarangays(barangayData.filter((barangay) => barangay.is_active));
         setCategories(categoryResponse.data.filter((category) => category.status === 'PUBLISHED'));

@@ -14,6 +14,7 @@ export type ChildLaborerGender = typeof childLaborerGenders[number];
 
 export type ChildLaborerRecord = {
   id: string;
+  category_id: string;
   filing_year: number;
   barangay_id: string;
   first_name: string;
@@ -30,6 +31,7 @@ export type ChildLaborerRecord = {
   parent_guardian_occupation: string | null;
   record_status: ChildLaborerStatus;
   remarks: string | null;
+  custom_values: Record<string, unknown>;
   created_by: string;
   updated_by: string;
   version: number;

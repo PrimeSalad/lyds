@@ -1,10 +1,15 @@
 import { z } from 'zod';
+import { categoryRecordTypes } from '../../domain/entities/category';
+
+export const listCategoriesQuerySchema = z.object({
+  recordType: z.enum(categoryRecordTypes).optional(),
+});
 
 export const createCategorySchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
   description: z.string().nullable().optional(),
-  record_type: z.string().min(1),
+  record_type: z.enum(categoryRecordTypes),
   filing_year: z.number().int().min(2000).max(2100),
   permission_mode: z.enum(['SK_FILLABLE', 'SK_VIEW_ONLY', 'ADMIN_ONLY', 'PUBLIC', 'RESTRICTED', 'PRIVATE']),
   allow_sk_export: z.boolean(),

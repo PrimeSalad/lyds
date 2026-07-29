@@ -1,5 +1,5 @@
 import { apiClient } from '../../../infrastructure/api-client';
-import type { CategoryListResponse, CategorySummary } from '../../../generated/api/api-types';
+import type { CategoryListResponse, CategoryRecordType, CategorySummary } from '../../../generated/api/api-types';
 
 export type Category = Omit<CategorySummary, 'record_count' | 'field_count'> & {
   record_count?: number;
@@ -7,12 +7,13 @@ export type Category = Omit<CategorySummary, 'record_count' | 'field_count'> & {
 };
 
 export type CategoryWithFields = Category & { fields: CategoryField[] };
+export type { CategoryRecordType };
 
 export interface CreateCategoryInput {
   code: string;
   name: string;
   description: string | null;
-  record_type: string;
+  record_type: CategoryRecordType;
   filing_year: number;
   permission_mode: string;
   allow_sk_export: boolean;
@@ -46,7 +47,10 @@ export interface CreateFieldInput {
 export type UpdateFieldInput = Partial<CreateFieldInput>;
 
 export const categoryApi = {
-  list: () => apiClient.request<CategoryListResponse>('/categories'),
+  list: (recordType?: CategoryRecordType) => {
+    const query = recordType ? `?recordType=${recordType}` : '';
+    return apiClient.request<CategoryListResponse>(`/categories${query}`);
+  },
   getById: (id: string) => apiClient.request<{ data: CategoryWithFields }>(`/categories/${id}`),
   create: (data: CreateCategoryInput) => apiClient.request<{ data: Category }>('/categories', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: UpdateCategoryInput) => apiClient.request<{ data: Category }>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

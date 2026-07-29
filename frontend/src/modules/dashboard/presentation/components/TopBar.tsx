@@ -1,19 +1,12 @@
-import { Badge, Box, Button, HStack, IconButton, Image, Text } from '@chakra-ui/react';
-import { useSelector } from 'react-redux';
-import { Link as RouterLink } from 'react-router';
-import { LuMenu, LuSettings } from 'react-icons/lu';
-import type { RootState } from '../../../../redux/store';
+import { Box, HStack, IconButton, Image, Text } from '@chakra-ui/react';
+import { LuMenu } from 'react-icons/lu';
 
 type TopBarProps = {
   onOpenNavigation?: () => void;
 };
 
-export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
-  const profile = useSelector((state: RootState) => state.auth.profile);
-  const roleLabel = profile?.role === 'SK_OFFICIAL' ? 'SK Official' : 'Administrator';
-
-  return (
-    <Box
+export const TopBar = ({ onOpenNavigation }: TopBarProps) => (
+  <Box
       as="header"
       minH="64px"
       bg="surface"
@@ -22,12 +15,12 @@ export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
       px={{ base: 3, sm: 4, md: 6, xl: 8 }}
       display="flex"
       alignItems="center"
-      justifyContent="space-between"
+      justifyContent="flex-start"
       position="sticky"
       top={0}
       zIndex={10}
     >
-      <HStack gap={3} minW={0}>
+    <HStack gap={3} minW={0}>
         <IconButton
           aria-label="Open navigation"
           variant="ghost"
@@ -54,21 +47,8 @@ export const TopBar = ({ onOpenNavigation }: TopBarProps) => {
             Municipality of Boac, Marinduque
           </Text>
         </Box>
-      </HStack>
-
-      <HStack gap={2} flexShrink={0}>
-        <Badge display={{ base: 'none', sm: 'inline-flex' }} colorPalette="green" variant="subtle">
-          {roleLabel}
-        </Badge>
-        <Button asChild variant="ghost" minH="44px" px={{ base: 2, md: 3 }}>
-          <RouterLink to="/account-settings" aria-label="Open account settings">
-            <LuSettings aria-hidden="true" />
-            <Text as="span" display={{ base: 'none', md: 'inline' }}>Account</Text>
-          </RouterLink>
-        </Button>
-      </HStack>
-    </Box>
-  );
-};
+    </HStack>
+  </Box>
+);
 
 export default TopBar;

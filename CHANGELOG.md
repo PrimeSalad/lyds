@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added registry-scoped categories for both Youth Registry and Child Laborer records, including real child-record category ownership, custom values, required-field validation, live record totals, list filtering, and an accessible Categories dataset switcher.
 - Added an accessible, URL-preserved Dashboard workspace switcher with a full current-record child laborer analytics view, filing-year control, and direct registry action.
 - Added a protected yearly Child Laborer Records registry with birthday-derived annual ages, education and work details, parent or guardian information, workflow statuses, remarks, duplicate checks, archival, barangay scoping, audit history, responsive tables, and official CSV/XLSX consolidation exports.
 - Added a Reports dataset selector for switching between KK Youth and Child Laborer records, with independent year, barangay, status, search, pagination, sorting, summary, and export controls.
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rebuilt the Youth Registry Dashboard to match the Child Laborer analytics hierarchy with a filing-year scope, situation snapshot, percentage KPIs, workflow, trend, demographics, data quality, barangay coverage, and decision brief; removed duplicate role and account controls from the top bar and consolidated the sidebar to one Dashboard destination.
 - Polished the shared application shell with grouped dashboard-first navigation, clearer office context, consistent 44-pixel controls, responsive actions, accessible loading and empty states, global focus visibility, and reduced-motion behavior.
 - Standardized child laborer nature-of-work categories, parent/guardian occupations, and existing validation remarks with professional canonical wording while preserving blank remarks as not yet validated.
 - Added a complete-record frontend analytics fallback so gender, age, barangay, and nature-of-work charts remain populated while a legacy backend deployment is still serving the basic summary shape.

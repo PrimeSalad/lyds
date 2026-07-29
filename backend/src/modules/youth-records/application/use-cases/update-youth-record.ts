@@ -42,7 +42,9 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
   if ('birth_date' in updateData || 'category_id' in updateData) {
     const categoryId = updateData.category_id ?? existingRecord.category_id;
     const category = await categoryRepository.getCategoryById(categoryId);
-    if (!category) throw API_ERRORS.notFound('Category');
+    if (!category || category.record_type !== 'YOUTH_PROFILE') {
+      throw API_ERRORS.validation('Select a youth registry category.');
+    }
     const birthDate = 'birth_date' in updateData ? updateData.birth_date : existingRecord.birth_date;
 
     if (birthDate) {

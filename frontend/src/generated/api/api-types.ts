@@ -21,6 +21,7 @@ export type ChildLaborerListResponse = components['schemas']['ChildLaborerListRe
 export type ChildLaborerBreakdownItem = components['schemas']['ChildLaborerBreakdownItem'];
 export type ChildLaborerDataQuality = components['schemas']['ChildLaborerDataQuality'];
 export type ChildLaborerSummary = components['schemas']['ChildLaborerSummary'];
+export type CategoryRecordType = components['schemas']['CategoryRecordType'];
 export type CategorySummary = components['schemas']['CategorySummary'];
 export type CategoryListResponse = components['schemas']['CategoryListResponse'];
 export type ImportBatchStatus = components['schemas']['ImportBatchStatus'];

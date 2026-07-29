@@ -25,7 +25,9 @@ export const createYouthRecord = async (input: any, authContext: any) => {
   }
 
   const category = await categoryRepository.getCategoryById(profileInput.category_id);
-  if (!category) throw API_ERRORS.notFound('Category');
+  if (!category || category.record_type !== 'YOUTH_PROFILE') {
+    throw API_ERRORS.validation('Select a youth registry category.');
+  }
 
   const birthDate = profileInput.birth_date || null;
   const age = birthDate ? computeAgeForFilingYear(birthDate, category.filing_year) : null;

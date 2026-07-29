@@ -12,6 +12,7 @@ import { createCategoryField } from '../../application/use-cases/create-category
 import { updateCategoryField } from '../../application/use-cases/update-category-field';
 import {
   createCategorySchema,
+  listCategoriesQuerySchema,
   updateCategorySchema,
   createCategoryFieldSchema,
   updateCategoryFieldSchema,
@@ -20,7 +21,8 @@ import {
 export const categoryController = {
   async list(req: Request, res: Response) {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const categories = await listCategories(ctx.role, ctx.barangayId);
+    const query = listCategoriesQuerySchema.parse(req.query);
+    const categories = await listCategories(ctx.role, ctx.barangayId, query.recordType);
     res.json({ data: categories });
   },
 

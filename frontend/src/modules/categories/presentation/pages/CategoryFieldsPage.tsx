@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Box, Heading, Button, HStack, VStack, Text, Badge, Card, SimpleGrid, Table } from '@chakra-ui/react';
+import { Box, Heading, Button, HStack, VStack, Text, Badge, Card, SimpleGrid, Spinner, Table } from '@chakra-ui/react';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { TextField, SelectField, CheckboxField, TextareaField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
@@ -127,17 +127,29 @@ const CategoryFieldsPage = () => {
     }
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <VStack py={16} gap={3} role="status">
+          <Spinner color="primary.600" />
+          <Text color="text.muted">Loading category fields…</Text>
+        </VStack>
+      </DashboardLayout>
+    );
+  }
 
   const sortedFields = [...fields].sort((a, b) => a.sort_order - b.sort_order);
+  const categoryListPath = category?.record_type === 'CHILD_LABORER'
+    ? '/categories?type=child-laborer'
+    : '/categories';
 
   return (
     <DashboardLayout>
       <PageHeader
         title={`Fields for ${category?.name ?? 'Category'}`}
-        description="Manage custom fields without changing existing record semantics."
+        description={`Manage custom fields shown on ${category?.record_type === 'CHILD_LABORER' ? 'child laborer' : 'youth registry'} records.`}
         actions={(
-          <Button variant="outline" onClick={() => navigate('/categories')}>Back to Categories</Button>
+          <Button variant="outline" minH="44px" onClick={() => navigate(categoryListPath)}>Back to Categories</Button>
         )}
       />
 

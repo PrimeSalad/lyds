@@ -127,7 +127,7 @@ const ImportPage = () => {
       setLoadingContext(true);
       try {
         const [categoryResponse, barangayResponse, assignedResponse] = await Promise.all([
-          categoryApi.list(),
+          categoryApi.list('YOUTH_PROFILE'),
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           !isAdmin && profile?.barangayId
             ? barangayApi.getById(profile.barangayId)

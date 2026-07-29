@@ -66,7 +66,9 @@ test.describe('Protected application routes', () => {
     expect(closeButtonBox?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(closeButtonBox?.height ?? 0).toBeGreaterThanOrEqual(44);
 
-    await navigation.getByRole('link', { name: 'Child Labor Dashboard' }).click();
+    await navigation.getByRole('link', { name: 'Dashboard', exact: true }).click();
+    await expect(page).toHaveURL('/');
+    await page.getByLabel('Registry').selectOption('CHILD_LABORERS');
     await expect(page).toHaveURL('/?view=child-laborers');
     await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
     await expect(navigation).toBeHidden();

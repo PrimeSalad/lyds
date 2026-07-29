@@ -4,6 +4,8 @@ import { buildChildLaborerSummary } from './child-laborer-summary';
 
 const record = (input: Partial<ChildLaborerRecord> = {}): ChildLaborerRecord => ({
   id: crypto.randomUUID(),
+  category_id: '33333333-3333-4333-8333-333333333333',
+  category_name: 'Child Laborer Records 2026',
   filing_year: 2026,
   barangay_id: '11111111-1111-4111-8111-111111111111',
   barangay_name: 'Amoingon',
@@ -23,6 +25,7 @@ const record = (input: Partial<ChildLaborerRecord> = {}): ChildLaborerRecord => 
   parent_guardian_occupation: 'Farmer',
   record_status: 'VALIDATED',
   remarks: 'Confirmed',
+  custom_values: {},
   version: 1,
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',

@@ -18,6 +18,7 @@ import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import {
   childLaborerApi,
@@ -64,10 +65,12 @@ const ChildLaborerListPage = () => {
   const isAdmin = profile?.role === 'ADMIN';
   const [records, setRecords] = useState<ChildLaborerRecord[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [summary, setSummary] = useState<ChildLaborerSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [filingYear, setFilingYear] = useState(currentYear);
+  const [categoryId, setCategoryId] = useState('');
   const [barangayId, setBarangayId] = useState('');
   const [status, setStatus] = useState<ChildLaborerStatus | ''>('');
   const [search, setSearch] = useState('');
@@ -83,6 +86,7 @@ const ChildLaborerListPage = () => {
     setLoading(true);
     try {
       const result = await childLaborerApi.list({
+        categoryId: categoryId || undefined,
         filingYear,
         barangayId: isAdmin ? barangayId || undefined : undefined,
         status: status || undefined,
@@ -106,12 +110,13 @@ const ChildLaborerListPage = () => {
 
   useEffect(() => {
     void loadRecords();
-  }, [filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
+  }, [categoryId, filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
 
   useEffect(() => {
     const loadSummary = async () => {
       try {
         const result = await childLaborerApi.summary({
+          categoryId: categoryId || undefined,
           filingYear,
           barangayId: isAdmin ? barangayId || undefined : undefined,
         });
@@ -121,7 +126,26 @@ const ChildLaborerListPage = () => {
       }
     };
     void loadSummary();
-  }, [filingYear, barangayId, isAdmin, records]);
+  }, [categoryId, filingYear, barangayId, isAdmin, records]);
+
+  useEffect(() => {
+    void categoryApi.list('CHILD_LABORER')
+      .then((response) => {
+        setCategories(response.data);
+        const preferred = [...response.data]
+          .sort((left, right) => (
+            Number((right.record_count ?? 0) > 0) - Number((left.record_count ?? 0) > 0)
+            || right.filing_year - left.filing_year
+          ))[0];
+        if (preferred) setFilingYear(preferred.filing_year);
+      })
+      .catch(() => showToast.error('Could not load child laborer categories'));
+  }, []);
+
+  useEffect(() => {
+    const selectedCategory = categories.find((category) => category.id === categoryId);
+    if (selectedCategory && selectedCategory.filing_year !== filingYear) setCategoryId('');
+  }, [categories, categoryId, filingYear]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -136,6 +160,7 @@ const ChildLaborerListPage = () => {
     setExporting(true);
     try {
       const blob = await childLaborerApi.export({
+        categoryId: categoryId || undefined,
         format,
         filingYear,
         barangayId: isAdmin ? barangayId || undefined : undefined,
@@ -156,6 +181,7 @@ const ChildLaborerListPage = () => {
 
   const columns = useMemo<Column<ChildLaborerRecord>[]>(() => [
     { key: 'row_number', header: 'No.', width: '70px', align: 'center' },
+    { key: 'category_name', header: 'Category', width: '210px' },
     { key: 'barangay_name', header: 'Barangay', sortable: true, width: '160px' },
     { key: 'child_name', header: 'Surname', sortable: true, width: '150px', render: (record) => record.last_name },
     { key: 'first_name', header: 'First Name', width: '150px' },
@@ -210,7 +236,7 @@ const ChildLaborerListPage = () => {
         await loadRecords();
       },
     },
-  ], [navigate, filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
+  ], [navigate, categoryId, filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
 
   const filters = (
     <HStack gap={3} wrap="wrap" flex="1" width="full">
@@ -235,6 +261,20 @@ const ChildLaborerListPage = () => {
           onChange={(event) => { setFilingYear(Number(event.target.value)); resetPage(); }}
         >
           {filingYears.map((year) => <option key={year} value={year}>{year}</option>)}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+      <NativeSelect.Root width={{ base: 'full', sm: '220px' }}>
+        <NativeSelect.Field
+          aria-label="Category"
+          value={categoryId}
+          minH="44px"
+          onChange={(event) => { setCategoryId(event.target.value); resetPage(); }}
+        >
+          <option value="">All Categories</option>
+          {categories
+            .filter((category) => category.filing_year === filingYear)
+            .map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
         </NativeSelect.Field>
         <NativeSelect.Indicator />
       </NativeSelect.Root>

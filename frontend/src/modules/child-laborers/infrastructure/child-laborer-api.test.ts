@@ -10,6 +10,8 @@ import { childLaborerApi } from './child-laborer-api';
 
 const record = {
   id: 'child-laborer-1',
+  category_id: '22222222-2222-4222-8222-222222222222',
+  category_name: 'Child Laborer Records 2026',
   filing_year: 2026,
   barangay_id: '11111111-1111-4111-8111-111111111111',
   barangay_name: 'Amoingon',
@@ -29,6 +31,7 @@ const record = {
   parent_guardian_occupation: 'Farmer',
   record_status: 'VALIDATED',
   remarks: 'Confirmed',
+  custom_values: {},
   version: 1,
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',

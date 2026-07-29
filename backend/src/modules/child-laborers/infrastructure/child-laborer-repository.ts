@@ -15,6 +15,7 @@ import { toChildLaborerPresentation } from './child-laborer-presenter';
 const TABLE = 'child_laborer_records';
 
 export type ChildLaborerFilters = {
+  categoryId?: string;
   filingYear?: number;
   barangayId?: string | null;
   status?: ChildLaborerStatus;
@@ -29,6 +30,7 @@ const safeSearchTerm = (value: string) => value
 
 const applyFilters = (query: any, filters: ChildLaborerFilters) => {
   let filteredQuery = query;
+  if (filters.categoryId) filteredQuery = filteredQuery.eq('category_id', filters.categoryId);
   if (filters.filingYear) filteredQuery = filteredQuery.eq('filing_year', filters.filingYear);
   if (filters.barangayId) filteredQuery = filteredQuery.eq('barangay_id', filters.barangayId);
   if (filters.status) {
@@ -60,6 +62,7 @@ const listQuery = (filters: ChildLaborerFilters) => {
 const summaryQuery = (filters: ChildLaborerFilters) => applyFilters(
   supabaseAdmin.from(TABLE).select(`
     filing_year,
+    category_id,
     barangay_id,
     birth_date,
     gender,
@@ -193,7 +196,7 @@ export const childLaborerRepository = {
     return toChildLaborerPresentation(data);
   },
 
-  async summary(filters: Pick<ChildLaborerFilters, 'filingYear' | 'barangayId' | 'status' | 'search'>) {
+  async summary(filters: Pick<ChildLaborerFilters, 'categoryId' | 'filingYear' | 'barangayId' | 'status' | 'search'>) {
     return buildChildLaborerSummary(await listForSummary(filters));
   },
 };

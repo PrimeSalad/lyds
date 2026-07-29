@@ -85,7 +85,7 @@ const ReportsPage = () => {
           reportApi.getSummary({ barangayId, categoryId, status }),
           reportApi.getDemographics({ barangayId, categoryId, status }),
           isAdmin ? barangayApi.list() : Promise.resolve([]),
-          categoryApi.list(),
+          categoryApi.list('YOUTH_PROFILE'),
         ]);
         setSummary(sumRes.data);
         setDemographics(demRes.data);

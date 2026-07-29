@@ -1,8 +1,13 @@
 import { supabaseAdmin } from '../../../../config/supabase';
-import type { Category, CategoryField, CategoryWithFields } from '../../domain/entities/category';
+import type { Category, CategoryField, CategoryRecordType, CategoryWithFields } from '../../domain/entities/category';
 
 export const categoryRepository = {
-  async listCategories(options?: { status?: string; permission_mode?: string; recordBarangayId?: string | null }): Promise<Category[]> {
+  async listCategories(options?: {
+    status?: string;
+    permission_mode?: string;
+    record_type?: CategoryRecordType;
+    recordBarangayId?: string | null;
+  }): Promise<Category[]> {
     let query = supabaseAdmin
       .from('categories')
       .select('*')
@@ -16,13 +21,20 @@ export const categoryRepository = {
     if (options?.permission_mode) {
       query = query.eq('permission_mode', options.permission_mode);
     }
+
+    if (options?.record_type) {
+      query = query.eq('record_type', options.record_type);
+    }
     
     const { data, error } = await query;
     if (error) throw error;
 
     return await Promise.all((data ?? []).map(async (category) => {
+      const recordTable = category.record_type === 'CHILD_LABORER'
+        ? 'child_laborer_records'
+        : 'youth_profiles';
       let recordCountQuery = supabaseAdmin
-        .from('youth_profiles')
+        .from(recordTable)
         .select('id', { count: 'exact', head: true })
         .eq('category_id', category.id)
         .is('deleted_at', null);

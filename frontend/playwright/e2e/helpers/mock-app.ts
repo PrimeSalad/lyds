@@ -96,6 +96,17 @@ const category = {
   updated_at: '2026-01-01T00:00:00.000Z',
 };
 
+const childLaborerCategory = {
+  ...category,
+  id: 'child-category-2026',
+  code: 'CHILD_LABORER_2026',
+  name: 'Child Laborer Records 2026',
+  description: 'Annual protected child laborer registry.',
+  record_type: 'CHILD_LABORER',
+  permission_mode: 'SK_FILLABLE',
+  record_count: 1,
+};
+
 const barangay = {
   id: 'barangay-agot',
   code: '174001001',
@@ -109,6 +120,8 @@ const barangay = {
 
 const childLaborer = {
   id: 'child-laborer-1',
+  category_id: childLaborerCategory.id,
+  category_name: childLaborerCategory.name,
   row_number: 1,
   filing_year: 2026,
   barangay_id: barangay.id,
@@ -129,6 +142,7 @@ const childLaborer = {
   parent_guardian_occupation: 'Farmer',
   record_status: 'VALIDATED',
   remarks: 'Household details confirmed during field validation.',
+  custom_values: {},
   version: 1,
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
@@ -223,7 +237,12 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       return;
     }
     if (path === '/categories') {
-      await json(route, { data: [category] });
+      const recordType = url.searchParams.get('recordType');
+      await json(route, {
+        data: recordType === 'YOUTH_PROFILE'
+          ? [category]
+          : recordType === 'CHILD_LABORER' ? [childLaborerCategory] : [category, childLaborerCategory],
+      });
       return;
     }
     if (path === `/categories/${category.id}`) {
@@ -231,6 +250,14 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       return;
     }
     if (path === `/categories/${category.id}/fields`) {
+      await json(route, { data: [] });
+      return;
+    }
+    if (path === `/categories/${childLaborerCategory.id}`) {
+      await json(route, { data: { ...childLaborerCategory, fields: [] } });
+      return;
+    }
+    if (path === `/categories/${childLaborerCategory.id}/fields`) {
       await json(route, { data: [] });
       return;
     }

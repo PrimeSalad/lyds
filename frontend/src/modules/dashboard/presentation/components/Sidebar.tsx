@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, HStack, IconButton, Image, VStack, Text, Badge } from '@chakra-ui/react';
+import { Box, Button, HStack, IconButton, Image, VStack, Text } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import type { IconType } from 'react-icons';
@@ -32,7 +32,6 @@ type NavigationLink = {
   path: string;
   icon: IconType;
   exact?: boolean;
-  dashboardView?: 'YOUTH' | 'CHILD_LABORERS';
 };
 
 type NavigationSection = {
@@ -41,8 +40,7 @@ type NavigationSection = {
 };
 
 const overviewLinks: NavigationLink[] = [
-  { label: 'Youth Dashboard', path: '/', icon: LuLayoutDashboard, dashboardView: 'YOUTH' },
-  { label: 'Child Labor Dashboard', path: '/?view=child-laborers', icon: LuChartNoAxesCombined, dashboardView: 'CHILD_LABORERS' },
+  { label: 'Dashboard', path: '/', icon: LuLayoutDashboard, exact: true },
 ];
 
 const adminSections: NavigationSection[] = [
@@ -107,20 +105,10 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const location = useLocation();
   const sections = profile?.role === 'ADMIN' ? adminSections : skSections;
   const links = sections.flatMap((section) => section.links);
-  const dashboardQuery = new URLSearchParams(location.search);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const isLinkActive = (link: NavigationLink) => {
     const path = link.path.split('?')[0] || '/';
-
-    if (link.dashboardView === 'CHILD_LABORERS') {
-      return location.pathname === '/' && dashboardQuery.get('view') === 'child-laborers';
-    }
-
-    if (link.dashboardView === 'YOUTH') {
-      return location.pathname === '/' && dashboardQuery.get('view') !== 'child-laborers';
-    }
-
     return link.exact
       ? location.pathname === path
       : location.pathname.startsWith(path) && !links.some((candidate) => (
@@ -172,9 +160,6 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
             <Image src="/brand/lydo-logo.png" alt="Boac LYDS logo" w="48px" h="38px" objectFit="contain" />
             <Box>
               <Text fontWeight="750" color="primary.800" fontSize="md" fontFamily="heading" lineHeight="1.1">Boac Youth IMS</Text>
-              <Badge colorPalette="green" variant="subtle" mt={1} fontSize="2xs">
-                {profile?.role === 'SK_OFFICIAL' ? 'SK Official' : 'Administrator'}
-              </Badge>
             </Box>
           </HStack>
         </Box>

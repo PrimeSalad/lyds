@@ -48,6 +48,7 @@ export type ChildLaborerSortField =
   | 'created_at';
 
 export type ChildLaborerListParams = {
+  categoryId?: string;
   filingYear?: number;
   barangayId?: string;
   status?: ChildLaborerStatus;
@@ -60,6 +61,7 @@ export type ChildLaborerListParams = {
 
 const queryString = (params: ChildLaborerListParams) => {
   const query = new URLSearchParams();
+  if (params.categoryId) query.set('categoryId', params.categoryId);
   if (params.filingYear) query.set('filingYear', String(params.filingYear));
   if (params.barangayId) query.set('barangayId', params.barangayId);
   if (params.status) query.set('status', params.status);
@@ -117,12 +119,14 @@ export const childLaborerApi = {
   }),
 
   summary: async (params: {
+    categoryId?: string;
     filingYear?: number;
     barangayId?: string;
     status?: ChildLaborerStatus;
     search?: string;
   }) => {
     const query = new URLSearchParams();
+    if (params.categoryId) query.set('categoryId', params.categoryId);
     if (params.filingYear) query.set('filingYear', String(params.filingYear));
     if (params.barangayId) query.set('barangayId', params.barangayId);
     if (params.status) query.set('status', params.status);
@@ -141,6 +145,7 @@ export const childLaborerApi = {
   },
 
   export: (params: {
+    categoryId?: string;
     format: 'csv' | 'xlsx';
     filingYear: number;
     barangayId?: string;
@@ -151,6 +156,7 @@ export const childLaborerApi = {
       format: params.format,
       filingYear: String(params.filingYear),
     });
+    if (params.categoryId) query.set('categoryId', params.categoryId);
     if (params.barangayId) query.set('barangayId', params.barangayId);
     if (params.status) query.set('status', params.status);
     if (params.search) query.set('search', params.search);

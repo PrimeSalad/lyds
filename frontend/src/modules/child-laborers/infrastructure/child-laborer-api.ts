@@ -8,6 +8,7 @@ import type {
   UpdateChildLaborerInput,
 } from '../../../generated/api/api-types';
 import { apiClient } from '../../../infrastructure/api-client';
+import { buildChildLaborerSummary } from '../domain/child-laborer-summary';
 
 type ChildLaborerSummaryPayload = Partial<ChildLaborerSummary> & Pick<
   ChildLaborerSummary,
@@ -29,6 +30,14 @@ const normalizeSummary = (summary: ChildLaborerSummaryPayload): ChildLaborerSumm
     records_with_specified_work: 0,
   },
 });
+
+const hasFullAnalytics = (summary: ChildLaborerSummaryPayload) => (
+  Array.isArray(summary.gender_distribution)
+  && Array.isArray(summary.age_distribution)
+  && Array.isArray(summary.barangay_distribution)
+  && Array.isArray(summary.work_distribution)
+  && Boolean(summary.data_quality)
+);
 
 export type ChildLaborerSortField =
   | 'child_name'
@@ -60,6 +69,24 @@ const queryString = (params: ChildLaborerListParams) => {
   if (params.sortField) query.set('sortField', params.sortField);
   if (params.sortDir) query.set('sortDir', params.sortDir);
   return query.toString();
+};
+
+const listAllForAnalytics = async (params: ChildLaborerListParams) => {
+  const records: ChildLaborerRecord[] = [];
+  let page = 1;
+  while (true) {
+    const result = await apiClient.request<ChildLaborerListResponse>(`/child-laborers?${queryString({
+      ...params,
+      page,
+      pageSize: 100,
+      sortField: 'barangay_name',
+      sortDir: 'asc',
+    })}`);
+    records.push(...result.data);
+    if (page >= result.meta.totalPages) break;
+    page += 1;
+  }
+  return records;
 };
 
 export const childLaborerApi = {
@@ -101,6 +128,15 @@ export const childLaborerApi = {
     if (params.status) query.set('status', params.status);
     if (params.search) query.set('search', params.search);
     const response = await apiClient.request<{ data: ChildLaborerSummaryPayload }>(`/child-laborers/summary?${query}`);
+    if (!hasFullAnalytics(response.data)) {
+      const records = await listAllForAnalytics({
+        filingYear: params.filingYear,
+        barangayId: params.barangayId,
+        status: params.status,
+        search: params.search,
+      });
+      return { data: buildChildLaborerSummary(records) };
+    }
     return { data: normalizeSummary(response.data) };
   },
 

@@ -94,6 +94,7 @@ const ChildLaborerFormPage = () => {
 
   const filingYear = Number(watch('filing_year'));
   const birthDate = watch('birth_date');
+  const recordStatus = watch('record_status');
   const age = useMemo(() => {
     const birthYear = Number(birthDate.slice(0, 4));
     return Number.isInteger(birthYear) && Number.isInteger(filingYear)
@@ -148,6 +149,11 @@ const ChildLaborerFormPage = () => {
   const submit = async (values: ChildLaborerFormValues) => {
     if (!values.father_name.trim() && !values.mother_name.trim() && !values.guardian_name.trim()) {
       setError('guardian_name', { message: 'Enter at least one parent or guardian name.' });
+      return;
+    }
+
+    if (values.record_status === 'VALIDATED' && !values.remarks.trim()) {
+      setError('remarks', { message: 'Add validation remarks before marking this record as validated.' });
       return;
     }
 
@@ -215,8 +221,9 @@ const ChildLaborerFormPage = () => {
         </Box>
       )}
 
-      <Card.Root as="form" onSubmit={handleSubmit(submit)} borderColor="border" borderRadius="lg" boxShadow="panel">
-        <Card.Body p={{ base: 4, md: 6 }}>
+      <form noValidate onSubmit={handleSubmit(submit)}>
+        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+          <Card.Body p={{ base: 4, md: 6 }}>
           <SectionHeader mt={0}>Annual record scope</SectionHeader>
           <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={5}>
             <Controller
@@ -322,8 +329,24 @@ const ChildLaborerFormPage = () => {
             <Controller name="record_status" control={control} render={({ field, fieldState }) => (
               <SelectField {...field} label="Record Status" required options={workflowOptions} error={fieldState.error?.message} />
             )} />
-            <Controller name="remarks" control={control} render={({ field, fieldState }) => (
-              <TextareaField {...field} label="Remarks" rows={4} placeholder="Add follow-up context, referral notes, or state No additional remarks." error={fieldState.error?.message} />
+            <Controller name="remarks" control={control} rules={{
+              validate: (value) => recordStatus !== 'VALIDATED'
+                || Boolean(value.trim())
+                || 'Add validation remarks before marking this record as validated.',
+            }} render={({ field, fieldState }) => (
+              <TextareaField
+                {...field}
+                label="Remarks"
+                rows={4}
+                required={recordStatus === 'VALIDATED'}
+                placeholder={recordStatus === 'VALIDATED'
+                  ? 'Describe what was confirmed during validation'
+                  : 'Add follow-up context or referral notes'}
+                helpText={recordStatus === 'VALIDATED'
+                  ? 'Required evidence for validated status.'
+                  : 'A record without remarks remains identified and not yet validated.'}
+                error={fieldState.error?.message}
+              />
             )} />
           </Grid>
 
@@ -336,14 +359,15 @@ const ChildLaborerFormPage = () => {
               </Text>
             </Box>
           </HStack>
-        </Card.Body>
-        <Card.Footer p={{ base: 4, md: 6 }} pt={0} justifyContent="flex-end" gap={3} flexDirection={{ base: 'column-reverse', sm: 'row' }}>
-          <Button width={{ base: 'full', sm: 'auto' }} minH="44px" type="button" variant="outline" onClick={goBack} disabled={saving}>Cancel</Button>
-          <Button width={{ base: 'full', sm: 'auto' }} minH="44px" type="submit" colorPalette="green" loading={saving}>
-            <LuSave aria-hidden="true" /> {isEditing ? 'Save Changes' : 'Add Record'}
-          </Button>
-        </Card.Footer>
-      </Card.Root>
+          </Card.Body>
+          <Card.Footer p={{ base: 4, md: 6 }} pt={0} justifyContent="flex-end" gap={3} flexDirection={{ base: 'column-reverse', sm: 'row' }}>
+            <Button width={{ base: 'full', sm: 'auto' }} minH="44px" type="button" variant="outline" onClick={goBack} disabled={saving}>Cancel</Button>
+            <Button width={{ base: 'full', sm: 'auto' }} minH="44px" type="submit" colorPalette="green" loading={saving}>
+              <LuSave aria-hidden="true" /> {isEditing ? 'Save Changes' : 'Add Record'}
+            </Button>
+          </Card.Footer>
+        </Card.Root>
+      </form>
 
       <ConfirmDialog
         open={discardOpen}

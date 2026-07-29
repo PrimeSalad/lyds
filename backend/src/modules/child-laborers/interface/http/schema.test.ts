@@ -36,6 +36,22 @@ describe('child laborer HTTP schemas', () => {
     expect(result.success).toBe(false);
   });
 
+  it('requires remarks before a record can be validated', () => {
+    const withoutRemarks = createChildLaborerSchema.safeParse({
+      ...validInput,
+      record_status: 'VALIDATED',
+      remarks: '   ',
+    });
+    const withRemarks = createChildLaborerSchema.safeParse({
+      ...validInput,
+      record_status: 'VALIDATED',
+      remarks: 'Household details confirmed during field validation.',
+    });
+
+    expect(withoutRemarks.success).toBe(false);
+    expect(withRemarks.success).toBe(true);
+  });
+
   it('coerces list pagination and filing-year query values', () => {
     expect(listChildLaborersQuerySchema.parse({ filingYear: '2026', page: '2' })).toMatchObject({
       filingYear: 2026,

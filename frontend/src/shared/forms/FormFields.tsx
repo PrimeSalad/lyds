@@ -71,6 +71,7 @@ interface TextareaFieldProps {
   error?: string;
   required?: boolean;
   placeholder?: string;
+  helpText?: string;
   rows?: number;
   onBlur?: () => void;
   ref?: React.Ref<HTMLTextAreaElement>;
@@ -84,6 +85,7 @@ export const TextareaField = ({
   error,
   required,
   placeholder,
+  helpText,
   rows = 3,
   onBlur,
   ref,
@@ -101,6 +103,7 @@ export const TextareaField = ({
       borderColor="border.strong"
       _focusVisible={{ borderColor: 'primary.600', boxShadow: '0 0 0 1px var(--chakra-colors-primary-600)' }}
     />
+    {helpText && !error && <Field.HelperText>{helpText}</Field.HelperText>}
     {error && <Field.ErrorText>{error}</Field.ErrorText>}
   </Field.Root>
 );

@@ -16,7 +16,6 @@ import {
 } from '@chakra-ui/react';
 import type { IconType } from 'react-icons';
 import {
-  LuActivity,
   LuChartNoAxesCombined,
   LuCircleAlert,
   LuDatabase,
@@ -379,7 +378,10 @@ export const ChildLaborerAnalytics = ({
 
   const total = summary.total_records;
   const schoolRate = ratio(summary.attending_school, total);
-  const activeRate = ratio(summary.active_cases, total);
+  const validatedCount = summary.status_counts.VALIDATED ?? 0;
+  const awaitingValidationCount = summary.status_counts.IDENTIFIED ?? 0;
+  const validatedRate = ratio(validatedCount, total);
+  const awaitingValidationRate = ratio(awaitingValidationCount, total);
   const scopeCount = summary.barangay_distribution.length;
   const schoolItems = withColors([
     { key: 'ATTENDING', label: 'Attending school', count: summary.attending_school, percentage: schoolRate },
@@ -398,7 +400,7 @@ export const ChildLaborerAnalytics = ({
   const workItems = withColors(summary.work_distribution, workColors);
   const filterSummary = total === 0
     ? `No child laborer records match the current ${year} filters.`
-    : `${formatNumber(total)} child laborer record${total === 1 ? '' : 's'} across ${formatNumber(scopeCount)} barangay${scopeCount === 1 ? '' : 's'}, with ${formatNumber(summary.not_attending_school)} currently marked as not attending school.`;
+    : `${formatNumber(total)} child laborer record${total === 1 ? '' : 's'} across ${formatNumber(scopeCount)} barangay${scopeCount === 1 ? '' : 's'}. ${formatNumber(validatedCount)} validated (${formatPercentage(validatedRate)}) and ${formatNumber(awaitingValidationCount)} not yet validated (${formatPercentage(awaitingValidationRate)}), based on recorded remarks.`;
 
   return (
     <VStack align="stretch" gap={5}>
@@ -444,10 +446,10 @@ export const ChildLaborerAnalytics = ({
 
       <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
         <MetricCard label="Records represented" value={formatNumber(total)} helper={`Filtered ${year} registry`} icon={LuUsersRound} />
+        <MetricCard label="Validated records" value={formatPercentage(validatedRate)} helper={`${formatNumber(validatedCount)} record${validatedCount === 1 ? '' : 's'} with validation remarks`} icon={LuShieldCheck} tone="info" />
+        <MetricCard label="Not yet validated" value={formatPercentage(awaitingValidationRate)} helper={`${formatNumber(awaitingValidationCount)} identified record${awaitingValidationCount === 1 ? '' : 's'} awaiting remarks`} icon={LuCircleAlert} tone="warning" />
         <MetricCard label="School participation" value={formatPercentage(schoolRate)} helper={`${formatNumber(summary.attending_school)} attending school`} icon={LuGraduationCap} tone="info" />
-        <MetricCard label="Education follow-up" value={formatNumber(summary.not_attending_school)} helper="Marked as not attending school" icon={LuSchool} tone="warning" />
         <MetricCard label="Barangays represented" value={formatNumber(scopeCount)} helper={scopeLabel} icon={LuMapPin} />
-        <MetricCard label="Active case share" value={formatPercentage(activeRate)} helper={`${formatNumber(summary.active_cases)} active · ${formatNumber(summary.closed_cases)} closed`} icon={LuActivity} />
       </SimpleGrid>
 
       <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} alignItems="stretch">
@@ -463,7 +465,7 @@ export const ChildLaborerAnalytics = ({
         <GridItem colSpan={{ base: 1, xl: 7 }}>
           <BreakdownPanel
             title="Case status pipeline"
-            description="Where child labor cases currently sit in the local response workflow."
+            description="Current workflow percentages. A record is validated only when validation remarks are present."
             items={statusItems}
           />
         </GridItem>
@@ -522,8 +524,8 @@ export const ChildLaborerAnalytics = ({
                   },
                   {
                     icon: LuShieldCheck,
-                    title: `${formatNumber(summary.active_cases)} active case${summary.active_cases === 1 ? '' : 's'}`,
-                    text: 'Identified, validated, referred, and monitored cases remain part of the active response workload.',
+                    title: `${formatPercentage(validatedRate)} validation completion`,
+                    text: `${formatNumber(validatedCount)} of ${formatNumber(total)} filtered records contain validation remarks; ${formatNumber(awaitingValidationCount)} still await validation.`,
                     tone: 'info.light',
                     color: 'info',
                   },
@@ -552,7 +554,7 @@ export const ChildLaborerAnalytics = ({
       </Grid>
 
       <Text srOnly>
-        Report summary: {filterSummary} School participation is {formatPercentage(schoolRate)}. Active case share is {formatPercentage(activeRate)}.
+        Report summary: {filterSummary} School participation is {formatPercentage(schoolRate)}.
       </Text>
     </VStack>
   );

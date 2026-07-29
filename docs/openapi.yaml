@@ -1170,6 +1170,7 @@ components:
         remarks:
           type: string
           maxLength: 1000
+          description: Required when record_status is VALIDATED; validation percentages are based on current record statuses backed by remarks.
     UpdateChildLaborerInput:
       allOf:
         - $ref: '#/components/schemas/CreateChildLaborerInput'

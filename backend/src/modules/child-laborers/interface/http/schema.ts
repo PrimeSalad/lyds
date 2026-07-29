@@ -41,6 +41,14 @@ const validateAnnualRecord = (
       message: 'Birth date must be on or before the end of the filing year.',
     });
   }
+
+  if (value.record_status === 'VALIDATED' && !value.remarks) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['remarks'],
+      message: 'Remarks are required before a record can be marked as validated.',
+    });
+  }
 };
 
 export const createChildLaborerSchema = childLaborerFields.superRefine(validateAnnualRecord);

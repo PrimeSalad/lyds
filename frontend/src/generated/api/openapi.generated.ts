@@ -1800,6 +1800,7 @@ export interface components {
             parent_guardian_occupation?: string;
             /** @default IDENTIFIED */
             record_status: components["schemas"]["ChildLaborerStatus"];
+            /** @description Required when record_status is VALIDATED; validation percentages are based on current record statuses backed by remarks. */
             remarks?: string;
         };
         UpdateChildLaborerInput: components["schemas"]["CreateChildLaborerInput"] & {

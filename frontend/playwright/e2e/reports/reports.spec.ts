@@ -24,11 +24,13 @@ test.describe('Reports', () => {
     await expect(page.getByRole('heading', { name: 'Case status pipeline' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Barangay concentration' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Reporting completeness' })).toBeVisible();
+    await expect(page.getByText('Validated records', { exact: true })).toBeVisible();
+    await expect(page.getByText('1 record with validation remarks', { exact: true })).toBeVisible();
     await expect(page.getByText('100.0%', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Dela Cruz', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Seasonal farm work', { exact: true }).first()).toBeVisible();
     const recordRow = page.getByRole('row').filter({ hasText: 'Seasonal farm work' });
-    await expect(recordRow.getByText('Monitored', { exact: true })).toBeVisible();
+    await expect(recordRow.getByText('Validated', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /Export XLSX/i })).toBeVisible();
   });
 

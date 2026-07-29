@@ -35,19 +35,31 @@ test.describe('Dashboard dataset switcher', () => {
 
     await expect(page.getByRole('heading', { name: 'Youth Registry Dashboard' })).toBeVisible();
     await expect(page.getByText('Records represented', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-dashboard-summary="true"]')).toBeVisible();
+    await expect(page.locator('[data-dashboard-metric="true"]')).toHaveCount(5);
+    await expect(page.locator('main svg[width="42"][height="42"]')).toHaveCount(0);
+    const youthMetricColumns = await page.locator('[data-dashboard-metrics="true"]').evaluate((element) => (
+      window.getComputedStyle(element).gridTemplateColumns
+    ));
 
     await page.getByLabel('Registry').selectOption('CHILD_LABORERS');
 
     await expect(page).toHaveURL('/?view=child-laborers');
     await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Child labor intelligence for focused local action' })).toBeVisible();
+    await expect(page.locator('[data-dashboard-summary="true"]')).toBeVisible();
     await expect(page.getByText('Records represented', { exact: true })).toBeVisible();
     await expect(page.getByText('Validated records', { exact: true })).toBeVisible();
     await expect(page.getByText('Reported nature of work', { exact: true })).toBeVisible();
     await expect(page.getByText('No records match the current filters.')).toHaveCount(0);
+    await expect(page.locator('[data-dashboard-metric="true"]')).toHaveCount(5);
+    await expect(page.locator('main svg[width="42"][height="42"]')).toHaveCount(0);
+    const childMetricColumns = await page.locator('[data-dashboard-metrics="true"]').evaluate((element) => (
+      window.getComputedStyle(element).gridTemplateColumns
+    ));
+    expect(childMetricColumns).toBe(youthMetricColumns);
 
     await page.getByLabel('Filing year').selectOption('2026');
-    await expect(page.getByText('2026 situation snapshot', { exact: true })).toBeVisible();
+    await expect(page.getByText('Filing year 2026', { exact: true })).toBeVisible();
 
     await page.getByLabel('Registry').selectOption('YOUTH');
     await expect(page).toHaveURL('/');

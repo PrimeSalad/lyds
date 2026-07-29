@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Badge, Box, Button, Card, Flex, Grid, GridItem, Heading, HStack, Icon, SimpleGrid, Skeleton, Text, VStack } from '@chakra-ui/react';
+import { Badge, Box, Button, Card, Flex, Grid, GridItem, HStack, SimpleGrid, Skeleton, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router';
-import type { IconType } from 'react-icons';
 import {
   LuArrowRight,
-  LuChartNoAxesCombined,
-  LuCircleCheckBig,
-  LuClock3,
-  LuFileCheck2,
-  LuMapPin,
   LuRefreshCw,
   LuTriangleAlert,
-  LuUsersRound,
 } from 'react-icons/lu';
 import { type RootState } from '../../../../redux/store';
 import { Sidebar } from '../components/Sidebar';
@@ -25,6 +18,12 @@ import { categoryApi } from '../../../categories/infrastructure/category-api';
 import { childLaborerApi, type ChildLaborerSummary } from '../../../child-laborers/infrastructure/child-laborer-api';
 import { ChildLaborerAnalytics } from '../../../child-laborers/presentation/components/ChildLaborerAnalytics';
 import { DashboardViewSwitcher, type DashboardView } from '../components/DashboardViewSwitcher';
+import {
+  RegistryBriefList,
+  RegistryMetricCard,
+  RegistrySectionHeading,
+  RegistrySummary,
+} from '../../../../shared/components/RegistryDashboardPrimitives';
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [navigationOpen, setNavigationOpen] = useState(false);
@@ -103,52 +102,7 @@ const statusPalettes: Record<string, string> = {
   ARCHIVED: 'gray',
 };
 
-type MetricCardProps = {
-  label: string;
-  value: number | string;
-  helper: string;
-  icon: IconType;
-  loading: boolean;
-  tone?: 'default' | 'warning' | 'success';
-};
-
-const MetricCard = ({ label, value, helper, icon, loading, tone = 'default' }: MetricCardProps) => {
-  const colors = tone === 'warning'
-    ? { bg: 'warning.light', color: 'warning' }
-    : tone === 'success'
-      ? { bg: 'success.light', color: 'success' }
-      : { bg: 'primary.50', color: 'primary.700' };
-
-  return (
-    <Card.Root borderColor="border" borderRadius="md" boxShadow="panel" minH="148px">
-      <Card.Body p={{ base: 4, md: 5 }}>
-        <Flex justify="space-between" gap={3} align="flex-start">
-          <Box minW={0}>
-            <Text fontSize="sm" color="text.secondary" fontWeight="600">{label}</Text>
-            <Skeleton loading={loading} mt={2} width={loading ? '72px' : 'auto'} minW={loading ? '72px' : 0}>
-              <Text fontSize={{ base: '1.5rem', md: '1.75rem' }} whiteSpace="nowrap" lineHeight="1.1" fontWeight="750" fontFamily="heading" fontVariantNumeric="tabular-nums">
-                {typeof value === 'number' ? formatNumber(value) : value}
-              </Text>
-            </Skeleton>
-          </Box>
-          <Flex width="40px" height="40px" flexShrink={0} align="center" justify="center" borderRadius="md" bg={colors.bg} color={colors.color}>
-            <Icon as={icon} boxSize="20px" aria-hidden="true" />
-          </Flex>
-        </Flex>
-        <Text mt={3} fontSize="xs" color="text.muted">{helper}</Text>
-      </Card.Body>
-    </Card.Root>
-  );
-};
-
-const SectionHeading = ({ title, description }: { title: string; description: string }) => (
-  <Box>
-    <Heading as="h2" size="sm" fontFamily="heading" fontWeight="650" color="text.primary">{title}</Heading>
-    <Text mt={1} fontSize="sm" color="text.muted">{description}</Text>
-  </Box>
-);
-
-const YouthSnapshot = ({ data, year, scopeLabel }: {
+const YouthRegistrySummary = ({ data, year, scopeLabel }: {
   data: DashboardAnalytics;
   year: number;
   scopeLabel: string;
@@ -159,31 +113,7 @@ const YouthSnapshot = ({ data, year, scopeLabel }: {
     ? `No youth registry records are filed for ${year} in this scope.`
     : `${formatNumber(total)} youth profile${total === 1 ? '' : 's'} across ${formatNumber(data.coverage.barangaysWithRecords)} barangay${data.coverage.barangaysWithRecords === 1 ? '' : 's'}. ${formatNumber(data.summary.approved)} approved (${approvalRate.toFixed(1)}%) and ${formatNumber(data.summary.submitted)} awaiting review.`;
 
-  return (
-    <Card.Root bg="primary.900" color="white" borderRadius="lg" overflow="hidden" boxShadow="panel">
-      <Card.Body p={{ base: 5, md: 7 }}>
-        <Grid templateColumns={{ base: '1fr', lg: 'minmax(0, 1.45fr) minmax(220px, 0.55fr)' }} gap={6} alignItems="center">
-          <Box>
-            <HStack gap={2} wrap="wrap" mb={4}>
-              <Badge colorPalette="green" variant="solid">{year} registry snapshot</Badge>
-              <Badge variant="outline" borderColor="whiteAlpha.500" color="white">{scopeLabel}</Badge>
-            </HStack>
-            <Heading as="h2" fontFamily="heading" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="700" lineHeight="1.25" color="white">
-              Youth registry intelligence for local planning
-            </Heading>
-            <Text mt={3} maxW="720px" color="whiteAlpha.800" fontSize={{ base: 'sm', md: 'md' }} lineHeight="1.7">
-              {summaryText}
-            </Text>
-          </Box>
-          <Flex justify={{ base: 'flex-start', lg: 'center' }}>
-            <Flex boxSize={{ base: '76px', md: '92px' }} align="center" justify="center" borderRadius="2xl" bg="whiteAlpha.150" borderWidth="1px" borderColor="whiteAlpha.300">
-              <LuChartNoAxesCombined size={42} aria-hidden="true" />
-            </Flex>
-          </Flex>
-        </Grid>
-      </Card.Body>
-    </Card.Root>
-  );
+  return <RegistrySummary year={year} scopeLabel={scopeLabel} summary={summaryText} />;
 };
 
 const DemographicPanel = ({ title, description, items }: {
@@ -195,7 +125,7 @@ const DemographicPanel = ({ title, description, items }: {
   return (
     <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
       <Card.Header p={{ base: 4, md: 5 }} pb={2}>
-        <SectionHeading title={title} description={description} />
+        <RegistrySectionHeading title={title} description={description} />
       </Card.Header>
       <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }}>
         {items.length === 0 ? (
@@ -226,125 +156,125 @@ const YouthDecisionBrief = ({ data }: { data: DashboardAnalytics }) => {
   const uncoveredBarangays = Math.max(0, data.coverage.totalBarangays - data.coverage.barangaysWithRecords);
   const items = [
     {
-      icon: LuClock3,
       title: `${formatNumber(data.summary.submitted)} profile${data.summary.submitted === 1 ? '' : 's'} awaiting review`,
       text: 'Prioritize submitted profiles so current-year participation data can move into the approved registry.',
-      bg: 'warning.light',
-      color: 'warning',
     },
     {
-      icon: LuFileCheck2,
       title: `${data.dataQuality.completionRate.toFixed(1)}% core profile completion`,
       text: `${formatNumber(data.dataQuality.incompleteCore)} profiles still need required demographic or classification details.`,
-      bg: 'info.light',
-      color: 'info',
     },
     {
-      icon: LuMapPin,
       title: uncoveredBarangays === 0 ? 'Every barangay is represented' : `${formatNumber(uncoveredBarangays)} barangay${uncoveredBarangays === 1 ? '' : 's'} without records`,
       text: uncoveredBarangays === 0
         ? 'Maintain complete annual submissions while review and cleanup continue.'
         : 'Coordinate annual registration with barangays that do not yet have a profile in this filing year.',
-      bg: 'primary.50',
-      color: 'primary.700',
     },
   ];
 
   return (
     <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
       <Card.Header p={{ base: 4, md: 5 }} pb={2}>
-        <SectionHeading title="Decision brief" description="A concise reading of the current youth registry." />
+        <RegistrySectionHeading title="Decision brief" description="A concise reading of the current youth registry." />
       </Card.Header>
       <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }}>
-        <VStack align="stretch" gap={3}>
-          {items.map((item) => (
-            <HStack key={item.title} align="flex-start" gap={3} p={3} borderRadius="md" bg={item.bg}>
-              <Flex boxSize="36px" align="center" justify="center" flexShrink={0} borderRadius="md" bg="surface" color={item.color}>
-                <Icon as={item.icon} boxSize="18px" aria-hidden="true" />
-              </Flex>
-              <Box>
-                <Text fontSize="sm" fontWeight="700">{item.title}</Text>
-                <Text mt={1} fontSize="xs" color="text.secondary" lineHeight="1.55">{item.text}</Text>
-              </Box>
-            </HStack>
-          ))}
-        </VStack>
+        <RegistryBriefList items={items} />
       </Card.Body>
     </Card.Root>
   );
 };
 
-const StatusPanel = ({ data }: { data: DashboardAnalytics }) => (
-  <Card.Root borderColor="border" borderRadius="md" height="full">
-    <Card.Header pb={2}>
-      <SectionHeading title="Record pipeline" description="Current distribution across the review workflow." />
-    </Card.Header>
-    <Card.Body pt={3}>
-      <VStack align="stretch" gap={4}>
-        {data.statusDistribution.map((item) => (
-          <Box key={item.status}>
-            <Flex justify="space-between" gap={3} mb={1.5}>
-              <HStack gap={2}>
-                <Box width="8px" height="8px" borderRadius="full" bg={statusColors[item.status]} />
-                <Text fontSize="sm" color="text.secondary">{item.label}</Text>
-              </HStack>
-              <Text fontSize="sm" fontWeight="700" fontVariantNumeric="tabular-nums">
-                {formatNumber(item.count)} <Text as="span" color="text.muted" fontWeight="400">({item.percentage.toFixed(1)}%)</Text>
-              </Text>
-            </Flex>
-            <Box height="7px" bg="surface.muted" borderRadius="full" overflow="hidden">
-              <Box
-                height="full"
-                width={`${item.count > 0 ? Math.max(item.percentage, 1.5) : 0}%`}
-                bg={statusColors[item.status]}
-                borderRadius="full"
-                transition="width 300ms ease"
-              />
-            </Box>
-          </Box>
-        ))}
-      </VStack>
-    </Card.Body>
-  </Card.Root>
-);
+const StatusPanel = ({ data }: { data: DashboardAnalytics }) => {
+  const hasStatusData = data.statusDistribution.some((item) => item.count > 0);
+
+  return (
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+      <Card.Header p={{ base: 4, md: 5 }} pb={2}>
+        <RegistrySectionHeading title="Record pipeline" description="Current distribution across the review workflow." />
+      </Card.Header>
+      <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
+        {!hasStatusData ? (
+          <Flex minH="180px" align="center" justify="center" textAlign="center">
+            <Text maxW="42ch" color="text.muted" fontSize="sm">
+              No workflow activity is available for this filing year.
+            </Text>
+          </Flex>
+        ) : (
+          <VStack align="stretch" gap={4}>
+            {data.statusDistribution.map((item) => (
+              <Box key={item.status}>
+                <Flex justify="space-between" gap={3} mb={1.5}>
+                  <HStack gap={2}>
+                    <Box width="8px" height="8px" borderRadius="full" bg={statusColors[item.status]} />
+                    <Text fontSize="sm" color="text.secondary">{item.label}</Text>
+                  </HStack>
+                  <Text fontSize="sm" fontWeight="700" fontVariantNumeric="tabular-nums">
+                    {formatNumber(item.count)} <Text as="span" color="text.muted" fontWeight="400">({item.percentage.toFixed(1)}%)</Text>
+                  </Text>
+                </Flex>
+                <Box height="7px" bg="surface.muted" borderRadius="full" overflow="hidden">
+                  <Box
+                    height="full"
+                    width={`${item.count > 0 ? Math.max(item.percentage, 1.5) : 0}%`}
+                    bg={statusColors[item.status]}
+                    borderRadius="full"
+                    transition="width 300ms ease"
+                  />
+                </Box>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Card.Body>
+    </Card.Root>
+  );
+};
 
 const TrendPanel = ({ data }: { data: DashboardAnalytics }) => {
+  const hasActivity = data.monthlyTrend.some((month) => month.created + month.submitted + month.approved > 0);
   const maximum = Math.max(1, ...data.monthlyTrend.flatMap((month) => [month.created, month.submitted, month.approved]));
   const barHeight = (value: number) => `${Math.max(value === 0 ? 0 : 8, (value / maximum) * 136)}px`;
 
   return (
-    <Card.Root borderColor="border" borderRadius="md" height="full">
-      <Card.Header pb={2}>
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+      <Card.Header p={{ base: 4, md: 5 }} pb={2}>
         <Flex justify="space-between" gap={4} align={{ base: 'flex-start', md: 'center' }} direction={{ base: 'column', md: 'row' }}>
-          <SectionHeading title="Six-month activity" description="Created, submitted, and approved records by month." />
-          <HStack gap={3} wrap="wrap" fontSize="xs" color="text.secondary">
-            <HStack gap={1.5}><Box w="8px" h="8px" bg="#2563EB" borderRadius="xs" />Created</HStack>
-            <HStack gap={1.5}><Box w="8px" h="8px" bg="#D97706" borderRadius="xs" />Submitted</HStack>
-            <HStack gap={1.5}><Box w="8px" h="8px" bg="#15803D" borderRadius="xs" />Approved</HStack>
-          </HStack>
+          <RegistrySectionHeading title="Six-month activity" description="Created, submitted, and approved records by month." />
+          {hasActivity && (
+            <HStack gap={3} wrap="wrap" fontSize="xs" color="text.secondary">
+              <HStack gap={1.5}><Box w="8px" h="8px" bg="#2563EB" borderRadius="xs" />Created</HStack>
+              <HStack gap={1.5}><Box w="8px" h="8px" bg="#D97706" borderRadius="xs" />Submitted</HStack>
+              <HStack gap={1.5}><Box w="8px" h="8px" bg="#15803D" borderRadius="xs" />Approved</HStack>
+            </HStack>
+          )}
         </Flex>
       </Card.Header>
-      <Card.Body pt={2} overflowX="auto">
-        <Flex minW="320px" height="190px" align="flex-end" gap={{ base: 1, md: 3 }} borderBottom="1px solid" borderColor="border" pb={2}>
-          {data.monthlyTrend.map((month) => (
-            <VStack
-              key={month.month}
-              flex="1"
-              minW="42px"
-              height="full"
-              justify="flex-end"
-              gap={2}
-              aria-label={`${month.label}: ${month.created} created, ${month.submitted} submitted, ${month.approved} approved`}
-            >
-              <HStack align="flex-end" justify="center" gap="3px" height="145px" width="full">
-                <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.created)} bg="#2563EB" borderRadius="2px 2px 0 0" />
-                <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.submitted)} bg="#D97706" borderRadius="2px 2px 0 0" />
-                <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.approved)} bg="#15803D" borderRadius="2px 2px 0 0" />
-              </HStack>
-              <Text fontSize="xs" color="text.muted" fontWeight="600">{month.label}</Text>
-            </VStack>
-          ))}
-        </Flex>
+      <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }} overflowX="auto">
+        {!hasActivity ? (
+          <Flex minH="112px" align="center" justify="center" textAlign="center">
+            <Text color="text.muted" fontSize="sm">No workflow activity was recorded in the last six months.</Text>
+          </Flex>
+        ) : (
+          <Flex minW="320px" height="190px" align="flex-end" gap={{ base: 1, md: 3 }} borderBottom="1px solid" borderColor="border" pb={2}>
+            {data.monthlyTrend.map((month) => (
+              <VStack
+                key={month.month}
+                flex="1"
+                minW="42px"
+                height="full"
+                justify="flex-end"
+                gap={2}
+                aria-label={`${month.label}: ${month.created} created, ${month.submitted} submitted, ${month.approved} approved`}
+              >
+                <HStack align="flex-end" justify="center" gap="3px" height="145px" width="full">
+                  <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.created)} bg="#2563EB" borderRadius="2px 2px 0 0" />
+                  <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.submitted)} bg="#D97706" borderRadius="2px 2px 0 0" />
+                  <Box width={{ base: '7px', md: '10px' }} height={barHeight(month.approved)} bg="#15803D" borderRadius="2px 2px 0 0" />
+                </HStack>
+                <Text fontSize="xs" color="text.muted" fontWeight="600">{month.label}</Text>
+              </VStack>
+            ))}
+          </Flex>
+        )}
       </Card.Body>
     </Card.Root>
   );
@@ -358,11 +288,11 @@ const DataQualityPanel = ({ data, onOpenRecords }: { data: DashboardAnalytics; o
     { label: 'Drafts inactive for 30+ days', value: data.dataQuality.staleDrafts },
   ];
   return (
-    <Card.Root borderColor="border" borderRadius="md" height="full">
-      <Card.Header pb={2}>
-        <SectionHeading title="Data quality" description="Items that need cleanup before reporting." />
+    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+      <Card.Header p={{ base: 4, md: 5 }} pb={2}>
+        <RegistrySectionHeading title="Data quality" description="Items that need cleanup before reporting." />
       </Card.Header>
-      <Card.Body pt={3}>
+      <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
         <Flex align="baseline" justify="space-between" mb={2}>
           <Text fontSize="sm" color="text.secondary">Core profile completion</Text>
           <Text fontFamily="heading" fontSize="lg" fontWeight="700">{data.dataQuality.completionRate.toFixed(1)}%</Text>
@@ -399,25 +329,10 @@ const BarangayPanel = ({
 }: BarangayPanelProps) => (
   <Card.Root borderColor="border" borderRadius="lg" height="full" overflow="hidden" boxShadow="panel">
     <Card.Header p={{ base: 4, md: 5 }} borderBottomWidth="1px" borderColor="border">
-      <HStack gap={3} align="flex-start">
-          <Flex
-            boxSize="40px"
-            flexShrink={0}
-            align="center"
-            justify="center"
-            borderRadius="md"
-            bg="primary.50"
-            color="primary.700"
-          >
-            <LuMapPin size={20} aria-hidden="true" />
-          </Flex>
-          <Box>
-            <Text fontFamily="heading" fontWeight="650" color="text.primary">Barangay coverage</Text>
-            <Text mt={1} fontSize="sm" color="text.muted">
-              Compare registered youth across every barangay by filing year.
-            </Text>
-          </Box>
-      </HStack>
+      <RegistrySectionHeading
+        title="Barangay coverage"
+        description="Compare registered youth across every barangay by filing year."
+      />
     </Card.Header>
     <Card.Body p={0}>
       <Box p={{ base: 4, md: 5 }} bg="surface.muted" borderBottomWidth="1px" borderColor="border">
@@ -471,8 +386,14 @@ const BarangayPanel = ({
 
       {data.barangayCoverage.length === 0 ? (
         <Box p={8} textAlign="center">
-          <Text fontFamily="heading" fontWeight="600">No barangays available</Text>
-          <Text mt={1} fontSize="sm" color="text.muted">Try another filing year.</Text>
+          <Text fontFamily="heading" fontWeight="600">
+            {data.coverage.barangaysWithRecords > 0 ? 'Barangay totals are being consolidated' : 'No barangay records for this year'}
+          </Text>
+          <Text mt={1} fontSize="sm" color="text.muted">
+            {data.coverage.barangaysWithRecords > 0
+              ? 'The coverage total is available; detailed barangay rows were not included in the current report response.'
+              : 'Choose another filing year or add the first youth record.'}
+          </Text>
         </Box>
       ) : (
         <VStack align="stretch" gap={0} maxH="420px" overflowY="auto">
@@ -520,11 +441,11 @@ const BarangayPanel = ({
 );
 
 const RecentRecordsPanel = ({ data, onOpenRecord }: { data: DashboardAnalytics; onOpenRecord: (id: string) => void }) => (
-  <Card.Root borderColor="border" borderRadius="md" height="full">
-    <Card.Header pb={2}>
-      <SectionHeading title="Recent record activity" description="Most recently updated youth profiles." />
+  <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
+    <Card.Header p={{ base: 4, md: 5 }} pb={2}>
+      <RegistrySectionHeading title="Recent record activity" description="Most recently updated youth profiles." />
     </Card.Header>
-    <Card.Body pt={3}>
+    <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
       {data.recentRecords.length === 0 ? (
         <Text color="text.muted" fontSize="sm">No record activity yet.</Text>
       ) : (
@@ -560,9 +481,15 @@ const RecentRecordsPanel = ({ data, onOpenRecord }: { data: DashboardAnalytics; 
 );
 
 const DashboardSkeleton = () => (
-  <SimpleGrid columns={{ base: 1, sm: 2, xl: 4 }} gap={4}>
-    {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="148px" borderRadius="md" />)}
-  </SimpleGrid>
+  <VStack align="stretch" gap={5} aria-label="Loading youth registry analytics">
+    <Skeleton height="108px" borderRadius="lg" />
+    <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
+      {Array.from({ length: 5 }, (_, index) => <Skeleton key={index} height="148px" borderRadius="lg" />)}
+    </SimpleGrid>
+    <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5}>
+      {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="320px" borderRadius="lg" />)}
+    </Grid>
+  </VStack>
 );
 
 export const DashboardPage = () => {
@@ -740,7 +667,7 @@ export const DashboardPage = () => {
         <>
           {error && (
             <Flex role="alert" mb={5} p={4} border="1px solid" borderColor="danger" bg="danger.light" borderRadius="md" gap={3} align="flex-start">
-              <Icon as={LuTriangleAlert} color="danger" boxSize="20px" mt="1px" flexShrink={0} />
+              <LuTriangleAlert size={20} color="var(--chakra-colors-danger)" style={{ marginTop: '4px', flexShrink: 0 }} aria-hidden="true" />
               <Box flex={1}>
                 <Text fontWeight="700" color="danger">Analytics unavailable</Text>
                 <Text mt={1} fontSize="sm" color="text.secondary">{error}</Text>
@@ -752,31 +679,33 @@ export const DashboardPage = () => {
           {loading && !analytics ? (
             <DashboardSkeleton />
           ) : analytics ? (
-            <>
-              <YouthSnapshot
+            <VStack align="stretch" gap={5}>
+              <YouthRegistrySummary
                 data={analytics}
                 year={youthYear}
                 scopeLabel={isAdmin ? 'All barangays' : 'Assigned barangay'}
               />
 
-              <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4} mt={5}>
-                <MetricCard label="Records represented" value={youthTotal} helper={`${summary?.thisMonth ?? 0} added this month`} icon={LuUsersRound} loading={loading} />
-                <MetricCard label="Approved records" value={youthPercentage(summary?.approved ?? 0)} helper={`${formatNumber(summary?.approved ?? 0)} completed reviews`} icon={LuCircleCheckBig} loading={loading} tone="success" />
-                <MetricCard label="Pending review" value={youthPercentage(summary?.submitted ?? 0)} helper={`${formatNumber(summary?.submitted ?? 0)} awaiting action`} icon={LuClock3} loading={loading} tone="warning" />
-                <MetricCard label="Profile completion" value={`${analytics.dataQuality.completionRate.toFixed(1)}%`} helper={`${formatNumber(analytics.dataQuality.incompleteCore)} incomplete profiles`} icon={LuFileCheck2} loading={loading} />
-                <MetricCard label="Barangays represented" value={analytics.coverage.barangaysWithRecords} helper={isAdmin ? `of ${analytics.coverage.totalBarangays} barangays` : 'Assigned barangay scope'} icon={LuMapPin} loading={loading} />
+              <SimpleGrid data-dashboard-metrics="true" columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
+                <RegistryMetricCard label="Records represented" value={youthTotal} helper={`${summary?.thisMonth ?? 0} added this month`} loading={loading} />
+                <RegistryMetricCard label="Approved records" value={youthPercentage(summary?.approved ?? 0)} helper={`${formatNumber(summary?.approved ?? 0)} completed reviews`} loading={loading} />
+                <RegistryMetricCard label="Pending review" value={youthPercentage(summary?.submitted ?? 0)} helper={`${formatNumber(summary?.submitted ?? 0)} awaiting action`} loading={loading} />
+                <RegistryMetricCard label="Profile completion" value={`${analytics.dataQuality.completionRate.toFixed(1)}%`} helper={`${formatNumber(analytics.dataQuality.incompleteCore)} incomplete profiles`} loading={loading} />
+                <RegistryMetricCard label="Barangays represented" value={analytics.coverage.barangaysWithRecords} helper={isAdmin ? `of ${analytics.coverage.totalBarangays} barangays` : 'Assigned barangay scope'} loading={loading} />
               </SimpleGrid>
 
-              <Grid templateColumns={{ base: '1fr', xl: 'minmax(0, 1.45fr) minmax(320px, 0.75fr)' }} gap={5} mt={5} alignItems="stretch">
-                <StatusPanel data={analytics} />
-                <DataQualityPanel data={analytics} onOpenRecords={() => navigate('/youth-records')} />
+              <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} alignItems="stretch">
+                <GridItem colSpan={{ base: 1, xl: 7 }}>
+                  <StatusPanel data={analytics} />
+                </GridItem>
+                <GridItem colSpan={{ base: 1, xl: 5 }}>
+                  <DataQualityPanel data={analytics} onOpenRecords={() => navigate('/youth-records')} />
+                </GridItem>
               </Grid>
 
-              <Box mt={5}>
-                <TrendPanel data={analytics} />
-              </Box>
+              <TrendPanel data={analytics} />
 
-              <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5} mt={5} alignItems="stretch">
+              <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5} alignItems="stretch">
                 <DemographicPanel
                   title="Youth age profile"
                   description="Age-group composition for the selected filing year."
@@ -789,7 +718,7 @@ export const DashboardPage = () => {
                 />
               </Grid>
 
-              <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} mt={5} alignItems="start">
+              <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} alignItems="start">
                 {isAdmin && coverageData && (
                   <GridItem colSpan={{ base: 1, xl: 7 }}>
                     <BarangayPanel
@@ -807,12 +736,12 @@ export const DashboardPage = () => {
                 </GridItem>
               </Grid>
 
-              <Box mt={5}><AnnouncementFeed /></Box>
+              <AnnouncementFeed />
 
-              <Text mt={4} textAlign="right" color="text.muted" fontSize="xs">
+              <Text textAlign="right" color="text.muted" fontSize="xs">
                 Updated {formatDateTime(analytics.generatedAt)}
               </Text>
-            </>
+            </VStack>
           ) : null}
         </>
       )}

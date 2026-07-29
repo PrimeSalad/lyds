@@ -1,35 +1,28 @@
 import {
-  Badge,
   Box,
   Button,
   Card,
   Flex,
   Grid,
   GridItem,
-  Heading,
   HStack,
-  Icon,
   SimpleGrid,
   Skeleton,
   Text,
   VStack,
 } from '@chakra-ui/react';
-import type { IconType } from 'react-icons';
-import {
-  LuChartNoAxesCombined,
-  LuCircleAlert,
-  LuDatabase,
-  LuGraduationCap,
-  LuMapPin,
-  LuSchool,
-  LuShieldCheck,
-  LuUsersRound,
-} from 'react-icons/lu';
+import { LuCircleAlert } from 'react-icons/lu';
 import type {
   ChildLaborerBreakdownItem,
   ChildLaborerStatus,
   ChildLaborerSummary,
 } from '../../../../generated/api/api-types';
+import {
+  RegistryBriefList,
+  RegistryMetricCard,
+  RegistrySectionHeading,
+  RegistrySummary,
+} from '../../../../shared/components/RegistryDashboardPrimitives';
 
 type ChartColor = {
   token: string;
@@ -96,62 +89,6 @@ const withColors = (
   color: palette[index % palette.length],
 }));
 
-const SectionHeading = ({ title, description }: { title: string; description: string }) => (
-  <Box>
-    <Heading as="h2" size="sm" fontFamily="heading" fontWeight="650" color="text.primary">{title}</Heading>
-    <Text mt={1} fontSize="sm" color="text.muted" lineHeight="1.55">{description}</Text>
-  </Box>
-);
-
-type MetricCardProps = {
-  label: string;
-  value: string;
-  helper: string;
-  icon: IconType;
-  tone?: 'default' | 'info' | 'warning';
-};
-
-const MetricCard = ({ label, value, helper, icon, tone = 'default' }: MetricCardProps) => {
-  const toneStyle = tone === 'warning'
-    ? { background: 'warning.light', color: 'warning' }
-    : tone === 'info'
-      ? { background: 'info.light', color: 'info' }
-      : { background: 'primary.50', color: 'primary.700' };
-
-  return (
-    <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" minH="152px">
-      <Card.Body p={{ base: 4, md: 5 }}>
-        <Flex justify="space-between" gap={3} align="flex-start">
-          <Text fontSize="sm" color="text.secondary" fontWeight="600">{label}</Text>
-          <Flex
-            boxSize="42px"
-            flexShrink={0}
-            align="center"
-            justify="center"
-            borderRadius="md"
-            bg={toneStyle.background}
-            color={toneStyle.color}
-          >
-            <Icon as={icon} boxSize="21px" aria-hidden="true" />
-          </Flex>
-        </Flex>
-        <Text
-          mt={3}
-          fontFamily="heading"
-          fontSize={{ base: '1.6rem', md: '1.75rem' }}
-          fontWeight="750"
-          lineHeight="1.1"
-          fontVariantNumeric="tabular-nums"
-          whiteSpace="nowrap"
-        >
-          {value}
-        </Text>
-        <Text mt={3} fontSize="xs" color="text.muted" lineHeight="1.5">{helper}</Text>
-      </Card.Body>
-    </Card.Root>
-  );
-};
-
 const DonutChart = ({
   items,
   centerValue,
@@ -217,7 +154,7 @@ const DonutPanel = ({
   return (
     <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
       <Card.Header pb={2} p={{ base: 4, md: 5 }}>
-        <SectionHeading title={title} description={description} />
+        <RegistrySectionHeading title={title} description={description} />
       </Card.Header>
       <Card.Body pt={1} px={{ base: 4, md: 5 }} pb={{ base: 4, md: 5 }}>
         <Grid templateColumns={{ base: '1fr', sm: '160px minmax(0, 1fr)' }} gap={5} alignItems="center" justifyItems={{ base: 'center', sm: 'stretch' }}>
@@ -254,7 +191,7 @@ const BreakdownPanel = ({
 }) => (
   <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
     <Card.Header pb={2} p={{ base: 4, md: 5 }}>
-      <SectionHeading title={title} description={description} />
+      <RegistrySectionHeading title={title} description={description} />
     </Card.Header>
     <Card.Body pt={2} px={{ base: 4, md: 5 }} pb={{ base: 4, md: 5 }}>
       {items.length === 0 ? (
@@ -298,7 +235,7 @@ const DataQualityPanel = ({ summary }: { summary: ChildLaborerSummary }) => {
   return (
     <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
       <Card.Header pb={2} p={{ base: 4, md: 5 }}>
-        <SectionHeading
+        <RegistrySectionHeading
           title="Reporting completeness"
           description="Completeness across education, parent or guardian occupation, and nature-of-work fields."
         />
@@ -335,12 +272,12 @@ const DataQualityPanel = ({ summary }: { summary: ChildLaborerSummary }) => {
 
 const AnalyticsSkeleton = () => (
   <VStack align="stretch" gap={5} aria-label="Loading child laborer analytics">
-    <Skeleton height={{ base: '220px', md: '180px' }} borderRadius="lg" />
+    <Skeleton height="108px" borderRadius="lg" />
     <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
-      {Array.from({ length: 5 }, (_, index) => <Skeleton key={index} height="152px" borderRadius="lg" />)}
+      {Array.from({ length: 5 }, (_, index) => <Skeleton key={index} height="148px" borderRadius="lg" />)}
     </SimpleGrid>
     <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5}>
-      {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="340px" borderRadius="lg" />)}
+      {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} height="320px" borderRadius="lg" />)}
     </Grid>
   </VStack>
 );
@@ -361,9 +298,7 @@ export const ChildLaborerAnalytics = ({
         <Card.Body p={{ base: 4, md: 5 }}>
           <Flex justify="space-between" gap={4} align={{ base: 'stretch', sm: 'center' }} direction={{ base: 'column', sm: 'row' }}>
             <HStack gap={3} align="flex-start">
-              <Flex boxSize="42px" align="center" justify="center" borderRadius="md" bg="surface" color="danger" flexShrink={0}>
-                <LuCircleAlert size={21} aria-hidden="true" />
-              </Flex>
+              <LuCircleAlert size={21} color="var(--chakra-colors-danger)" style={{ marginTop: '2px', flexShrink: 0 }} aria-hidden="true" />
               <Box>
                 <Text fontFamily="heading" fontWeight="650">Analytics could not be loaded</Text>
                 <Text mt={1} fontSize="sm" color="text.secondary">{error ?? 'Please try again.'}</Text>
@@ -411,45 +346,14 @@ export const ChildLaborerAnalytics = ({
         </Flex>
       )}
 
-      <Card.Root bg="primary.900" color="white" borderRadius="lg" overflow="hidden" boxShadow="panel">
-        <Card.Body p={{ base: 5, md: 7 }} position="relative">
-          <Box position="absolute" width="260px" height="260px" borderRadius="full" bg="whiteAlpha.100" right="-90px" top="-130px" pointerEvents="none" />
-          <Grid templateColumns={{ base: '1fr', lg: 'minmax(0, 1.45fr) minmax(260px, 0.55fr)' }} gap={6} alignItems="center" position="relative">
-            <Box>
-              <HStack gap={2} wrap="wrap" mb={4}>
-                <Badge colorPalette="green" variant="solid">{year} situation snapshot</Badge>
-                <Badge variant="outline" borderColor="whiteAlpha.500" color="white">{scopeLabel}</Badge>
-              </HStack>
-              <Heading as="h2" fontFamily="heading" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="700" lineHeight="1.25" color="white">
-                Child labor intelligence for focused local action
-              </Heading>
-              <Text mt={3} maxW="720px" color="whiteAlpha.800" fontSize={{ base: 'sm', md: 'md' }} lineHeight="1.7">
-                {filterSummary}
-              </Text>
-            </Box>
-            <Flex justify={{ base: 'flex-start', lg: 'center' }}>
-              <Flex
-                boxSize={{ base: '76px', md: '92px' }}
-                align="center"
-                justify="center"
-                borderRadius="2xl"
-                bg="whiteAlpha.150"
-                borderWidth="1px"
-                borderColor="whiteAlpha.300"
-              >
-                <LuChartNoAxesCombined size={42} aria-hidden="true" />
-              </Flex>
-            </Flex>
-          </Grid>
-        </Card.Body>
-      </Card.Root>
+      <RegistrySummary year={year} scopeLabel={scopeLabel} summary={filterSummary} />
 
-      <SimpleGrid columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
-        <MetricCard label="Records represented" value={formatNumber(total)} helper={`Filtered ${year} registry`} icon={LuUsersRound} />
-        <MetricCard label="Validated records" value={formatPercentage(validatedRate)} helper={`${formatNumber(validatedCount)} record${validatedCount === 1 ? '' : 's'} with validation remarks`} icon={LuShieldCheck} tone="info" />
-        <MetricCard label="Not yet validated" value={formatPercentage(awaitingValidationRate)} helper={`${formatNumber(awaitingValidationCount)} identified record${awaitingValidationCount === 1 ? '' : 's'} awaiting remarks`} icon={LuCircleAlert} tone="warning" />
-        <MetricCard label="School participation" value={formatPercentage(schoolRate)} helper={`${formatNumber(summary.attending_school)} attending school`} icon={LuGraduationCap} tone="info" />
-        <MetricCard label="Barangays represented" value={formatNumber(scopeCount)} helper={scopeLabel} icon={LuMapPin} />
+      <SimpleGrid data-dashboard-metrics="true" columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
+        <RegistryMetricCard label="Records represented" value={total} helper={`Filtered ${year} registry`} />
+        <RegistryMetricCard label="Validated records" value={formatPercentage(validatedRate)} helper={`${formatNumber(validatedCount)} record${validatedCount === 1 ? '' : 's'} with validation remarks`} />
+        <RegistryMetricCard label="Not yet validated" value={formatPercentage(awaitingValidationRate)} helper={`${formatNumber(awaitingValidationCount)} identified record${awaitingValidationCount === 1 ? '' : 's'} awaiting remarks`} />
+        <RegistryMetricCard label="School participation" value={formatPercentage(schoolRate)} helper={`${formatNumber(summary.attending_school)} attending school`} />
+        <RegistryMetricCard label="Barangays represented" value={scopeCount} helper={scopeLabel} />
       </SimpleGrid>
 
       <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} alignItems="stretch">
@@ -510,44 +414,23 @@ export const ChildLaborerAnalytics = ({
         <GridItem colSpan={{ base: 1, xl: 5 }}>
           <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
             <Card.Header pb={2} p={{ base: 4, md: 5 }}>
-              <SectionHeading title="Decision brief" description="A plain-language reading of the current report filters." />
+              <RegistrySectionHeading title="Decision brief" description="A plain-language reading of the current report filters." />
             </Card.Header>
             <Card.Body pt={2} px={{ base: 4, md: 5 }} pb={{ base: 4, md: 5 }}>
-              <VStack align="stretch" gap={3}>
-                {[
-                  {
-                    icon: LuSchool,
-                    title: `${formatNumber(summary.not_attending_school)} education follow-up${summary.not_attending_school === 1 ? '' : 's'}`,
-                    text: 'Records currently marked as not attending school may need coordinated validation and referral.',
-                    tone: 'warning.light',
-                    color: 'warning',
-                  },
-                  {
-                    icon: LuShieldCheck,
-                    title: `${formatPercentage(validatedRate)} validation completion`,
-                    text: `${formatNumber(validatedCount)} of ${formatNumber(total)} filtered records contain validation remarks; ${formatNumber(awaitingValidationCount)} still await validation.`,
-                    tone: 'info.light',
-                    color: 'info',
-                  },
-                  {
-                    icon: LuDatabase,
-                    title: `${formatPercentage(summary.data_quality.completeness_percentage)} reporting completeness`,
-                    text: 'Improve missing education, occupation, and nature-of-work details before formal consolidation.',
-                    tone: 'primary.50',
-                    color: 'primary.700',
-                  },
-                ].map((item) => (
-                  <HStack key={item.title} align="flex-start" gap={3} p={3} borderRadius="md" bg={item.tone}>
-                    <Flex boxSize="36px" align="center" justify="center" flexShrink={0} borderRadius="md" bg="surface" color={item.color}>
-                      <Icon as={item.icon} boxSize="18px" aria-hidden="true" />
-                    </Flex>
-                    <Box>
-                      <Text fontSize="sm" fontWeight="700">{item.title}</Text>
-                      <Text mt={1} fontSize="xs" color="text.secondary" lineHeight="1.55">{item.text}</Text>
-                    </Box>
-                  </HStack>
-                ))}
-              </VStack>
+              <RegistryBriefList items={[
+                {
+                  title: `${formatNumber(summary.not_attending_school)} education follow-up${summary.not_attending_school === 1 ? '' : 's'}`,
+                  text: 'Records currently marked as not attending school may need coordinated validation and referral.',
+                },
+                {
+                  title: `${formatPercentage(validatedRate)} validation completion`,
+                  text: `${formatNumber(validatedCount)} of ${formatNumber(total)} filtered records contain validation remarks; ${formatNumber(awaitingValidationCount)} still await validation.`,
+                },
+                {
+                  title: `${formatPercentage(summary.data_quality.completeness_percentage)} reporting completeness`,
+                  text: 'Improve missing education, occupation, and nature-of-work details before formal consolidation.',
+                },
+              ]} />
             </Card.Body>
           </Card.Root>
         </GridItem>

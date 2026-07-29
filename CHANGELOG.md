@@ -31,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Rebuilt the Youth Registry Dashboard to match the Child Laborer analytics hierarchy with a filing-year scope, situation snapshot, percentage KPIs, workflow, trend, demographics, data quality, barangay coverage, and decision brief; removed duplicate role and account controls from the top bar and consolidated the sidebar to one Dashboard destination.
+- Replaced decorative dashboard icon tiles and marketing-style hero panels with a shared, compact registry summary; Youth and Child Laborer dashboards now use the same icon-free KPI cards, five-column grid, spacing, radii, panel padding, and loading geometry.
+- Rebuilt the Youth Registry Dashboard to match the Child Laborer analytics hierarchy with a filing-year scope, concise registry summary, percentage KPIs, workflow, trend, demographics, data quality, barangay coverage, and decision brief; removed duplicate role and account controls from the top bar and consolidated the sidebar to one Dashboard destination.
 - Polished the shared application shell with grouped dashboard-first navigation, clearer office context, consistent 44-pixel controls, responsive actions, accessible loading and empty states, global focus visibility, and reduced-motion behavior.
 - Standardized child laborer nature-of-work categories, parent/guardian occupations, and existing validation remarks with professional canonical wording while preserving blank remarks as not yet validated.
 - Added a complete-record frontend analytics fallback so gender, age, barangay, and nature-of-work charts remain populated while a legacy backend deployment is still serving the basic summary shape.

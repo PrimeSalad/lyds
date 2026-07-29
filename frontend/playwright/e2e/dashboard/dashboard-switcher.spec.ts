@@ -18,11 +18,11 @@ test.describe('Dashboard dataset switcher', () => {
     await expect(navigation.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('aria-current', 'page');
     await expect(navigation.getByRole('link', { name: /Youth Dashboard|Child Labor Dashboard/ })).toHaveCount(0);
 
-    await page.getByLabel('Registry').selectOption('CHILD_LABORERS');
+    await page.getByLabel('Registry', { exact: true }).selectOption('CHILD_LABORERS');
 
     await expect(page).toHaveURL('/?view=child-laborers');
     await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
-    await page.getByLabel('Registry').selectOption('YOUTH');
+    await page.getByLabel('Registry', { exact: true }).selectOption('YOUTH');
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Youth Registry Dashboard' })).toBeVisible();
     expect(errors).toEqual([]);
@@ -42,7 +42,7 @@ test.describe('Dashboard dataset switcher', () => {
       window.getComputedStyle(element).gridTemplateColumns
     ));
 
-    await page.getByLabel('Registry').selectOption('CHILD_LABORERS');
+    await page.getByLabel('Registry', { exact: true }).selectOption('CHILD_LABORERS');
 
     await expect(page).toHaveURL('/?view=child-laborers');
     await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
@@ -61,7 +61,7 @@ test.describe('Dashboard dataset switcher', () => {
     await page.getByLabel('Filing year').selectOption('2026');
     await expect(page.getByText('Filing year 2026', { exact: true })).toBeVisible();
 
-    await page.getByLabel('Registry').selectOption('YOUTH');
+    await page.getByLabel('Registry', { exact: true }).selectOption('YOUTH');
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Youth Registry Dashboard' })).toBeVisible();
     expect(errors).toEqual([]);
@@ -72,7 +72,7 @@ test.describe('Dashboard dataset switcher', () => {
     await installApiMocks(page);
     await page.goto('/?view=child-laborers');
 
-    const viewSelector = page.getByLabel('Registry');
+    const viewSelector = page.getByLabel('Registry', { exact: true });
     await expect(viewSelector).toHaveValue('CHILD_LABORERS');
     await expect(page.getByLabel('Filing year')).toBeVisible();
     expect((await viewSelector.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);

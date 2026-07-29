@@ -11,6 +11,12 @@ import { SectionHeader } from '../../../../shared/components/SectionHeader';
 import { SelectField, TextareaField, TextField } from '../../../../shared/forms/FormFields';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import {
+  availableCategoryYears,
+  categoriesForRegistry,
+  categoriesForYear,
+  preferredCategoryYear,
+} from '../../../categories/domain/category-scope';
 import { CategoryCustomFields } from '../../../categories/presentation/components/CategoryCustomFields';
 import { categoryApi, type Category, type CategoryField } from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
@@ -83,7 +89,7 @@ const ChildLaborerFormPage = () => {
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [recordVersion, setRecordVersion] = useState(1);
-  const [fetching, setFetching] = useState(isEditing);
+  const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -102,6 +108,15 @@ const ChildLaborerFormPage = () => {
   const selectedCategoryId = watch('category_id');
   const birthDate = watch('birth_date');
   const recordStatus = watch('record_status');
+  const selectableCategories = useMemo(
+    () => categories.filter((category) => category.status === 'PUBLISHED' || category.id === selectedCategoryId),
+    [categories, selectedCategoryId],
+  );
+  const categoryYears = useMemo(() => availableCategoryYears(selectableCategories), [selectableCategories]);
+  const yearCategories = useMemo(
+    () => categoriesForYear(selectableCategories, Number.isInteger(filingYear) ? filingYear : null),
+    [filingYear, selectableCategories],
+  );
   const age = useMemo(() => {
     const birthYear = Number(birthDate.slice(0, 4));
     return Number.isInteger(birthYear) && Number.isInteger(filingYear)
@@ -117,6 +132,9 @@ const ChildLaborerFormPage = () => {
 
     void categoryApi.getById(selectedCategoryId)
       .then((response) => {
+        if (response.data.record_type !== 'CHILD_LABORER') {
+          throw new Error('The selected category does not belong to Child Laborer Records.');
+        }
         setCategoryFields(response.data.fields);
         setValue('filing_year', String(response.data.filing_year), { shouldDirty: false });
       })
@@ -135,10 +153,10 @@ const ChildLaborerFormPage = () => {
           recordId ? childLaborerApi.get(recordId) : Promise.resolve(null),
         ]);
         setBarangays(barangayData);
-        const categoryData: Category[] = [...categoryResult.data];
+        const categoryData: Category[] = categoriesForRegistry(categoryResult.data, 'CHILD_LABORER');
         if (recordResult && !categoryData.some((category) => category.id === recordResult.data.category_id)) {
           const recordCategory = await categoryApi.getById(recordResult.data.category_id);
-          categoryData.push(recordCategory.data);
+          if (recordCategory.data.record_type === 'CHILD_LABORER') categoryData.push(recordCategory.data);
         }
         const availableCategories = categoryData
           .filter((category) => category.status === 'PUBLISHED')
@@ -168,10 +186,12 @@ const ChildLaborerFormPage = () => {
             custom_values: record.custom_values ?? {},
           });
         } else if (availableCategories[0]) {
+          const preferredYear = preferredCategoryYear(availableCategories);
+          const preferredCategory = categoriesForYear(availableCategories, preferredYear)[0] ?? availableCategories[0];
           reset({
             ...defaultValues,
-            category_id: availableCategories[0].id,
-            filing_year: String(availableCategories[0].filing_year),
+            category_id: preferredCategory.id,
+            filing_year: String(preferredCategory.filing_year),
           });
         }
       } catch (error) {
@@ -273,28 +293,45 @@ const ChildLaborerFormPage = () => {
           <SectionHeader mt={0}>Annual record scope</SectionHeader>
           <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', xl: 'repeat(4, 1fr)' }} gap={5}>
             <Controller
+              name="filing_year"
+              control={control}
+              rules={{ required: 'Filing year is required.' }}
+              render={({ field, fieldState }) => (
+                <SelectField
+                  {...field}
+                  label="Filing Year"
+                  required
+                  placeholder="Select filing year"
+                  options={categoryYears.map((year) => ({ value: String(year), label: String(year) }))}
+                  error={fieldState.error?.message}
+                  helpText="Only years with Child Laborer categories are available."
+                  onChange={(value) => {
+                    field.onChange(value);
+                    const nextYear = Number(value);
+                    const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+                    if (!selectedCategory || selectedCategory.filing_year !== nextYear) {
+                      setValue('category_id', '', { shouldDirty: true, shouldValidate: true });
+                    }
+                  }}
+                />
+              )}
+            />
+            <Controller
               name="category_id"
               control={control}
               rules={{ required: 'Category is required.' }}
               render={({ field, fieldState }) => (
                 <SelectField
                   {...field}
-                  label="Category"
+                  label="Child Laborer Category"
                   required
-                  placeholder="Select category"
-                  options={categories
-                    .filter((category) => category.status === 'PUBLISHED' || category.id === selectedCategoryId)
-                    .map((category) => ({ value: category.id, label: category.name }))}
+                  placeholder={filingYear ? 'Select child laborer category' : 'Select a filing year first'}
+                  options={yearCategories.map((category) => ({ value: category.id, label: category.name }))}
                   error={fieldState.error?.message}
+                  disabled={!filingYear}
+                  helpText={filingYear ? `Showing Child Laborer categories for ${filingYear} only.` : undefined}
                 />
               )}
-            />
-            <TextField
-              label="Filing Year"
-              value={filingYear || ''}
-              onChange={() => undefined}
-              readOnly
-              helpText="Defined by the selected category."
             />
             {isAdmin ? (
               <Controller

@@ -107,6 +107,24 @@ const childLaborerCategory = {
   record_count: 1,
 };
 
+const youthCategory2025 = {
+  ...category,
+  id: 'category-2025',
+  code: 'KK_2025',
+  name: 'KK Youth Profile 2025',
+  filing_year: 2025,
+  record_count: 0,
+};
+
+const childLaborerCategory2025 = {
+  ...childLaborerCategory,
+  id: 'child-category-2025',
+  code: 'CHILD_LABORER_2025',
+  name: 'Child Laborer Records 2025',
+  filing_year: 2025,
+  record_count: 0,
+};
+
 const barangay = {
   id: 'barangay-agot',
   code: '174001001',
@@ -240,8 +258,10 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       const recordType = url.searchParams.get('recordType');
       await json(route, {
         data: recordType === 'YOUTH_PROFILE'
-          ? [category]
-          : recordType === 'CHILD_LABORER' ? [childLaborerCategory] : [category, childLaborerCategory],
+          ? [category, youthCategory2025]
+          : recordType === 'CHILD_LABORER'
+            ? [childLaborerCategory, childLaborerCategory2025]
+            : [category, youthCategory2025, childLaborerCategory, childLaborerCategory2025],
       });
       return;
     }
@@ -253,11 +273,27 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       await json(route, { data: [] });
       return;
     }
+    if (path === `/categories/${youthCategory2025.id}`) {
+      await json(route, { data: { ...youthCategory2025, fields: [] } });
+      return;
+    }
+    if (path === `/categories/${youthCategory2025.id}/fields`) {
+      await json(route, { data: [] });
+      return;
+    }
     if (path === `/categories/${childLaborerCategory.id}`) {
       await json(route, { data: { ...childLaborerCategory, fields: [] } });
       return;
     }
     if (path === `/categories/${childLaborerCategory.id}/fields`) {
+      await json(route, { data: [] });
+      return;
+    }
+    if (path === `/categories/${childLaborerCategory2025.id}`) {
+      await json(route, { data: { ...childLaborerCategory2025, fields: [] } });
+      return;
+    }
+    if (path === `/categories/${childLaborerCategory2025.id}/fields`) {
       await json(route, { data: [] });
       return;
     }

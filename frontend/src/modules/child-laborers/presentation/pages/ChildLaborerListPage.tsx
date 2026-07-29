@@ -18,6 +18,12 @@ import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import {
+  availableCategoryYears,
+  categoriesForRegistry,
+  categoriesForYear,
+  preferredCategoryYear,
+} from '../../../categories/domain/category-scope';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import {
@@ -27,9 +33,6 @@ import {
   type ChildLaborerStatus,
   type ChildLaborerSummary,
 } from '../../infrastructure/child-laborer-api';
-
-const currentYear = new Date().getFullYear();
-const filingYears = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index);
 
 const statusOptions: Array<{ value: ChildLaborerStatus; label: string }> = [
   { value: 'IDENTIFIED', label: 'Identified' },
@@ -66,10 +69,11 @@ const ChildLaborerListPage = () => {
   const [records, setRecords] = useState<ChildLaborerRecord[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [summary, setSummary] = useState<ChildLaborerSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [filingYear, setFilingYear] = useState(currentYear);
+  const [filingYear, setFilingYear] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [barangayId, setBarangayId] = useState('');
   const [status, setStatus] = useState<ChildLaborerStatus | ''>('');
@@ -81,8 +85,14 @@ const ChildLaborerListPage = () => {
     key: 'barangay_name',
     direction: 'asc',
   });
+  const filingYears = useMemo(() => availableCategoryYears(categories), [categories]);
+  const yearCategories = useMemo(
+    () => categoriesForYear(categories, filingYear),
+    [categories, filingYear],
+  );
 
   const loadRecords = async () => {
+    if (filingYear === null) return;
     setLoading(true);
     try {
       const result = await childLaborerApi.list({
@@ -109,11 +119,22 @@ const ChildLaborerListPage = () => {
   };
 
   useEffect(() => {
+    if (filingYear === null) {
+      setRecords([]);
+      setMeta({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
+      setLoading(categoriesLoading);
+      return;
+    }
     void loadRecords();
-  }, [categoryId, filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
+  }, [categoryId, filingYear, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin, categoriesLoading]);
 
   useEffect(() => {
     const loadSummary = async () => {
+      if (filingYear === null) {
+        setSummary(null);
+        return;
+      }
+      setSummary(null);
       try {
         const result = await childLaborerApi.summary({
           categoryId: categoryId || undefined,
@@ -131,21 +152,22 @@ const ChildLaborerListPage = () => {
   useEffect(() => {
     void categoryApi.list('CHILD_LABORER')
       .then((response) => {
-        setCategories(response.data);
-        const preferred = [...response.data]
-          .sort((left, right) => (
-            Number((right.record_count ?? 0) > 0) - Number((left.record_count ?? 0) > 0)
-            || right.filing_year - left.filing_year
-          ))[0];
-        if (preferred) setFilingYear(preferred.filing_year);
+        const childCategories = categoriesForRegistry(response.data, 'CHILD_LABORER')
+          .filter((category) => category.status === 'PUBLISHED' || (category.record_count ?? 0) > 0);
+        setCategories(childCategories);
+        setFilingYear(preferredCategoryYear(childCategories));
       })
-      .catch(() => showToast.error('Could not load child laborer categories'));
+      .catch(() => {
+        setCategories([]);
+        setFilingYear(null);
+        showToast.error('Could not load child laborer categories');
+      })
+      .finally(() => setCategoriesLoading(false));
   }, []);
 
   useEffect(() => {
-    const selectedCategory = categories.find((category) => category.id === categoryId);
-    if (selectedCategory && selectedCategory.filing_year !== filingYear) setCategoryId('');
-  }, [categories, categoryId, filingYear]);
+    if (categoryId && !yearCategories.some((category) => category.id === categoryId)) setCategoryId('');
+  }, [categoryId, yearCategories]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -157,6 +179,10 @@ const ChildLaborerListPage = () => {
   const resetPage = () => setPage(1);
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
+    if (filingYear === null) {
+      showToast.error('Select an available child laborer filing year before exporting.');
+      return;
+    }
     setExporting(true);
     try {
       const blob = await childLaborerApi.export({
@@ -253,28 +279,31 @@ const ChildLaborerListPage = () => {
           minH="44px"
         />
       </Box>
-      <NativeSelect.Root width={{ base: 'full', sm: '150px' }}>
+      <NativeSelect.Root width={{ base: 'full', sm: '150px' }} disabled={categoriesLoading || filingYears.length === 0}>
         <NativeSelect.Field
           aria-label="Filing year"
-          value={filingYear}
+          value={filingYear ?? ''}
           minH="44px"
-          onChange={(event) => { setFilingYear(Number(event.target.value)); resetPage(); }}
+          onChange={(event) => {
+            setFilingYear(event.target.value ? Number(event.target.value) : null);
+            setCategoryId('');
+            resetPage();
+          }}
         >
+          {filingYears.length === 0 && <option value="">No child laborer years available</option>}
           {filingYears.map((year) => <option key={year} value={year}>{year}</option>)}
         </NativeSelect.Field>
         <NativeSelect.Indicator />
       </NativeSelect.Root>
-      <NativeSelect.Root width={{ base: 'full', sm: '220px' }}>
+      <NativeSelect.Root width={{ base: 'full', sm: '220px' }} disabled={categoriesLoading || filingYear === null}>
         <NativeSelect.Field
           aria-label="Category"
           value={categoryId}
           minH="44px"
           onChange={(event) => { setCategoryId(event.target.value); resetPage(); }}
         >
-          <option value="">All Categories</option>
-          {categories
-            .filter((category) => category.filing_year === filingYear)
-            .map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          <option value="">All Child Laborer Categories</option>
+          {yearCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
         </NativeSelect.Field>
         <NativeSelect.Indicator />
       </NativeSelect.Root>
@@ -314,8 +343,8 @@ const ChildLaborerListPage = () => {
         description="Maintain the protected yearly consolidation, case status, birthdays, education, work, and parent or guardian details."
         actions={(
           <HStack gap={2} wrap="wrap">
-            <Button minH="44px" variant="outline" onClick={() => void handleExport('csv')} loading={exporting}>CSV</Button>
-            <Button minH="44px" variant="outline" onClick={() => void handleExport('xlsx')} loading={exporting}>
+            <Button minH="44px" variant="outline" onClick={() => void handleExport('csv')} loading={exporting} disabled={filingYear === null}>CSV</Button>
+            <Button minH="44px" variant="outline" onClick={() => void handleExport('xlsx')} loading={exporting} disabled={filingYear === null}>
               <LuDownload aria-hidden="true" /> Export Excel
             </Button>
             <Button minH="44px" colorPalette="green" onClick={() => navigate('/child-laborers/new')}>
@@ -327,7 +356,7 @@ const ChildLaborerListPage = () => {
 
       <SimpleGrid columns={{ base: 2, lg: 5 }} gap={3} mb={6}>
         {[
-          { label: `${filingYear} records`, value: summary?.total_records ?? 0 },
+          { label: filingYear === null ? 'No available filing year' : `${filingYear} records`, value: summary?.total_records ?? 0 },
           { label: 'Attending school', value: summary?.attending_school ?? 0 },
           { label: 'Not attending', value: summary?.not_attending_school ?? 0 },
           { label: 'Active cases', value: summary?.active_cases ?? 0 },
@@ -355,7 +384,9 @@ const ChildLaborerListPage = () => {
         loading={loading}
         filters={filters}
         variant="excel"
-        emptyMessage={`No child laborer records found for ${filingYear}.`}
+        emptyMessage={filingYear === null
+          ? 'No Child Laborer category years are available.'
+          : `No child laborer records found for ${filingYear}.`}
         pagination={{ page: meta.page, totalPages: meta.totalPages, totalItems: meta.totalItems, onPageChange: setPage }}
         sorting={{
           key: sort.key,

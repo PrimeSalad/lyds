@@ -9,6 +9,12 @@ import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import {
+  availableCategoryYears,
+  categoriesForRegistry,
+  categoriesForYear,
+  preferredCategoryYear,
+} from '../../../categories/domain/category-scope';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
 import {
   youthRecordApi,
@@ -36,6 +42,7 @@ const YouthRecordListPage = () => {
   const [records, setRecords] = useState<YouthRecord[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryOptionsReady, setCategoryOptionsReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -51,11 +58,12 @@ const YouthRecordListPage = () => {
   const [meta, setMeta] = useState({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
 
   const uniqueYears = useMemo(() => {
-    const years = categories
-      .map((c) => c.filing_year)
-      .filter((y): y is number => y != null);
-    return [...new Set(years)].sort((a, b) => b - a);
+    return availableCategoryYears(categories);
   }, [categories]);
+  const yearCategories = useMemo(
+    () => categoriesForYear(categories, filingYear ? Number(filingYear) : null),
+    [categories, filingYear],
+  );
 
   const exportYears = useMemo(() => uniqueYears.map((year) => ({
     year,
@@ -75,6 +83,10 @@ const YouthRecordListPage = () => {
   }, [exportYear, exportYears]);
 
   useEffect(() => {
+    if (categoryId && !yearCategories.some((category) => category.id === categoryId)) setCategoryId('');
+  }, [categoryId, yearCategories]);
+
+  useEffect(() => {
     const loadFilters = async () => {
       try {
         const [barangayData, categoryResponse] = await Promise.all([
@@ -82,18 +94,33 @@ const YouthRecordListPage = () => {
           categoryApi.list('YOUTH_PROFILE'),
         ]);
         setBarangays(barangayData.filter((barangay) => barangay.is_active));
-        setCategories(categoryResponse.data.filter((category) => category.status === 'PUBLISHED'));
+        const youthCategories = categoriesForRegistry(categoryResponse.data, 'YOUTH_PROFILE')
+          .filter((category) => category.status === 'PUBLISHED');
+        setCategories(youthCategories);
+        const preferredYear = preferredCategoryYear(youthCategories);
+        setFilingYear(preferredYear === null ? '' : String(preferredYear));
       } catch (error) {
+        setCategories([]);
+        setFilingYear('');
         showToast.error({
           title: 'Filters could not be loaded',
           description: error instanceof Error ? error.message : 'Refresh the page and try again.',
         });
+      } finally {
+        setCategoryOptionsReady(true);
       }
     };
     void loadFilters();
   }, [isAdmin]);
 
   useEffect(() => {
+    if (!categoryOptionsReady) return;
+    if (!filingYear) {
+      setRecords([]);
+      setMeta({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
+      setLoading(false);
+      return;
+    }
     const delay = window.setTimeout(async () => {
       setLoading(true);
       const [sortField, sortDir] = sort === 'barangay-asc'
@@ -132,7 +159,7 @@ const YouthRecordListPage = () => {
       }
     }, search ? 300 : 0);
     return () => window.clearTimeout(delay);
-  }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin]);
+  }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin, categoryOptionsReady]);
 
   const columns = useMemo(() => {
     const result: Column<YouthRecord>[] = [
@@ -405,17 +432,21 @@ const YouthRecordListPage = () => {
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
-          <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 180px' }} maxW={{ lg: '200px' }}>
-            <NativeSelect.Field aria-label="Filter by year" value={filingYear} onChange={(event) => { setFilingYear(event.target.value); resetPage(); }} minH="44px">
-              <option value="">All Years</option>
+          <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 180px' }} maxW={{ lg: '200px' }} disabled={!categoryOptionsReady || uniqueYears.length === 0}>
+            <NativeSelect.Field aria-label="Filter by year" value={filingYear} onChange={(event) => {
+              setFilingYear(event.target.value);
+              setCategoryId('');
+              resetPage();
+            }} minH="44px">
+              {uniqueYears.length === 0 && <option value="">No Youth Registry years available</option>}
               {uniqueYears.map((year) => <option key={year} value={year}>{year}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
-          <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 210px' }} maxW={{ lg: '240px' }}>
+          <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 210px' }} maxW={{ lg: '240px' }} disabled={!categoryOptionsReady || !filingYear}>
             <NativeSelect.Field aria-label="Filter by category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); resetPage(); }} minH="44px">
-              <option value="">All Categories</option>
-              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}{category.filing_year ? ` (${category.filing_year})` : ''}</option>)}
+              <option value="">All Youth Registry Categories</option>
+              {yearCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>

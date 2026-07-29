@@ -68,7 +68,7 @@ test.describe('Protected application routes', () => {
 
     await navigation.getByRole('link', { name: 'Dashboard', exact: true }).click();
     await expect(page).toHaveURL('/');
-    await page.getByLabel('Registry').selectOption('CHILD_LABORERS');
+    await page.getByLabel('Registry', { exact: true }).selectOption('CHILD_LABORERS');
     await expect(page).toHaveURL('/?view=child-laborers');
     await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
     await expect(navigation).toBeHidden();

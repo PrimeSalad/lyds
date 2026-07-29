@@ -29,6 +29,7 @@ import {
   type Category,
   type CategoryRecordType,
 } from '../../infrastructure/category-api';
+import { categoriesForRegistry } from '../../domain/category-scope';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 
@@ -79,7 +80,7 @@ const CategoryListPage = () => {
     setLoading(true);
     try {
       const response = await categoryApi.list(recordType);
-      setCategories(response.data);
+      setCategories(categoriesForRegistry(response.data, recordType));
     } catch (error) {
       showToast.error({
         title: 'Could not load categories',

@@ -25,8 +25,9 @@ test.describe('Category registry switching', () => {
     await installApiMocks(page);
     await page.goto('/child-laborers/new');
 
-    await expect(page.getByLabel('Category')).toHaveValue('child-category-2026');
+    await expect(page.getByLabel('Child Laborer Category')).toHaveValue('child-category-2026');
     await expect(page.getByLabel('Filing Year')).toHaveValue('2026');
-    await expect(page.getByText('Defined by the selected category.')).toBeVisible();
+    await expect(page.getByText('Only years with Child Laborer categories are available.')).toBeVisible();
+    await expect(page.getByText('Showing Child Laborer categories for 2026 only.')).toBeVisible();
   });
 });

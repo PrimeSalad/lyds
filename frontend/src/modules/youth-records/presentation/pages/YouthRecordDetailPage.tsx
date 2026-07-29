@@ -535,7 +535,7 @@ const YouthRecordDetailPage = () => {
                 </Button>
               </Dialog.Footer>
               <Dialog.CloseTrigger asChild>
-                <IconButton aria-label="Close return dialog" variant="ghost" size="sm" position="absolute" top={3} right={3} disabled={actionLoading}>
+                <IconButton aria-label="Close return dialog" variant="ghost" minW="44px" minH="44px" position="absolute" top={2} right={2} disabled={actionLoading}>
                   <LuX aria-hidden="true" />
                 </IconButton>
               </Dialog.CloseTrigger>

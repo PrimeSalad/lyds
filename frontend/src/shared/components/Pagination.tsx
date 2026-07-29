@@ -54,7 +54,7 @@ const PageSelect = ({
   onPageChange,
   compact = false,
 }: Omit<PaginationProps, 'totalItems'> & { compact?: boolean }) => (
-  <NativeSelect.Root size="sm" w={compact ? '76px' : '88px'}>
+  <NativeSelect.Root w={compact ? '76px' : '104px'}>
     <NativeSelect.Field
       aria-label="Jump to page"
       value={page}
@@ -65,6 +65,7 @@ const PageSelect = ({
       fontWeight="600"
       textAlign="center"
       cursor="pointer"
+      minH="44px"
     >
       {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
         <option key={pageNumber} value={pageNumber}>
@@ -109,7 +110,8 @@ export const Pagination = ({
           <IconButton
             aria-label="First page"
             title="First page"
-            size="sm"
+            minW="44px"
+            minH="44px"
             variant="ghost"
             color="text.secondary"
             disabled={page === 1}
@@ -120,7 +122,8 @@ export const Pagination = ({
           <IconButton
             aria-label="Previous page"
             title="Previous page"
-            size="sm"
+            minW="44px"
+            minH="44px"
             variant="ghost"
             color="text.secondary"
             disabled={page === 1}
@@ -135,9 +138,8 @@ export const Pagination = ({
                 key={item}
                 aria-label={`Page ${item}`}
                 aria-current={item === page ? 'page' : undefined}
-                size="sm"
-                minW="34px"
-                h="34px"
+                minW="44px"
+                h="44px"
                 px={2}
                 borderRadius="md"
                 variant={item === page ? 'solid' : 'ghost'}
@@ -158,7 +160,8 @@ export const Pagination = ({
           <IconButton
             aria-label="Next page"
             title="Next page"
-            size="sm"
+            minW="44px"
+            minH="44px"
             variant="ghost"
             color="text.secondary"
             disabled={page === totalPages}
@@ -169,7 +172,8 @@ export const Pagination = ({
           <IconButton
             aria-label="Last page"
             title="Last page"
-            size="sm"
+            minW="44px"
+            minH="44px"
             variant="ghost"
             color="text.secondary"
             disabled={page === totalPages}
@@ -193,7 +197,8 @@ export const Pagination = ({
       >
         <IconButton
           aria-label="Previous page"
-          size="sm"
+          minW="44px"
+          minH="44px"
           variant="outline"
           disabled={page === 1}
           onClick={() => onPageChange(page - 1)}
@@ -209,7 +214,8 @@ export const Pagination = ({
 
         <IconButton
           aria-label="Next page"
-          size="sm"
+          minW="44px"
+          minH="44px"
           variant="outline"
           disabled={page === totalPages}
           onClick={() => onPageChange(page + 1)}

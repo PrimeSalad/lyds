@@ -37,7 +37,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <Box minH="100dvh" bg="#F5F7F6" borderTop="4px solid" borderColor="primary.700" display="flex" flexDirection="column">
+    <Box minH="100dvh" bg="page.bg" borderTop="4px solid" borderColor="primary.700" display="flex" flexDirection="column">
       <Flex as="header" bg="white" borderBottom="1px solid" borderColor="border" minH={{ base: '68px', md: '84px' }} px={{ base: 4, md: 8 }} align="center">
         <Flex width="full" maxW="1280px" mx="auto" align="center">
           <HStack gap={{ base: 3, md: 4 }}>
@@ -133,7 +133,8 @@ export const LoginPage = () => {
                   <IconButton
                     type="button"
                     variant="ghost"
-                    size="sm"
+                    minW="44px"
+                    minH="44px"
                     position="absolute"
                     right="5px"
                     top="50%"

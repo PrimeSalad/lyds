@@ -7,7 +7,7 @@ type PageHeaderProps = {
 };
 
 export const PageHeader = ({ title, description, actions }: PageHeaderProps) => (
-  <Flex justify="space-between" align={{ base: 'stretch', md: 'flex-start' }} direction={{ base: 'column', md: 'row' }} gap={4} mb={{ base: 5, md: 7 }}>
+  <Flex justify="space-between" align={{ base: 'stretch', md: 'flex-start' }} direction={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 6 }} mb={{ base: 5, md: 7 }}>
     <Box minW={0}>
       <Heading as="h1" fontSize={{ base: '1.5rem', md: '1.75rem' }} lineHeight="1.2" fontFamily="heading" fontWeight="700" color="text.primary">
         {title}
@@ -18,6 +18,16 @@ export const PageHeader = ({ title, description, actions }: PageHeaderProps) => 
         </Text>
       )}
     </Box>
-    {actions && <Flex gap={3} wrap="wrap" flexShrink={0} css={{ '& > *': { minHeight: '44px' } }}>{actions}</Flex>}
+    {actions && (
+      <Flex
+        width={{ base: 'full', md: 'auto' }}
+        gap={3}
+        wrap="wrap"
+        flexShrink={0}
+        css={{ '& > *': { minHeight: '44px' } }}
+      >
+        {actions}
+      </Flex>
+    )}
   </Flex>
 );

@@ -400,7 +400,7 @@ const ImportPage = () => {
               <Alert.Title>Import needs attention</Alert.Title>
               <Text mt={1}>{formError}</Text>
             </Box>
-            <IconButton aria-label="Dismiss error" variant="ghost" size="sm" onClick={() => setFormError(null)}>
+            <IconButton aria-label="Dismiss error" variant="ghost" minW="44px" minH="44px" onClick={() => setFormError(null)}>
               <LuX />
             </IconButton>
           </Alert.Root>

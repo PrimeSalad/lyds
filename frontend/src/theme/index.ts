@@ -5,14 +5,35 @@ const config = defineConfig({
     html: {
       colorPalette: 'green',
       bg: 'page.bg',
+      minWidth: '320px',
+      textRendering: 'optimizeLegibility',
     },
     body: {
       bg: 'page.bg',
       color: 'text.primary',
+      minWidth: '320px',
+      minHeight: '100dvh',
+      lineHeight: '1.5',
+    },
+    'button, a, input, select, textarea, [role="button"]': {
+      touchAction: 'manipulation',
+    },
+    ':focus-visible': {
+      outline: '3px solid',
+      outlineColor: 'primary.500',
+      outlineOffset: '2px',
     },
     '::selection': {
       bg: 'primary.100',
       color: 'primary.800',
+    },
+    '*, *::before, *::after': {
+      '@media (prefers-reduced-motion: reduce)': {
+        animationDuration: '0.01ms !important',
+        animationIterationCount: '1 !important',
+        scrollBehavior: 'auto !important',
+        transitionDuration: '0.01ms !important',
+      },
     },
   },
   theme: {
@@ -56,6 +77,7 @@ const config = defineConfig({
       },
       shadows: {
         panel: { value: '0 1px 2px rgba(18, 59, 39, 0.05), 0 8px 24px rgba(18, 59, 39, 0.04)' },
+        elevated: { value: '0 12px 32px rgba(18, 59, 39, 0.10)' },
       },
     },
   },

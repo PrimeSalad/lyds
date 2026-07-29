@@ -24,7 +24,7 @@ export const AppToaster = () => (
               )}
             </Stack>
             <Toast.CloseTrigger asChild>
-              <IconButton aria-label="Dismiss notification" variant="ghost" size="sm">
+              <IconButton aria-label="Dismiss notification" variant="ghost" minW="44px" minH="44px">
                 <LuX />
               </IconButton>
             </Toast.CloseTrigger>

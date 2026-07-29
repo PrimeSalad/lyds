@@ -30,9 +30,10 @@ const ReportsPage = lazy(() => import('./modules/reports/presentation/pages/Repo
 const AnnouncementListPage = lazy(() => import('./modules/announcements/presentation/pages/AnnouncementListPage'));
 
 const PageLoader = () => (
-  <Box py={12} textAlign="center">
+  <VStack py={12} textAlign="center" role="status" gap={3}>
     <Spinner size="lg" color="primary.600" />
-  </Box>
+    <Text color="text.secondary" fontSize="sm">Loading workspace…</Text>
+  </VStack>
 );
 
 const NotFoundPage = () => (
@@ -41,7 +42,7 @@ const NotFoundPage = () => (
       <Text color="primary.700" fontWeight="800" fontSize="sm">ERROR 404</Text>
       <Heading as="h1" fontSize={{ base: '2xl', md: '3xl' }}>Page not found</Heading>
       <Text color="text.secondary">The page may have moved or the address may be incorrect.</Text>
-      <Button asChild colorPalette="green" mt={2}>
+      <Button asChild colorPalette="green" mt={2} minH="44px">
         <RouterLink to="/"><LuHouse />Return to Dashboard</RouterLink>
       </Button>
     </VStack>

@@ -2,6 +2,28 @@ import { expect, test } from '@playwright/test';
 import { installApiMocks, runtimeErrors } from '../helpers/mock-app';
 
 test.describe('Dashboard dataset switcher', () => {
+  test('exposes both dashboards directly from the grouped workspace navigation', async ({ page }) => {
+    const errors = runtimeErrors(page);
+    await installApiMocks(page);
+    await page.goto('/');
+
+    const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
+    await expect(navigation.getByText('Overview', { exact: true })).toBeVisible();
+    await expect(navigation.getByText('Records and review', { exact: true })).toBeVisible();
+    await expect(page.getByText('Local Youth Development Office', { exact: true })).toBeVisible();
+
+    await navigation.getByRole('link', { name: 'Child Labor Dashboard' }).click();
+
+    await expect(page).toHaveURL('/?view=child-laborers');
+    await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
+    await expect(navigation.getByRole('link', { name: 'Child Labor Dashboard' })).toHaveAttribute('aria-current', 'page');
+
+    await navigation.getByRole('link', { name: 'Youth Dashboard' }).click();
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: 'Admin Dashboard' })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test('switches from youth analytics to the current child laborer dashboard', async ({ page }) => {
     const errors = runtimeErrors(page);
     await installApiMocks(page);

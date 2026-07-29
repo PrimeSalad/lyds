@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Button, HStack, IconButton, Image, VStack, Text, Badge } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
+import type { IconType } from 'react-icons';
 import { type RootState } from '../../../../redux/store';
 import { clearProfile } from '../../../auth/application/auth-store';
 import { authApi } from '../../../auth/infrastructure/auth-api';
@@ -26,29 +27,72 @@ import {
   LuX,
 } from 'react-icons/lu';
 
-const adminLinks = [
-  { label: 'Dashboard', path: '/', icon: LuLayoutDashboard },
-  { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
-  { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
-  { label: 'Review Queue', path: '/review-queue', icon: LuClipboardCheck },
-  { label: 'Imports', path: '/imports', icon: LuUpload },
-  { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
-  { label: 'Announcements', path: '/announcements', icon: LuMegaphone },
-  { label: 'Barangays', path: '/barangays', icon: LuMapPin },
-  { label: 'SK Accounts', path: '/accounts', icon: LuUserCog },
-  { label: 'Categories', path: '/categories', icon: LuListTree },
-  { label: 'Reference Data', path: '/reference-data', icon: LuDatabase },
-  { label: 'Audit Logs', path: '/audit-logs', icon: LuClipboardList },
+type NavigationLink = {
+  label: string;
+  path: string;
+  icon: IconType;
+  exact?: boolean;
+  dashboardView?: 'YOUTH' | 'CHILD_LABORERS';
+};
+
+type NavigationSection = {
+  label: string;
+  links: NavigationLink[];
+};
+
+const overviewLinks: NavigationLink[] = [
+  { label: 'Youth Dashboard', path: '/', icon: LuLayoutDashboard, dashboardView: 'YOUTH' },
+  { label: 'Child Labor Dashboard', path: '/?view=child-laborers', icon: LuChartNoAxesCombined, dashboardView: 'CHILD_LABORERS' },
 ];
 
-const skLinks = [
-  { label: 'Dashboard', path: '/', icon: LuLayoutDashboard },
-  { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
-  { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
-  { label: 'Add Record', path: '/youth-records/new', icon: LuFilePlus2, exact: true },
-  { label: 'Bulk Import', path: '/imports/new', icon: LuUpload, exact: true },
-  { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
-  { label: 'Announcements', path: '/announcements', icon: LuMegaphone },
+const adminSections: NavigationSection[] = [
+  { label: 'Overview', links: overviewLinks },
+  {
+    label: 'Records and review',
+    links: [
+      { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+      { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
+      { label: 'Review Queue', path: '/review-queue', icon: LuClipboardCheck },
+      { label: 'Imports', path: '/imports', icon: LuUpload },
+    ],
+  },
+  {
+    label: 'Information',
+    links: [
+      { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
+      { label: 'Announcements', path: '/announcements', icon: LuMegaphone },
+    ],
+  },
+  {
+    label: 'Administration',
+    links: [
+      { label: 'Barangays', path: '/barangays', icon: LuMapPin },
+      { label: 'SK Accounts', path: '/accounts', icon: LuUserCog },
+      { label: 'Categories', path: '/categories', icon: LuListTree },
+      { label: 'Reference Data', path: '/reference-data', icon: LuDatabase },
+      { label: 'Audit Logs', path: '/audit-logs', icon: LuClipboardList },
+    ],
+  },
+];
+
+const skSections: NavigationSection[] = [
+  { label: 'Overview', links: overviewLinks },
+  {
+    label: 'Records',
+    links: [
+      { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+      { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
+      { label: 'Add Record', path: '/youth-records/new', icon: LuFilePlus2, exact: true },
+      { label: 'Bulk Import', path: '/imports/new', icon: LuUpload, exact: true },
+    ],
+  },
+  {
+    label: 'Information',
+    links: [
+      { label: 'Reports', path: '/reports', icon: LuChartNoAxesCombined },
+      { label: 'Announcements', path: '/announcements', icon: LuMegaphone },
+    ],
+  },
 ];
 
 type SidebarProps = {
@@ -61,8 +105,28 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const links = profile?.role === 'ADMIN' ? adminLinks : skLinks;
+  const sections = profile?.role === 'ADMIN' ? adminSections : skSections;
+  const links = sections.flatMap((section) => section.links);
+  const dashboardQuery = new URLSearchParams(location.search);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
+  const isLinkActive = (link: NavigationLink) => {
+    const path = link.path.split('?')[0] || '/';
+
+    if (link.dashboardView === 'CHILD_LABORERS') {
+      return location.pathname === '/' && dashboardQuery.get('view') === 'child-laborers';
+    }
+
+    if (link.dashboardView === 'YOUTH') {
+      return location.pathname === '/' && dashboardQuery.get('view') !== 'child-laborers';
+    }
+
+    return link.exact
+      ? location.pathname === path
+      : location.pathname.startsWith(path) && !links.some((candidate) => (
+          candidate.exact && candidate.path.split('?')[0] === location.pathname
+        ));
+  };
 
   const handleLogout = async () => {
     try {
@@ -95,6 +159,7 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       px={3}
       py={4}
       display="flex"
+      visibility={{ base: isOpen ? 'visible' : 'hidden', lg: 'visible' }}
       flexDirection="column"
       zIndex={30}
       transform={{ base: isOpen ? 'translateX(0)' : 'translateX(-100%)', lg: 'translateX(0)' }}
@@ -125,41 +190,51 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         </IconButton>
       </HStack>
 
-      <Text px={3} mb={2} fontSize="xs" fontWeight="700" color="text.muted" textTransform="uppercase">Workspace</Text>
-      <VStack gap={1} align="stretch" flex={1} overflowY="auto">
-        {links.map((link) => {
-          const isExact = 'exact' in link && link.exact;
-          const isActive = link.path === '/'
-            ? location.pathname === '/'
-            : isExact
-              ? location.pathname === link.path
-              : location.pathname.startsWith(link.path) && !links.some((candidate) => (
-                  'exact' in candidate && candidate.exact && candidate.path === location.pathname
-                ));
-          const LinkIcon = link.icon;
-          return (
-            <Button
-              asChild
-              key={link.path}
-              justifyContent="flex-start"
-              variant="ghost"
-              bg={isActive ? 'primary.50' : 'transparent'}
-              color={isActive ? 'primary.800' : 'text.secondary'}
-              borderLeft="3px solid"
-              borderLeftColor={isActive ? 'primary.600' : 'transparent'}
-              fontWeight={isActive ? '700' : '500'}
-              minH="44px"
+      <VStack gap={4} align="stretch" flex={1} overflowY="auto" pr={1}>
+        {sections.map((section) => (
+          <Box key={section.label}>
+            <Text
               px={3}
-              _hover={{ bg: isActive ? 'primary.100' : 'surface.muted', color: 'text.primary' }}
-              onClick={onClose}
+              mb={2}
+              fontSize="xs"
+              fontWeight="700"
+              color="text.muted"
+              textTransform="uppercase"
+              letterSpacing="0.08em"
             >
-              <RouterLink to={link.path} aria-current={isActive ? 'page' : undefined}>
-                <LinkIcon size={18} aria-hidden="true" />
-                {link.label}
-              </RouterLink>
-            </Button>
-          );
-        })}
+              {section.label}
+            </Text>
+            <VStack gap={1} align="stretch">
+              {section.links.map((link) => {
+                const isActive = isLinkActive(link);
+                const LinkIcon = link.icon;
+
+                return (
+                  <Button
+                    asChild
+                    key={link.path}
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    bg={isActive ? 'primary.50' : 'transparent'}
+                    color={isActive ? 'primary.800' : 'text.secondary'}
+                    borderLeft="3px solid"
+                    borderLeftColor={isActive ? 'primary.600' : 'transparent'}
+                    fontWeight={isActive ? '700' : '500'}
+                    minH="44px"
+                    px={3}
+                    _hover={{ bg: isActive ? 'primary.100' : 'surface.muted', color: 'text.primary' }}
+                    onClick={onClose}
+                  >
+                    <RouterLink to={link.path} aria-current={isActive ? 'page' : undefined}>
+                      <LinkIcon size={18} aria-hidden="true" />
+                      {link.label}
+                    </RouterLink>
+                  </Button>
+                );
+              })}
+            </VStack>
+          </Box>
+        ))}
       </VStack>
 
       {profile?.role === 'SK_OFFICIAL' && profile.barangayId && (

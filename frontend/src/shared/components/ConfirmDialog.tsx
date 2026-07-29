@@ -65,20 +65,21 @@ export const ConfirmDialog = ({
             )}
           </Dialog.Body>
           <Dialog.Footer flexDirection={{ base: 'column-reverse', sm: 'row' }} gap={3}>
-            <Button width={{ base: 'full', sm: 'auto' }} variant="outline" onClick={() => onOpenChange({ open: false })} disabled={loading}>
+            <Button minH="44px" width={{ base: 'full', sm: 'auto' }} variant="outline" onClick={() => onOpenChange({ open: false })} disabled={loading}>
               {cancelLabel}
             </Button>
             <Button
               colorPalette={variant === 'danger' ? 'red' : 'green'}
               onClick={handleConfirm}
               loading={loading}
+              minH="44px"
               width={{ base: 'full', sm: 'auto' }}
             >
               {confirmLabel}
             </Button>
           </Dialog.Footer>
           <Dialog.CloseTrigger asChild>
-            <IconButton aria-label="Close confirmation" variant="ghost" size="sm" position="absolute" top={3} right={3}>
+            <IconButton aria-label="Close confirmation" variant="ghost" minW="44px" minH="44px" position="absolute" top={2} right={2}>
               <LuX />
             </IconButton>
           </Dialog.CloseTrigger>

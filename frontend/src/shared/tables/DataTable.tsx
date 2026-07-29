@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Table, Text, HStack, Button, Input, VStack, Spinner, Box, Card, IconButton } from '@chakra-ui/react';
-import { LuArrowDown, LuArrowUp, LuSearch, LuX } from 'react-icons/lu';
+import { Table, Text, HStack, Button, Input, VStack, Skeleton, Box, Card, IconButton } from '@chakra-ui/react';
+import { LuArrowDown, LuArrowUp, LuInbox, LuSearch, LuX } from 'react-icons/lu';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Pagination } from '../components/Pagination';
 
@@ -139,10 +139,17 @@ export const DataTable = <T,>({
 
   if (loading) {
     return (
-      <VStack py={12} gap={3} color="text.secondary" role="status">
-        <Spinner size="lg" color="primary.600" />
-        <Text fontSize="sm">Loading records...</Text>
-      </VStack>
+      <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" role="status" aria-label="Loading records">
+        <Card.Body p={{ base: 4, md: 5 }}>
+          <VStack align="stretch" gap={3}>
+            <Skeleton height="44px" borderRadius="md" />
+            {Array.from({ length: 5 }, (_, index) => (
+              <Skeleton key={index} height={{ base: '92px', md: '48px' }} borderRadius="md" />
+            ))}
+          </VStack>
+          <Text srOnly>Loading records…</Text>
+        </Card.Body>
+      </Card.Root>
     );
   }
 
@@ -183,6 +190,8 @@ export const DataTable = <T,>({
                   aria-label="Clear search"
                   variant="ghost"
                   size="sm"
+                  minW="44px"
+                  minH="44px"
                   position="absolute"
                   right={1}
                   top="50%"
@@ -247,8 +256,9 @@ export const DataTable = <T,>({
                       variant="plain"
                       size="xs"
                       h="auto"
-                      minW="0"
-                      p={0}
+                      minW="44px"
+                      minH="44px"
+                      px={1}
                       fontFamily="heading"
                       fontSize="sm"
                       fontWeight="600"
@@ -288,7 +298,10 @@ export const DataTable = <T,>({
             {paginated.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={columns.length + (actions ? 1 : 0)} textAlign="center" py={12}>
-                  <Text color="text.muted">{emptyMessage}</Text>
+                  <VStack gap={2}>
+                    <Box color="text.muted"><LuInbox size={24} aria-hidden="true" /></Box>
+                    <Text color="text.muted">{emptyMessage}</Text>
+                  </VStack>
                 </Table.Cell>
               </Table.Row>
             ) : (
@@ -333,6 +346,7 @@ export const DataTable = <T,>({
                               size="sm"
                               variant={action.variant === 'danger' ? 'outline' : 'ghost'}
                               colorPalette={action.variant === 'danger' ? 'red' : undefined}
+                              minH="44px"
                               onClick={() => handleAction(action, row)}
                             >
                               {action.label}
@@ -352,7 +366,10 @@ export const DataTable = <T,>({
       <VStack display={{ base: 'flex', md: 'none' }} align="stretch" gap={3}>
         {paginated.length === 0 ? (
           <Box borderWidth="1px" borderColor="border" borderRadius="lg" bg="surface" p={6} textAlign="center" boxShadow="panel">
-            <Text color="text.muted">{emptyMessage}</Text>
+            <VStack gap={2}>
+              <Box color="text.muted"><LuInbox size={24} aria-hidden="true" /></Box>
+              <Text color="text.muted">{emptyMessage}</Text>
+            </VStack>
           </Box>
         ) : paginated.map((row, idx) => (
           <Box key={getRowKey(row, idx)} borderWidth="1px" borderColor="border" borderRadius="lg" bg="surface" p={4} boxShadow="panel">
@@ -371,7 +388,7 @@ export const DataTable = <T,>({
                     <Button
                       key={action.label}
                       size="sm"
-                      minH="40px"
+                      minH="44px"
                       variant={action.variant === 'danger' ? 'outline' : 'subtle'}
                       colorPalette={action.variant === 'danger' ? 'red' : 'gray'}
                       onClick={() => handleAction(action, row)}

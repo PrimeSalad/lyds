@@ -51,14 +51,25 @@ test.describe('Protected application routes', () => {
     ));
     expect(hasHorizontalOverflow).toBe(false);
 
-    await page.getByRole('button', { name: 'Open navigation' }).click();
-    const closeButton = page
-      .getByRole('navigation', { name: 'Primary navigation' })
+    const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
+    const openButton = page.getByRole('button', { name: 'Open navigation' });
+    await expect(navigation).toBeHidden();
+    const openButtonBox = await openButton.boundingBox();
+    expect(openButtonBox?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(openButtonBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    await openButton.click();
+    const closeButton = navigation
       .getByRole('button', { name: 'Close navigation' });
     await expect(closeButton).toBeVisible();
     const closeButtonBox = await closeButton.boundingBox();
     expect(closeButtonBox?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(closeButtonBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    await navigation.getByRole('link', { name: 'Child Labor Dashboard' }).click();
+    await expect(page).toHaveURL('/?view=child-laborers');
+    await expect(page.getByRole('heading', { name: 'Child Laborer Dashboard' })).toBeVisible();
+    await expect(navigation).toBeHidden();
   });
 
   test('dashboard remains usable in mobile landscape with reduced motion', async ({ page }) => {

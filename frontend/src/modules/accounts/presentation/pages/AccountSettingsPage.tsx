@@ -217,7 +217,8 @@ const AccountSettingsPage = () => {
                     type="button"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     variant="ghost"
-                    size="sm"
+                    minW="44px"
+                    minH="44px"
                     position="absolute"
                     right={1}
                     top="50%"

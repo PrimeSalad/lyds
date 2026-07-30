@@ -934,6 +934,106 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reports/summary:
+    get:
+      tags: [app]
+      summary: Get annual youth-record workflow totals
+      description: |
+        Returns youth-record totals for exactly one filing year. The filing
+        year is required so annual reports never silently combine datasets.
+        SK officials remain restricted to their assigned barangay.
+      parameters:
+        - in: query
+          name: filingYear
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
+      responses:
+        '200':
+          description: Filing-year workflow totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSummaryResponse'
+        '400':
+          description: Missing or invalid filing year or filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reports/demographics:
+    get:
+      tags: [app]
+      summary: Get annual youth demographic and participation responses
+      description: |
+        Returns demographic and civic-response breakdowns for exactly one
+        filing year. Missing answers remain visible as `No response` and every
+        percentage uses the complete year-filtered record count.
+      parameters:
+        - in: query
+          name: filingYear
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
+      responses:
+        '200':
+          description: Filing-year demographic and civic-response breakdowns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemographicsReportResponse'
+        '400':
+          description: Missing or invalid filing year or filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/reports/export:
     get:
       tags: [app]
@@ -1919,6 +2019,115 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DashboardAnalytics'
+    ReportSummary:
+      type: object
+      required: [totalRecords, draft, submitted, approved, returned, archived, thisMonth, totalBarangays, totalAccounts]
+      properties:
+        totalRecords:
+          type: integer
+          minimum: 0
+        draft:
+          type: integer
+          minimum: 0
+        submitted:
+          type: integer
+          minimum: 0
+        approved:
+          type: integer
+          minimum: 0
+        returned:
+          type: integer
+          minimum: 0
+        archived:
+          type: integer
+          minimum: 0
+        thisMonth:
+          type: integer
+          minimum: 0
+        totalBarangays:
+          type: integer
+          minimum: 0
+        totalAccounts:
+          type: integer
+          minimum: 0
+    ReportSummaryResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReportSummary'
+    DemographicBreakdown:
+      type: object
+      required: [label, count, percentage]
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+          minimum: 0
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+    DemographicsReport:
+      type: object
+      required:
+        - totalRecords
+        - sex
+        - civilStatus
+        - youthClassification
+        - youthAgeGroup
+        - educationalAttainment
+        - workStatus
+        - registeredVoter
+        - votedLastElection
+        - attendedAssembly
+      properties:
+        totalRecords:
+          type: integer
+          minimum: 0
+        sex:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        civilStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        youthClassification:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        youthAgeGroup:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        educationalAttainment:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        workStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        registeredVoter:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        votedLastElection:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+        attendedAssembly:
+          type: array
+          items:
+            $ref: '#/components/schemas/DemographicBreakdown'
+    DemographicsReportResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/DemographicsReport'
     ApproveSubmittedByBarangayInput:
       type: object
       required: [barangay_id]

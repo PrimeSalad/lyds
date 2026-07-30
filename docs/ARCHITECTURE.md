@@ -62,7 +62,7 @@ docs/openapi.yaml             API contract source of truth
 
 - Records move through draft, submitted, returned, approved, and archived states.
 - Spreadsheet imports preserve missing answers as `null`; they are not converted to “No.”
-- Reports include every in-scope record and expose missing source answers as **No response**.
+- Reports require an active registry filing year, include every in-scope record from that annual dataset only, and expose missing source answers as **No response**.
 - SK officials are constrained to their assigned barangay. Administrators can review and report across barangays.
 - CSV/XLSX generation is performed by the API.
 
@@ -74,7 +74,7 @@ docs/openapi.yaml             API contract source of truth
 - Records progress through identified, validated, referred, monitored, and closed states. Archive is a retained state rather than a destructive delete.
 - Administrators can work across barangays; SK officials are limited to the active assigned barangay in both application services and database RLS.
 - Database triggers keep immutable before/after audit entries for creates, edits, archives, and restores. Direct database access also requires an AAL2 token through a restrictive RLS policy.
-- Reports can switch between KK Youth and Child Laborer datasets. Each dataset keeps its own filters, summaries, sortable table, and CSV/XLSX export.
+- Reports can switch between KK Youth and Child Laborer datasets. Each dataset derives its filing-year choices from its own real categories, and every summary, demographic response, detailed row, and CSV/XLSX export remains scoped to the selected year.
 
 ## API contract
 

@@ -4,6 +4,7 @@ export const getDemographics = async (filters: {
   barangayId?: string | null;
   categoryId?: string | null;
   status?: string | null;
+  filingYear: number;
 }) => {
   return reportRepository.getDemographics(filters);
 };

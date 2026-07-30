@@ -4,7 +4,7 @@ The import workflow checks a spreadsheet before it creates any youth records:
 
 1. Select the published youth-profile category for the intended filing year.
 2. Administrators select the destination barangay. SK officials automatically use their active barangay assignment.
-3. Upload an `.xlsx` or `.csv` file up to 10 MB.
+3. Download and complete the guided `.xlsx` template, or upload a supported official KK workbook or `.csv` file up to 10 MB.
 4. Review ready, invalid, and duplicate rows. Download the error report when corrections are needed.
 5. Confirm the import. All ready rows are created atomically as submitted youth profiles.
 
@@ -13,6 +13,19 @@ The import workflow checks a spreadsheet before it creates any youth records:
 The parser scans the first 50 rows of every worksheet and uses the best recognizable header row. This supports both the downloadable template and official KK Youth Profile workbooks that contain title/instruction rows before their column headings.
 
 Common combined columns such as `NAME` and `BIRTHDAY` are supported alongside split name and date columns. The validator tolerates common spelling and formatting differences for reference fields, while preserving warnings in the row preview.
+
+## Guided Excel template
+
+The downloadable template mirrors the controlled fields in the Youth Record form. At download time, it loads the current active reference-data choices for sex assigned at birth, civil status, youth classification, educational attainment, and work status. Those fields and Yes/No answers use Excel dropdowns backed by hidden workbook lists, including the full educational-attainment list.
+
+- Green columns are required; slate columns are optional.
+- The `Instructions` sheet explains every field and shows the current accepted choices.
+- The `Youth Records` sheet includes 1,000 prepared data rows, frozen identity columns, filters, date/phone formatting, and whole-number validation for KK assembly counts.
+- The template asks for `REGISTERED VOTER?` and `VOTED LAST ELECTION?`, matching the manual Youth Record form.
+- Youth age group is not typed into the guided template. It is calculated from birthday and the selected filing year after upload.
+- CSV imports remain supported, but CSV files cannot preserve Excel dropdown validation.
+
+The import validator requires the same core demographic choices as the manual form: first name, last name, sex assigned at birth, civil status, youth classification, highest educational attainment, and work status. When registered voter is `Yes`, voted-last-election must be answered. When KK assembly attendance is `Yes`, an attendance count of at least one is required.
 
 ## Annual age and barangay rules
 

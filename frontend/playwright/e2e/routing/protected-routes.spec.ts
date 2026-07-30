@@ -87,6 +87,30 @@ test.describe('Protected application routes', () => {
     ))).toBe(false);
   });
 
+  test('guided import setup is mobile-safe and prevents incomplete validation', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await installApiMocks(page);
+    await page.goto('/imports/new');
+
+    await expect(page.getByRole('heading', { name: 'Start with the guided Excel template' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download Guided Template' })).toBeVisible();
+    const checkButton = page.getByRole('button', { name: 'Check Spreadsheet' });
+    await expect(checkButton).toBeDisabled();
+
+    await page.getByLabel('Barangay').selectOption('barangay-agot');
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'guided-youth-records.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: Buffer.from('test workbook'),
+    });
+
+    await expect(checkButton).toBeEnabled();
+    await expect(page.getByText(/guided-youth-records\.xlsx will be checked for Agot/)).toBeVisible();
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollWidth > document.documentElement.clientWidth
+    ))).toBe(false);
+  });
+
   test('SK officials cannot open administrator-only pages', async ({ page }) => {
     await installApiMocks(page, 'SK_OFFICIAL');
     await page.goto('/accounts');

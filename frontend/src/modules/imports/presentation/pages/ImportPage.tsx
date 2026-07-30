@@ -50,7 +50,7 @@ import {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = ['.xlsx', '.csv'];
-const steps = ['Set up', 'Review', 'Complete'];
+const steps = ['Prepare', 'Review', 'Complete'];
 
 const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
@@ -119,6 +119,16 @@ const ImportPage = () => {
       && (isAdmin || ['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode))
     ))
     .sort((a, b) => (b.filing_year ?? 0) - (a.filing_year ?? 0)), [categories, isAdmin]);
+
+  const selectedCategory = useMemo(
+    () => availableCategories.find((category) => category.id === categoryId) ?? null,
+    [availableCategories, categoryId],
+  );
+  const destinationBarangay = isAdmin
+    ? barangays.find((barangay) => barangay.id === barangayId) ?? null
+    : assignedBarangay;
+  const destinationBarangayId = isAdmin ? barangayId : profile?.barangayId;
+  const setupReady = Boolean(categoryId && destinationBarangayId && file && !loadingContext);
 
   const currentStep = completed ? 2 : batch ? 1 : 0;
 
@@ -354,14 +364,9 @@ const ImportPage = () => {
           title="Import Youth Records"
           description="Upload one barangay spreadsheet, review every issue, then import only clean and non-duplicate rows."
           actions={(
-            <>
-              <Button variant="outline" onClick={() => navigate('/imports')}>
-                <LuArrowLeft aria-hidden="true" /> Import History
-              </Button>
-              <Button variant="outline" onClick={handleDownloadTemplate} loading={downloading}>
-                <LuDownload aria-hidden="true" /> Download Template
-              </Button>
-            </>
+            <Button variant="outline" onClick={() => navigate('/imports')}>
+              <LuArrowLeft aria-hidden="true" /> Import History
+            </Button>
           )}
         />
 
@@ -410,9 +415,71 @@ const ImportPage = () => {
           <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
             <Card.Body p={{ base: 4, md: 7 }}>
               <VStack align="stretch" gap={6}>
+                <Box
+                  borderWidth="1px"
+                  borderColor="green.200"
+                  borderRadius="lg"
+                  bg="green.50"
+                  p={{ base: 4, md: 5 }}
+                >
+                  <Flex
+                    align={{ base: 'stretch', md: 'center' }}
+                    justify="space-between"
+                    direction={{ base: 'column', md: 'row' }}
+                    gap={4}
+                  >
+                    <HStack align="flex-start" gap={3}>
+                      <Flex
+                        boxSize="44px"
+                        flexShrink={0}
+                        borderRadius="md"
+                        align="center"
+                        justify="center"
+                        bg="green.100"
+                        color="green.700"
+                      >
+                        <LuFileSpreadsheet size={22} aria-hidden="true" />
+                      </Flex>
+                      <Box>
+                        <Badge colorPalette="green" mb={2}>Recommended</Badge>
+                        <Heading size="md">Start with the guided Excel template</Heading>
+                        <Text color="text.secondary" mt={2} maxW="68ch">
+                          Its dropdown choices match the Youth Record form, so names, classifications,
+                          education, work status, and Yes/No answers arrive in a consistent format.
+                        </Text>
+                      </Box>
+                    </HStack>
+                    <Button
+                      colorPalette="green"
+                      variant="solid"
+                      minH="44px"
+                      flexShrink={0}
+                      onClick={handleDownloadTemplate}
+                      loading={downloading}
+                    >
+                      <LuDownload aria-hidden="true" /> Download Guided Template
+                    </Button>
+                  </Flex>
+                  <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3} mt={4}>
+                    {[
+                      'Built-in dropdown choices',
+                      'Required fields clearly marked',
+                      'Instructions and field examples',
+                    ].map((benefit) => (
+                      <HStack key={benefit} gap={2} align="flex-start">
+                        <LuCircleCheck color="var(--chakra-colors-green-700)" aria-hidden="true" />
+                        <Text fontSize="sm" color="text.secondary">{benefit}</Text>
+                      </HStack>
+                    ))}
+                  </SimpleGrid>
+                </Box>
+
                 <Box>
-                  <Heading size="md">1. Choose the destination</Heading>
-                  <Text color="text.secondary" mt={2}>Age eligibility is calculated on December 31 of the selected filing year.</Text>
+                  <Heading size="md">1. Confirm the import destination</Heading>
+                  <Text color="text.secondary" mt={2}>
+                    Choose carefully: every ready row will be filed under this category and barangay.
+                    Age eligibility is calculated on December 31 of the selected filing year.
+                  </Text>
                 </Box>
 
                 {loadingContext ? (
@@ -455,8 +522,11 @@ const ImportPage = () => {
                 )}
 
                 <Box>
-                  <Heading size="md">2. Add the spreadsheet</Heading>
-                  <Text color="text.secondary" mt={2}>Official KK workbooks with title rows are supported. Maximum file size: 10 MB.</Text>
+                  <Heading size="md">2. Add the completed spreadsheet</Heading>
+                  <Text color="text.secondary" mt={2}>
+                    Guided templates and official KK workbooks are supported. CSV files are accepted,
+                    but only the guided .xlsx template includes dropdown validation. Maximum file size: 10 MB.
+                  </Text>
                 </Box>
 
                 <Box
@@ -517,11 +587,25 @@ const ImportPage = () => {
                   )}
                 </Box>
 
+                {setupReady && (
+                  <Alert.Root status="success" borderRadius="md" alignItems="flex-start">
+                    <LuCircleCheck aria-hidden="true" />
+                    <Box>
+                      <Alert.Title>Ready for a safe preview</Alert.Title>
+                      <Text mt={1} overflowWrap="anywhere">
+                        <strong>{file?.name}</strong> will be checked for{' '}
+                        <strong>{destinationBarangay?.name ?? 'your assigned barangay'}</strong> under{' '}
+                        <strong>{selectedCategory?.name ?? 'the selected category'}{selectedCategory?.filing_year ? ` (${selectedCategory.filing_year})` : ''}</strong>.
+                      </Text>
+                    </Box>
+                  </Alert.Root>
+                )}
+
                 <Alert.Root status="info" borderRadius="md" alignItems="flex-start">
                   <LuInfo aria-hidden="true" />
                   <Box>
-                    <Alert.Title>Safe preview first</Alert.Title>
-                    <Text mt={1}>No youth record is created until you review the results and confirm the import.</Text>
+                    <Alert.Title>Nothing is imported during checking</Alert.Title>
+                    <Text mt={1}>You will review ready, invalid, and duplicate rows before any youth record is created.</Text>
                   </Box>
                 </Alert.Root>
 
@@ -532,7 +616,7 @@ const ImportPage = () => {
                     minW={{ base: 'full', sm: '180px' }}
                     onClick={handleValidate}
                     loading={validating}
-                    disabled={loadingContext}
+                    disabled={!setupReady || validating}
                   >
                     <LuFileSpreadsheet aria-hidden="true" /> Check Spreadsheet
                   </Button>

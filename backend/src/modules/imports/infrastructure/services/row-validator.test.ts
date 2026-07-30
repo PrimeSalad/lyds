@@ -17,9 +17,18 @@ const context: ValidationContext = {
   ],
 };
 
+const requiredFields = {
+  'SEX ASSIGNED AT BIRTH': 'Female',
+  'CIVIL STATUS': 'Single',
+  'YOUTH CLASSIFICATION': 'Out of School Youth',
+  'HIGHEST EDUCATIONAL ATTAINMENT': 'College Level',
+  'WORK STATUS': 'Student',
+};
+
 describe('rowValidator', () => {
   it('allows a missing birth date and leaves age data blank', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       'FIRST NAME': 'Sample',
       'LAST NAME': 'Youth',
     }, context);
@@ -33,6 +42,7 @@ describe('rowValidator', () => {
 
   it('normalizes a letter O in a numeric birth day', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       'FIRST NAME': 'Aimee',
       'LAST NAME': 'Mogol',
       MONTH: 'Octob er',
@@ -47,6 +57,7 @@ describe('rowValidator', () => {
 
   it('rejects partially supplied invalid birth dates', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       'FIRST NAME': 'Sample',
       'LAST NAME': 'Youth',
       MONTH: 'October',
@@ -57,8 +68,8 @@ describe('rowValidator', () => {
   });
 
   it('uses the filing year boundary when checking ages', () => {
-    const eligible = rowValidator.validate({ NAME: 'Eligible Youth', BIRTHDAY: '12/31/1996' }, context);
-    const tooOld = rowValidator.validate({ NAME: 'Older Youth', BIRTHDAY: '12/31/1995' }, context);
+    const eligible = rowValidator.validate({ ...requiredFields, NAME: 'Eligible Youth', BIRTHDAY: '12/31/1996' }, context);
+    const tooOld = rowValidator.validate({ ...requiredFields, NAME: 'Older Youth', BIRTHDAY: '12/31/1995' }, context);
 
     expect(eligible.isValid).toBe(true);
     expect(eligible.normalizedData.age_at_submission).toBe(30);
@@ -68,6 +79,7 @@ describe('rowValidator', () => {
 
   it('parses surname-first names and normalizes common official-sheet values', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       BARANGAY: 'tabi',
       NAME: 'DELA CRUZ, ANA M.',
       BIRTHDAY: '01/15/2004',
@@ -92,7 +104,7 @@ describe('rowValidator', () => {
   });
 
   it('rejects a row assigned to another barangay', () => {
-    const result = rowValidator.validate({ NAME: 'Wrong Place', BARANGAY: 'Payatas' }, context);
+    const result = rowValidator.validate({ ...requiredFields, NAME: 'Wrong Place', BARANGAY: 'Payatas' }, context);
 
     expect(result.isValid).toBe(false);
     expect(result.validationErrors).toContain(
@@ -102,6 +114,7 @@ describe('rowValidator', () => {
 
   it('keeps an optional malformed email as a warning instead of blocking the row', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       NAME: 'Ana Youth',
       'E-MAIL ADDRESS': 'no email account',
     }, context);
@@ -114,7 +127,7 @@ describe('rowValidator', () => {
   });
 
   it('preserves unanswered yes-or-no fields instead of converting them to no', () => {
-    const result = rowValidator.validate({ NAME: 'No Answers Yet' }, context);
+    const result = rowValidator.validate({ ...requiredFields, NAME: 'No Answers Yet' }, context);
 
     expect(result.isValid).toBe(true);
     expect(result.normalizedData).toMatchObject({
@@ -129,6 +142,7 @@ describe('rowValidator', () => {
 
   it('keeps explicit no answers as false', () => {
     const result = rowValidator.validate({
+      ...requiredFields,
       NAME: 'Answered No',
       'REGISTERED VOTER?': 'No',
       'VOTED LAST ELECTION?': 'No',
@@ -140,5 +154,34 @@ describe('rowValidator', () => {
       voted_last_election: false,
       attended_kk_assembly: false,
     });
+  });
+
+  it('requires the same demographic choices as the Youth Record form', () => {
+    const result = rowValidator.validate({
+      'FIRST NAME': 'Missing',
+      'LAST NAME': 'Choices',
+    }, context);
+
+    expect(result.isValid).toBe(false);
+    expect(result.validationErrors).toEqual(expect.arrayContaining([
+      'Sex assigned at birth is required.',
+      'Civil status is required.',
+      'Youth classification is required.',
+      'Educational attainment is required.',
+      'Work status is required.',
+    ]));
+  });
+
+  it('requires dependent voter and assembly answers when their parent answer is Yes', () => {
+    const result = rowValidator.validate({
+      ...requiredFields,
+      NAME: 'Dependent Answers',
+      'REGISTERED VOTER?': 'Yes',
+      'ATTENDED KK ASSEMBLY?': 'Yes',
+    }, context);
+
+    expect(result.isValid).toBe(false);
+    expect(result.validationErrors).toContain('Voted last election is required when registered voter is Yes.');
+    expect(result.validationErrors).toContain('KK assembly count is required when attendance is Yes.');
   });
 });

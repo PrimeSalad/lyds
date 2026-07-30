@@ -56,12 +56,24 @@ const getAnnualCategoryIds = async (filingYear: number) => {
   return (data ?? []).map((category) => category.id);
 };
 
+const getScopedAnnualCategoryIds = async (filters: ReportFilters) => {
+  if (!filters.filingYear) return null;
+  const annualCategoryIds = await getAnnualCategoryIds(filters.filingYear);
+  if (filters.categoryId && !annualCategoryIds.includes(filters.categoryId)) return [];
+  return annualCategoryIds;
+};
+
 export const reportRepository = {
   async getSummary(filters: ReportFilters = {}) {
-    const profiles = await fetchAllPages((from, to) => applyFilters(
-      supabaseAdmin.from('youth_profiles').select('status, created_at'),
-      filters,
-    ).range(from, to));
+    const annualCategoryIds = await getScopedAnnualCategoryIds(filters);
+    const profiles = annualCategoryIds?.length === 0 ? [] : await fetchAllPages((from, to) => {
+      let query = applyFilters(
+        supabaseAdmin.from('youth_profiles').select('status, created_at'),
+        filters,
+      );
+      if (annualCategoryIds) query = query.in('category_id', annualCategoryIds);
+      return query.range(from, to);
+    });
 
     const now = new Date();
     const firstDayOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
@@ -169,8 +181,10 @@ export const reportRepository = {
   },
 
   async getDemographics(filters: ReportFilters = {}) {
-    const data = await fetchAllPages((from, to) => applyFilters(
-      supabaseAdmin.from('youth_profiles').select(`
+    const annualCategoryIds = await getScopedAnnualCategoryIds(filters);
+    const data = annualCategoryIds?.length === 0 ? [] : await fetchAllPages((from, to) => {
+      let query = applyFilters(
+        supabaseAdmin.from('youth_profiles').select(`
         sex:reference_options!sex_assigned_at_birth_id(label),
         civil_status:reference_options!civil_status_id(label),
         youth_classification:reference_options!youth_classification_id(label),
@@ -181,8 +195,11 @@ export const reportRepository = {
         voted_last_election,
         attended_kk_assembly
       `),
-      filters,
-    ).range(from, to));
+        filters,
+      );
+      if (annualCategoryIds) query = query.in('category_id', annualCategoryIds);
+      return query.range(from, to);
+    });
 
     return buildDemographicReport(data.map((profile) => ({
       sex: relationLabel(profile.sex),
@@ -230,11 +247,8 @@ export const reportRepository = {
   },
 
   async getExportData(filters: ReportFilters = {}) {
-    const annualCategoryIds = filters.filingYear
-      ? await getAnnualCategoryIds(filters.filingYear)
-      : null;
+    const annualCategoryIds = await getScopedAnnualCategoryIds(filters);
     if (annualCategoryIds?.length === 0) return [];
-    if (filters.categoryId && annualCategoryIds && !annualCategoryIds.includes(filters.categoryId)) return [];
 
     const records = await fetchAllPages((from, to) => {
       let query = applyFilters(

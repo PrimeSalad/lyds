@@ -8,6 +8,12 @@ import { StatusBadge } from '../../../../shared/components/StatusBadge';
 import { DataTable, type Column } from '../../../../shared/tables/DataTable';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
+import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
+import {
+  availableCategoryYears,
+  categoriesForRegistry,
+  preferredCategoryYear,
+} from '../../../categories/domain/category-scope';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import {
   childLaborerApi,
@@ -22,8 +28,6 @@ type ChildLaborerReportsViewProps = {
   onShowYouthRecords: () => void;
 };
 
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: currentYear - 1999 }, (_, index) => currentYear + 1 - index);
 const statuses: Array<{ value: ChildLaborerStatus; label: string }> = [
   { value: 'IDENTIFIED', label: 'Identified' },
   { value: 'VALIDATED', label: 'Validated' },
@@ -55,7 +59,9 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
   const [records, setRecords] = useState<ChildLaborerRecord[]>([]);
   const [summary, setSummary] = useState<ChildLaborerSummary | null>(null);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
-  const [year, setYear] = useState(currentYear);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [year, setYear] = useState<number | null>(null);
   const [barangayId, setBarangayId] = useState('');
   const [status, setStatus] = useState<ChildLaborerStatus | ''>('');
   const [search, setSearch] = useState('');
@@ -71,8 +77,19 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
     key: 'barangay_name',
     direction: 'asc',
   });
+  const childLaborerCategories = useMemo(
+    () => categoriesForRegistry(categories, 'CHILD_LABORER'),
+    [categories],
+  );
+  const years = useMemo(() => availableCategoryYears(childLaborerCategories), [childLaborerCategories]);
 
   useEffect(() => {
+    if (year === null) {
+      setRecords([]);
+      setMeta({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
+      setRecordsLoading(false);
+      return;
+    }
     let active = true;
     const loadRecords = async () => {
       setRecordsLoading(true);
@@ -105,6 +122,11 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
   }, [year, barangayId, status, deferredSearch, page, sort.key, sort.direction, isAdmin]);
 
   useEffect(() => {
+    if (year === null) {
+      setSummary(null);
+      setAnalyticsLoading(false);
+      return;
+    }
     let active = true;
     const loadAnalytics = async () => {
       setAnalyticsLoading(true);
@@ -130,8 +152,35 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
   }, [year, barangayId, status, deferredSearch, isAdmin, analyticsRevision]);
 
   useEffect(() => {
-    if (!isAdmin) return;
-    void barangayApi.list().then(setBarangays).catch(() => showToast.error('Could not load barangays'));
+    let active = true;
+    const loadFilters = async () => {
+      setCategoriesLoading(true);
+      try {
+        const [categoryResponse, barangayResponse] = await Promise.all([
+          categoryApi.list('CHILD_LABORER'),
+          isAdmin ? barangayApi.list() : Promise.resolve([]),
+        ]);
+        if (!active) return;
+        const scopedCategories = categoriesForRegistry(categoryResponse.data, 'CHILD_LABORER');
+        setCategories(scopedCategories);
+        setBarangays(barangayResponse);
+        setYear((current) => (
+          current !== null && availableCategoryYears(scopedCategories).includes(current)
+            ? current
+            : preferredCategoryYear(scopedCategories)
+        ));
+      } catch (error) {
+        if (!active) return;
+        showToast.error({
+          title: 'Could not load child laborer report years',
+          description: error instanceof Error ? error.message : 'Please try again.',
+        });
+      } finally {
+        if (active) setCategoriesLoading(false);
+      }
+    };
+    void loadFilters();
+    return () => { active = false; };
   }, [isAdmin]);
 
   const columns = useMemo<Column<ChildLaborerRecord>[]>(() => [
@@ -155,6 +204,10 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
   ], []);
 
   const exportRecords = async (format: 'csv' | 'xlsx') => {
+    if (year === null) {
+      showToast.error('Select a child laborer filing year before exporting');
+      return;
+    }
     setExporting(true);
     try {
       const blob = await childLaborerApi.export({
@@ -185,7 +238,7 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
     <DashboardLayout>
       <PageHeader
         title="Child Laborer Analytics"
-        description="Turn the protected yearly registry into an actionable picture of case status, education, demographics, location, work, and reporting quality."
+        description="Review one child laborer filing year at a time. Every metric, demographic chart, detailed row, and export follows the selected annual dataset."
         actions={(
           <HStack gap={3} wrap="wrap">
             <NativeSelect.Root width={{ base: 'full', md: '220px' }}>
@@ -200,8 +253,8 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
               </NativeSelect.Field>
               <NativeSelect.Indicator />
             </NativeSelect.Root>
-            <Button minH="44px" variant="outline" onClick={() => void exportRecords('csv')} loading={exporting}>Export CSV</Button>
-            <Button minH="44px" colorPalette="green" onClick={() => void exportRecords('xlsx')} loading={exporting}>
+            <Button minH="44px" variant="outline" onClick={() => void exportRecords('csv')} loading={exporting} disabled={year === null}>Export CSV</Button>
+            <Button minH="44px" colorPalette="green" onClick={() => void exportRecords('xlsx')} loading={exporting} disabled={year === null}>
               <LuDownload aria-hidden="true" /> Export XLSX
             </Button>
           </HStack>
@@ -211,7 +264,7 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
       <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" mb={5}>
         <Card.Header px={{ base: 4, md: 5 }} pt={{ base: 4, md: 5 }} pb={2}>
           <Heading as="h2" size="sm" fontFamily="heading" fontWeight="650">Report controls</Heading>
-          <Text mt={1} fontSize="sm" color="text.muted">Every chart, metric, and table row updates to match these filters.</Text>
+          <Text mt={1} fontSize="sm" color="text.muted">Filing year is required. Every chart, metric, and table row updates to match these filters.</Text>
         </Card.Header>
         <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
           <Grid templateColumns={{ base: '1fr', md: 'repeat(2, minmax(0, 1fr))', xl: isAdmin ? 'minmax(260px, 1.5fr) repeat(3, minmax(160px, 0.7fr))' : 'minmax(260px, 1.5fr) repeat(2, minmax(160px, 0.7fr))' }} gap={4}>
@@ -233,12 +286,14 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
             </Field.Root>
             <Field.Root>
               <Field.Label fontSize="sm" color="text.secondary">Filing year</Field.Label>
-              <NativeSelect.Root width="full">
-                <NativeSelect.Field aria-label="Filing year" minH="44px" value={year} onChange={(event) => { setYear(Number(event.target.value)); setPage(1); }}>
+              <NativeSelect.Root width="full" disabled={categoriesLoading || years.length === 0}>
+                <NativeSelect.Field aria-label="Filing year" minH="44px" value={year ?? ''} onChange={(event) => { setYear(Number(event.target.value)); setPage(1); }}>
+                  {years.length === 0 && <option value="">No filing years available</option>}
                   {years.map((item) => <option key={item} value={item}>{item}</option>)}
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>
+              <Field.HelperText>Only actual Child Laborer annual categories are listed.</Field.HelperText>
             </Field.Root>
             {isAdmin && (
               <Field.Root>
@@ -266,14 +321,23 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
         </Card.Body>
       </Card.Root>
 
-      <ChildLaborerAnalytics
-        summary={summary}
-        year={year}
-        scopeLabel={scopeLabel}
-        loading={analyticsLoading}
-        error={analyticsError}
-        onRetry={() => setAnalyticsRevision((revision) => revision + 1)}
-      />
+      {year === null ? (
+        <Card.Root borderColor="border" borderRadius="lg">
+          <Card.Body p={{ base: 5, md: 7 }} textAlign="center">
+            <Heading size="sm">No Child Laborer filing year is available</Heading>
+            <Text mt={2} color="text.muted">Create an annual Child Laborer category before generating reports.</Text>
+          </Card.Body>
+        </Card.Root>
+      ) : (
+        <ChildLaborerAnalytics
+          summary={summary}
+          year={year}
+          scopeLabel={scopeLabel}
+          loading={analyticsLoading}
+          error={analyticsError}
+          onRetry={() => setAnalyticsRevision((revision) => revision + 1)}
+        />
+      )}
 
       <Box mt={{ base: 8, md: 10 }} mb={4}>
         <Heading as="h2" size="md" fontFamily="heading" fontWeight="650">Detailed child laborer registry</Heading>
@@ -285,7 +349,7 @@ export const ChildLaborerReportsView = ({ onShowYouthRecords }: ChildLaborerRepo
         data={records}
         loading={recordsLoading}
         variant="excel"
-        emptyMessage={`No child laborer records found for ${year}.`}
+        emptyMessage={year === null ? 'No Child Laborer filing year is available.' : `No child laborer records found for ${year}.`}
         pagination={{ page: meta.page, totalPages: meta.totalPages, totalItems: meta.totalItems, onPageChange: setPage }}
         sorting={{
           key: sort.key,

@@ -46,6 +46,12 @@ The router files under `backend/src/routes/` and `backend/src/modules/*/interfac
 
 Imported source files can omit demographic and civic answers. Nullable fields remain `null` through detail, edit, update, export, and report flows. Reports label those values **No response** rather than treating them as “No.”
 
+## Annual report scoping
+
+`GET /reports/summary` and `GET /reports/demographics` require `filingYear`. The API resolves that year to `YOUTH_PROFILE` category IDs before querying profiles, so workflow totals, profile/demographic responses, and civic-participation responses cannot silently combine annual datasets. Optional barangay, category, and status filters are applied inside the selected year; a category from another year produces an empty scoped result rather than falling back to overall data.
+
+The Reports UI derives Youth and Child Laborer year choices only from real categories in the selected registry. Every visible metric, response table/chart, detailed row, CSV, and XLSX export follows the active filing year.
+
 ## Child laborer annual records
 
 `/child-laborers` stores a separate protected registry for each filing year. Birth date is required, while `age` is calculated as of December 31 of that filing year so historical consolidations do not change over time. Every active record has one of the `IDENTIFIED`, `VALIDATED`, `REFERRED`, `MONITORED`, or `CLOSED` statuses; archival retains the row and its audit history without including it in active totals or default exports.

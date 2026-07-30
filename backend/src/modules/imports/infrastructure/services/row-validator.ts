@@ -233,9 +233,19 @@ const setReferenceValue = (
   errors: string[],
   warnings: string[],
   ctx: ValidationContext,
-  input: { rawValue: string; groupCode: string; fieldName: string; label: string; resolver: (value: string) => string | null },
+  input: {
+    rawValue: string;
+    groupCode: string;
+    fieldName: string;
+    label: string;
+    required?: boolean;
+    resolver: (value: string) => string | null;
+  },
 ) => {
-  if (!input.rawValue) return;
+  if (!input.rawValue) {
+    if (input.required) errors.push(`${input.label} is required.`);
+    return;
+  }
   const direct = directOption(ctx, input.groupCode, input.rawValue);
   const resolvedCode = direct?.code ?? input.resolver(input.rawValue);
   const option = direct ?? (resolvedCode ? optionByCode(ctx, input.groupCode, resolvedCode) : undefined);
@@ -255,6 +265,12 @@ const contactNumber = (value: string) => {
   if (digits.length === 10 && digits.startsWith('9')) return `0${digits}`;
   if (digits.length === 12 && digits.startsWith('63')) return `+${digits}`;
   return digits || value.trim();
+};
+
+const checkedBooleanValue = (value: string, label: string, errors: string[]) => {
+  const parsed = booleanValue(value);
+  if (value && parsed === null) errors.push(`${label} must be Yes or No.`);
+  return parsed;
 };
 
 export const rowValidator = {
@@ -333,6 +349,7 @@ export const rowValidator = {
       groupCode: 'SEX_ASSIGNED_AT_BIRTH',
       fieldName: 'sex_assigned_at_birth_id',
       label: 'Sex assigned at birth',
+      required: true,
       resolver: sexCode,
     });
     const civilStatus = getValue(lookup, ['CIVIL STATUS']);
@@ -341,6 +358,7 @@ export const rowValidator = {
       groupCode: 'CIVIL_STATUS',
       fieldName: 'civil_status_id',
       label: 'Civil status',
+      required: true,
       resolver: civilStatusCode,
     });
 
@@ -352,6 +370,7 @@ export const rowValidator = {
       groupCode: 'YOUTH_CLASSIFICATION',
       fieldName: 'youth_classification_id',
       label: 'Youth classification',
+      required: true,
       resolver: classificationCode,
     });
 
@@ -361,6 +380,7 @@ export const rowValidator = {
       groupCode: 'EDUCATIONAL_ATTAINMENT',
       fieldName: 'educational_attainment_id',
       label: 'Educational attainment',
+      required: true,
       resolver: educationCode,
     });
     const workStatus = getValue(lookup, ['WORK STATUS', 'EMPLOYMENT STATUS']);
@@ -369,6 +389,7 @@ export const rowValidator = {
       groupCode: 'WORK_STATUS',
       fieldName: 'work_status_id',
       label: 'Work status',
+      required: true,
       resolver: workStatusCode,
     });
 
@@ -380,19 +401,42 @@ export const rowValidator = {
     normalizedData.contact_number = contactNumber(getValue(lookup, ['CONTACT NUMBER', 'CONTACT NO.', 'CONTACT NO', 'CONTACT', 'MOBILE'])) || null;
     normalizedData.purok = getValue(lookup, ['PUROK', 'ZONE']) || null;
 
-    const generalVoter = booleanValue(getValue(lookup, ['REGISTERED VOTER?', 'REGISTERED VOTER? Y/N']));
-    const skVoter = booleanValue(getValue(lookup, ['REGISTERED SK VOTER?']));
-    const nationalVoter = booleanValue(getValue(lookup, ['REGISTERED NATIONAL VOTER?']));
+    const generalVoter = checkedBooleanValue(
+      getValue(lookup, ['REGISTERED VOTER?', 'REGISTERED VOTER? Y/N']),
+      'Registered voter',
+      errors,
+    );
+    const skVoter = checkedBooleanValue(getValue(lookup, ['REGISTERED SK VOTER?']), 'Registered SK voter', errors);
+    const nationalVoter = checkedBooleanValue(
+      getValue(lookup, ['REGISTERED NATIONAL VOTER?']),
+      'Registered national voter',
+      errors,
+    );
+    const registeredVoter = generalVoter ?? skVoter;
+    const votedLastElection = checkedBooleanValue(
+      getValue(lookup, ['VOTED LAST ELECTION', 'VOTED LAST ELECTION? Y/N', 'VOTED LAST ELECTION?']),
+      'Voted last election',
+      errors,
+    );
     normalizedData.is_registered_voter = generalVoter ?? skVoter;
     normalizedData.is_registered_sk_voter = skVoter ?? generalVoter;
     normalizedData.is_registered_national_voter = nationalVoter ?? generalVoter;
-    normalizedData.voted_last_election = booleanValue(getValue(lookup, ['VOTED LAST ELECTION', 'VOTED LAST ELECTION? Y/N', 'VOTED LAST ELECTION?']));
+    normalizedData.voted_last_election = votedLastElection;
+    if (registeredVoter === true && votedLastElection === null) {
+      errors.push('Voted last election is required when registered voter is Yes.');
+    }
 
     const assemblyRaw = getValue(lookup, ['ATTENDED KK ASSEMBLY?', 'ATTENDED KK ASSEMBLY', 'ATTENDED KK ASSEMBLY - IF YES, HOW MANY TIMES?']);
-    const attendedAssembly = booleanValue(assemblyRaw);
+    const attendedAssembly = checkedBooleanValue(assemblyRaw, 'Attended KK assembly', errors);
     const countRaw = getValue(lookup, ['IF YES, HOW MANY TIMES?', 'IF YES, HOW MANY TIMES', 'ASSEMBLY COUNT', 'TIMES ATTENDED']);
     const countNumbers = `${assemblyRaw} ${countRaw}`.match(/\d+/g)?.map(Number) ?? [];
-    const assemblyCount = attendedAssembly === true ? Math.max(1, ...countNumbers) : 0;
+    const assemblyCount = attendedAssembly === true && countNumbers.length > 0 ? Math.max(...countNumbers) : 0;
+    if (attendedAssembly === true && assemblyCount < 1) {
+      errors.push('KK assembly count is required when attendance is Yes.');
+    }
+    if (attendedAssembly !== true && countNumbers.some((count) => count > 0)) {
+      warnings.push('KK assembly count was ignored because attendance is not Yes.');
+    }
     normalizedData.attended_kk_assembly = attendedAssembly;
     normalizedData.kk_assembly_count = assemblyCount;
 

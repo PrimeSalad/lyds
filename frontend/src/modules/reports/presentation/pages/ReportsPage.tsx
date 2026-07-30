@@ -1,10 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Badge, Box, Button, Card, Dialog, Heading, HStack, IconButton, NativeSelect, Portal, SimpleGrid, Table, Text, VStack } from '@chakra-ui/react';
-import { LuCircleAlert, LuDatabase, LuDownload, LuFileSpreadsheet, LuX } from 'react-icons/lu';
+import { Alert, Badge, Box, Button, Card, Dialog, Field, Grid, Heading, HStack, IconButton, NativeSelect, Portal, SimpleGrid, Spinner, Table, Text, VStack } from '@chakra-ui/react';
+import { LuCircleAlert, LuDatabase, LuDownload, LuFileSpreadsheet, LuRefreshCw, LuX } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { type RootState } from '../../../../redux/store';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
+import {
+  availableCategoryYears,
+  categoriesForRegistry,
+  categoriesForYear,
+  preferredCategoryYear,
+} from '../../../categories/domain/category-scope';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
@@ -32,11 +38,15 @@ const ReportsPage = () => {
   const [demographics, setDemographics] = useState<Demographics | null>(null);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [filingYear, setFilingYear] = useState<number | null>(null);
   const [barangayId, setBarangayId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('');
+  const [filtersLoading, setFiltersLoading] = useState(true);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+  const [reportsRevision, setReportsRevision] = useState(0);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [exportYear, setExportYear] = useState('');
   const [exporting, setExporting] = useState(false);
 
   const demographicSections = useMemo(() => demographics ? [
@@ -54,68 +64,107 @@ const ReportsPage = () => {
     total + (section.data.find((item) => item.label === 'No response')?.count ?? 0)
   ), 0), [demographicSections]);
 
-  const exportYears = useMemo(() => {
-    const years = categories
-      .map((category) => category.filing_year)
-      .filter((year): year is number => year != null);
-    const uniqueYears = [...new Set(years)].sort((a, b) => b - a);
-    return uniqueYears.map((year) => ({
-      year,
-      recordCount: categories
-        .filter((category) => category.filing_year === year)
-        .reduce((total, category) => total + (category.record_count ?? 0), 0),
-    }));
-  }, [categories]);
+  const youthCategories = useMemo(
+    () => categoriesForRegistry(categories, 'YOUTH_PROFILE'),
+    [categories],
+  );
+  const filingYears = useMemo(() => availableCategoryYears(youthCategories), [youthCategories]);
+  const yearCategories = useMemo(
+    () => categoriesForYear(youthCategories, filingYear),
+    [filingYear, youthCategories],
+  );
+  const selectedCategory = yearCategories.find((category) => category.id === categoryId) ?? null;
+  const selectedBarangay = barangays.find((barangay) => barangay.id === barangayId) ?? null;
 
   useEffect(() => {
-    if (exportYears.length === 0) {
-      setExportYear('');
-      return;
-    }
-    if (!exportYears.some(({ year }) => String(year) === exportYear)) {
-      setExportYear(String(exportYears[0].year));
-    }
-  }, [exportYear, exportYears]);
-
-  useEffect(() => {
-    if (dataset !== 'KK_YOUTH') return;
-    const fetchData = async () => {
+    let active = true;
+    const loadFilters = async () => {
+      setFiltersLoading(true);
       try {
-        const [sumRes, demRes, barangayData, categoryRes] = await Promise.all([
-          reportApi.getSummary({ barangayId, categoryId, status }),
-          reportApi.getDemographics({ barangayId, categoryId, status }),
+        const [barangayData, categoryRes] = await Promise.all([
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           categoryApi.list('YOUTH_PROFILE'),
         ]);
-        setSummary(sumRes.data);
-        setDemographics(demRes.data);
+        if (!active) return;
         setBarangays(barangayData);
         setCategories(categoryRes.data);
-      } catch {
-        showToast.error('Failed to load reports');
+        const scopedCategories = categoriesForRegistry(categoryRes.data, 'YOUTH_PROFILE');
+        setFilingYear((current) => (
+          current !== null && availableCategoryYears(scopedCategories).includes(current)
+            ? current
+            : preferredCategoryYear(scopedCategories)
+        ));
+      } catch (error) {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : 'Report filters could not be loaded.';
+        setReportsError(message);
+        showToast.error({ title: 'Failed to load report filters', description: message });
+      } finally {
+        if (active) setFiltersLoading(false);
       }
     };
-    fetchData();
-  }, [barangayId, categoryId, status, isAdmin, dataset]);
+    void loadFilters();
+    return () => { active = false; };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (categoryId && !yearCategories.some((category) => category.id === categoryId)) {
+      setCategoryId('');
+    }
+  }, [categoryId, yearCategories]);
+
+  useEffect(() => {
+    if (dataset !== 'KK_YOUTH' || filingYear === null || filtersLoading) return;
+    let active = true;
+    const fetchData = async () => {
+      setReportsLoading(true);
+      setReportsError(null);
+      setSummary(null);
+      setDemographics(null);
+      try {
+        const filters = { barangayId, categoryId, status, filingYear };
+        const [sumRes, demRes] = await Promise.all([
+          reportApi.getSummary(filters),
+          reportApi.getDemographics(filters),
+        ]);
+        if (!active) return;
+        setSummary(sumRes.data);
+        setDemographics(demRes.data);
+      } catch (error) {
+        if (!active) return;
+        const message = error instanceof Error ? error.message : `The ${filingYear} report could not be loaded.`;
+        setReportsError(message);
+        showToast.error({ title: 'Failed to load reports', description: message });
+      } finally {
+        if (active) setReportsLoading(false);
+      }
+    };
+    void fetchData();
+    return () => { active = false; };
+  }, [barangayId, categoryId, status, filingYear, filtersLoading, dataset, reportsRevision]);
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
+    const selectedYear = filingYear;
+    if (!Number.isInteger(selectedYear)) {
+      showToast.error('Select a filing year before exporting');
+      return;
+    }
     setExporting(true);
     try {
-      const selectedYear = format === 'xlsx' ? Number(exportYear) : undefined;
       const blob = await reportApi.exportRecords({
         format,
         barangayId,
         categoryId,
         status,
-        filingYear: Number.isInteger(selectedYear) ? selectedYear : undefined,
+        filingYear: selectedYear as number,
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       const scope = isAdmin && barangayId ? barangays.find((barangay) => barangay.id === barangayId)?.code ?? 'barangay' : isAdmin ? 'all-barangays' : 'assigned-barangay';
       a.href = url;
-      a.download = format === 'xlsx' && Number.isInteger(selectedYear)
+      a.download = format === 'xlsx'
         ? `KK Youth Profile ${selectedYear}.xlsx`
-        : `youth-records-${scope}.${format}`;
+        : `youth-records-${selectedYear}-${scope}.${format}`;
       a.click();
       window.URL.revokeObjectURL(url);
       setExportDialogOpen(false);
@@ -132,7 +181,7 @@ const ReportsPage = () => {
         <Box>
           <Heading size="sm">{title}</Heading>
           <Text fontSize="sm" color="text.muted" mt={1}>
-            All {demographics?.totalRecords.toLocaleString() ?? 0} filtered records are counted.
+            All {demographics?.totalRecords.toLocaleString() ?? 0} filtered {filingYear} records are counted.
           </Text>
         </Box>
       </Card.Header>
@@ -183,10 +232,10 @@ const ReportsPage = () => {
     <DashboardLayout>
       <PageHeader
         title="Reports"
-        description="Review consolidated record totals and export scoped datasets."
+        description="Review one annual dataset at a time. Every metric, demographic response, and export follows the selected filing year."
         actions={(
           <HStack gap={3} wrap="wrap">
-            <NativeSelect.Root maxW={{ base: 'full', md: '220px' }}>
+            <NativeSelect.Root width={{ base: 'full', md: '220px' }}>
               <NativeSelect.Field
                 aria-label="Report dataset"
                 value={dataset}
@@ -198,68 +247,110 @@ const ReportsPage = () => {
               </NativeSelect.Field>
               <NativeSelect.Indicator />
             </NativeSelect.Root>
-            {isAdmin && (
-              <NativeSelect.Root maxW={{ base: 'full', md: '190px' }}>
-                <NativeSelect.Field value={barangayId} onChange={(e) => setBarangayId(e.target.value)}>
-                  <option value="">All Barangays</option>
-                  {barangays.map((barangay) => (
-                    <option key={barangay.id} value={barangay.id}>{barangay.name}</option>
-                  ))}
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
-            )}
-            <NativeSelect.Root maxW={{ base: 'full', md: '220px' }}>
-              <NativeSelect.Field value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                <option value="">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
-            <NativeSelect.Root maxW={{ base: 'full', md: '170px' }}>
-              <NativeSelect.Field value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="">All Statuses</option>
-                <option value="DRAFT">Draft</option>
-                <option value="SUBMITTED">Submitted</option>
-                <option value="RETURNED">Returned</option>
-                <option value="APPROVED">Approved</option>
-                <option value="ARCHIVED">Archived</option>
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
-            <Button variant="outline" onClick={() => handleExport('csv')} disabled={exporting}>
+            <Button variant="outline" onClick={() => void handleExport('csv')} disabled={filingYear === null || exporting}>
               Export CSV
             </Button>
-            <Button colorPalette="green" onClick={() => setExportDialogOpen(true)} disabled={exportYears.length === 0 || exporting}>
+            <Button colorPalette="green" onClick={() => setExportDialogOpen(true)} disabled={filingYear === null || exporting}>
               <LuDownload aria-hidden="true" /> Export XLSX
             </Button>
           </HStack>
         )}
       />
 
+      <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" mb={5}>
+        <Card.Header px={{ base: 4, md: 5 }} pt={{ base: 4, md: 5 }} pb={2}>
+          <Heading as="h2" size="sm">Report controls</Heading>
+          <Text mt={1} fontSize="sm" color="text.muted">
+            Filing year is required. Profile and demographic totals never combine different annual datasets.
+          </Text>
+        </Card.Header>
+        <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
+          <Grid
+            templateColumns={{
+              base: '1fr',
+              md: 'repeat(2, minmax(0, 1fr))',
+              xl: isAdmin ? 'repeat(4, minmax(0, 1fr))' : 'repeat(3, minmax(0, 1fr))',
+            }}
+            gap={4}
+          >
+            <Field.Root required>
+              <Field.Label>Filing year <Field.RequiredIndicator /></Field.Label>
+              <NativeSelect.Root width="full" disabled={filtersLoading || filingYears.length === 0}>
+                <NativeSelect.Field
+                  aria-label="Filing year"
+                  minH="44px"
+                  value={filingYear ?? ''}
+                  onChange={(event) => {
+                    setFilingYear(Number(event.target.value));
+                    setCategoryId('');
+                  }}
+                >
+                  {filingYears.length === 0 && <option value="">No filing years available</option>}
+                  {filingYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+              <Field.HelperText>Controls every total, response table, and export.</Field.HelperText>
+            </Field.Root>
+            {isAdmin && (
+              <Field.Root>
+                <Field.Label>Barangay scope</Field.Label>
+                <NativeSelect.Root width="full" disabled={filtersLoading}>
+                  <NativeSelect.Field aria-label="Barangay" minH="44px" value={barangayId} onChange={(event) => setBarangayId(event.target.value)}>
+                    <option value="">All Barangays</option>
+                    {barangays.map((barangay) => (
+                      <option key={barangay.id} value={barangay.id}>{barangay.name}</option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
+            )}
+            <Field.Root>
+              <Field.Label>Youth category</Field.Label>
+              <NativeSelect.Root width="full" disabled={filtersLoading || filingYear === null}>
+                <NativeSelect.Field aria-label="Youth category" minH="44px" value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+                  <option value="">All categories in {filingYear ?? 'selected year'}</option>
+                  {yearCategories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}</option>
+                  ))}
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Field.Root>
+            <Field.Root>
+              <Field.Label>Record status</Field.Label>
+              <NativeSelect.Root width="full" disabled={filtersLoading || filingYear === null}>
+                <NativeSelect.Field aria-label="Record status" minH="44px" value={status} onChange={(event) => setStatus(event.target.value)}>
+                  <option value="">All Statuses</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="SUBMITTED">Submitted</option>
+                  <option value="RETURNED">Returned</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="ARCHIVED">Archived</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Field.Root>
+          </Grid>
+        </Card.Body>
+      </Card.Root>
+
       <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" mb={6}>
         <Card.Body p={{ base: 4, md: 5 }}>
           <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
             {[
               {
-                label: 'Current scope',
-                value: isAdmin
-                  ? 'All barangays'
-                  : 'Assigned barangay only',
+                label: 'Filing year',
+                value: filingYear ?? 'No annual dataset',
               },
               {
-                label: 'Excel export',
-                value: exportYears.length > 0
-                  ? `KK Youth Profile ${exportYear || (exportYears[0]?.year ?? 'Year')}`
-                  : 'No filing year available',
+                label: 'Barangay scope',
+                value: isAdmin ? selectedBarangay?.name ?? 'All barangays' : 'Assigned barangay only',
               },
               {
-                label: 'Record scope',
-                value: status || categoryId || barangayId
-                  ? 'Filtered dataset'
-                  : 'All available records',
+                label: 'Category scope',
+                value: selectedCategory?.name ?? (filingYear === null ? 'No annual dataset' : `All ${filingYear} youth categories`),
               },
             ].map((item) => (
               <Box key={item.label} p={4} bg="surface.muted" borderRadius="md" borderWidth="1px" borderColor="border">
@@ -281,32 +372,67 @@ const ReportsPage = () => {
         </Card.Root>
       )}
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} mb={8}>
-        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
-          <Card.Body p={5}>
-            <Text fontSize="sm" color="text.muted">Total Records</Text>
-            <Text fontSize="2xl" fontWeight="700" mt={1}>{summary?.totalRecords || 0}</Text>
+      {reportsError && (
+        <Alert.Root status="error" role="alert" borderRadius="md" mb={6} alignItems="flex-start">
+          <LuCircleAlert aria-hidden="true" />
+          <Box flex="1">
+            <Alert.Title>{filingYear ? `${filingYear} report could not be loaded` : 'Reports could not be loaded'}</Alert.Title>
+            <Text mt={1}>{reportsError}</Text>
+          </Box>
+          <Button variant="outline" colorPalette="red" minH="44px" onClick={() => setReportsRevision((revision) => revision + 1)}>
+            <LuRefreshCw aria-hidden="true" /> Retry
+          </Button>
+        </Alert.Root>
+      )}
+
+      {(filtersLoading || reportsLoading) && (
+        <Card.Root borderColor="border" borderRadius="lg" mb={6} aria-busy="true">
+          <Card.Body p={6}>
+            <HStack justify="center" gap={3} role="status">
+              <Spinner color="primary.600" />
+              <Text>Loading {filingYear ? `${filingYear} ` : ''}report data…</Text>
+            </HStack>
           </Card.Body>
         </Card.Root>
-        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
-          <Card.Body p={5}>
-            <Text fontSize="sm" color="text.muted">Approved</Text>
-            <Text fontSize="2xl" fontWeight="700" mt={1}>{summary?.approved || 0}</Text>
+      )}
+
+      {!filtersLoading && filingYear === null && (
+        <Card.Root borderColor="border" borderRadius="lg" mb={6}>
+          <Card.Body p={{ base: 5, md: 7 }} textAlign="center">
+            <Heading size="sm">No Youth Registry filing year is available</Heading>
+            <Text mt={2} color="text.muted">Create an annual Youth Registry category before generating reports.</Text>
           </Card.Body>
         </Card.Root>
-        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
-          <Card.Body p={5}>
-            <Text fontSize="sm" color="text.muted">Pending Review</Text>
-            <Text fontSize="2xl" fontWeight="700" mt={1}>{summary?.submitted || 0}</Text>
-          </Card.Body>
-        </Card.Root>
-        <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
-          <Card.Body p={5}>
-            <Text fontSize="sm" color="text.muted">This Month</Text>
-            <Text fontSize="2xl" fontWeight="700" mt={1}>{summary?.thisMonth || 0}</Text>
-          </Card.Body>
-        </Card.Root>
-      </SimpleGrid>
+      )}
+
+      {!reportsLoading && summary && (
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap={4} mb={8}>
+          <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">{filingYear} Records</Text>
+              <Text fontSize="2xl" fontWeight="700" mt={1}>{summary.totalRecords.toLocaleString()}</Text>
+            </Card.Body>
+          </Card.Root>
+          <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">Approved</Text>
+              <Text fontSize="2xl" fontWeight="700" mt={1}>{summary.approved.toLocaleString()}</Text>
+            </Card.Body>
+          </Card.Root>
+          <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">Pending Review</Text>
+              <Text fontSize="2xl" fontWeight="700" mt={1}>{summary.submitted.toLocaleString()}</Text>
+            </Card.Body>
+          </Card.Root>
+          <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
+            <Card.Body p={5}>
+              <Text fontSize="sm" color="text.muted">Added This Month</Text>
+              <Text fontSize="2xl" fontWeight="700" mt={1}>{summary.thisMonth.toLocaleString()}</Text>
+            </Card.Body>
+          </Card.Root>
+        </SimpleGrid>
+      )}
 
       {demographics && (
         <VStack align="stretch" gap={8}>
@@ -339,8 +465,13 @@ const ReportsPage = () => {
           </Card.Root>
 
           <Box>
-            <Heading size="md">Profile and demographic responses</Heading>
-            <Text mt={1} mb={4} color="text.muted" fontSize="sm">Percentages use every record in the current filters, including records with missing answers.</Text>
+            <HStack gap={3} wrap="wrap">
+              <Heading size="md">Profile and demographic responses</Heading>
+              <Badge colorPalette="green" variant="subtle">Filing year {filingYear}</Badge>
+            </HStack>
+            <Text mt={1} mb={4} color="text.muted" fontSize="sm">
+              Percentages use only {filingYear} records in the current barangay, category, and status filters, including records with missing answers.
+            </Text>
             <SimpleGrid columns={{ base: 1, xl: 2 }} gap={5}>
               {demographicSections.filter((section) => section.group === 'profile').map((section) => (
                 <DemographicTable key={section.title} title={section.title} data={section.data} />
@@ -349,8 +480,11 @@ const ReportsPage = () => {
           </Box>
 
           <Box>
-            <Heading size="md">Civic participation responses</Heading>
-            <Text mt={1} mb={4} color="text.muted" fontSize="sm">Yes, No, and unanswered imported values are reported separately.</Text>
+            <HStack gap={3} wrap="wrap">
+              <Heading size="md">Civic participation responses</Heading>
+              <Badge colorPalette="green" variant="subtle">Filing year {filingYear}</Badge>
+            </HStack>
+            <Text mt={1} mb={4} color="text.muted" fontSize="sm">Yes, No, and unanswered imported values for {filingYear} are reported separately.</Text>
             <SimpleGrid columns={{ base: 1, xl: 2 }} gap={5}>
               {demographicSections.filter((section) => section.group === 'participation').map((section) => (
                 <DemographicTable key={section.title} title={section.title} data={section.data} />
@@ -372,35 +506,30 @@ const ReportsPage = () => {
                   </Box>
                   <Box>
                     <Dialog.Title fontFamily="heading" fontWeight="650">Export Reports XLSX</Dialog.Title>
-                    <Text color="text.muted" fontSize="sm" mt={1}>Choose the filing year to use the official KK workbook layout.</Text>
+                    <Text color="text.muted" fontSize="sm" mt={1}>The export follows the active report filters.</Text>
                   </Box>
                 </HStack>
               </Dialog.Header>
               <Dialog.Body>
                 <VStack align="stretch" gap={4}>
-                  <NativeSelect.Root width="full" disabled={exporting}>
-                    <NativeSelect.Field
-                      aria-label="Filing year"
-                      value={exportYear}
-                      onChange={(e) => setExportYear(e.target.value)}
-                      minH="44px"
-                    >
-                      {exportYears.map(({ year, recordCount }) => (
-                        <option key={year} value={year}>
-                          {`KK Youth Profile ${year} — ${recordCount.toLocaleString()} record${recordCount === 1 ? '' : 's'}`}
-                        </option>
-                      ))}
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+                    <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
+                      <Text color="text.muted" fontSize="sm">Filing year</Text>
+                      <Text mt={1} fontWeight="700">{filingYear ?? 'Not selected'}</Text>
+                    </Box>
+                    <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
+                      <Text color="text.muted" fontSize="sm">Barangay</Text>
+                      <Text mt={1} fontWeight="700">{isAdmin ? selectedBarangay?.name ?? 'All barangays' : 'Assigned barangay'}</Text>
+                    </Box>
+                  </SimpleGrid>
                   <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
                     <Text fontWeight="700" fontSize="sm">Official KK youth profile layout</Text>
                     <Text color="text.secondary" fontSize="sm" lineHeight="1.6" mt={1}>
-                      The XLSX export uses the same filing-year workbook format as Youth Records, with the official title block and print-ready columns.
+                      The XLSX export includes only the selected filing year and current category/status filters, using the official title block and print-ready columns.
                     </Text>
                   </Box>
                   <Text color="text.muted" fontSize="sm">
-                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {exportYear || 'Year'}.xlsx</Text>
+                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {filingYear ?? 'Year'}.xlsx</Text>
                   </Text>
                 </VStack>
               </Dialog.Body>
@@ -408,7 +537,7 @@ const ReportsPage = () => {
                 <Button width={{ base: 'full', sm: 'auto' }} variant="outline" onClick={() => setExportDialogOpen(false)} disabled={exporting}>
                   Cancel
                 </Button>
-                <Button width={{ base: 'full', sm: 'auto' }} colorPalette="green" onClick={() => handleExport('xlsx')} loading={exporting} disabled={!exportYear}>
+                <Button width={{ base: 'full', sm: 'auto' }} colorPalette="green" onClick={() => void handleExport('xlsx')} loading={exporting} disabled={filingYear === null}>
                   <LuDownload aria-hidden="true" /> Download Excel
                 </Button>
               </Dialog.Footer>

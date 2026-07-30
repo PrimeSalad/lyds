@@ -1649,6 +1649,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get annual youth-record workflow totals
+         * @description Returns youth-record totals for exactly one filing year. The filing
+         *     year is required so annual reports never silently combine datasets.
+         *     SK officials remain restricted to their assigned barangay.
+         */
+        get: {
+            parameters: {
+                query: {
+                    filingYear: number;
+                    barangayId?: string;
+                    categoryId?: string;
+                    status?: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Filing-year workflow totals */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReportSummaryResponse"];
+                    };
+                };
+                /** @description Missing or invalid filing year or filters */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/demographics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get annual youth demographic and participation responses
+         * @description Returns demographic and civic-response breakdowns for exactly one
+         *     filing year. Missing answers remain visible as `No response` and every
+         *     percentage uses the complete year-filtered record count.
+         */
+        get: {
+            parameters: {
+                query: {
+                    filingYear: number;
+                    barangayId?: string;
+                    categoryId?: string;
+                    status?: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Filing-year demographic and civic-response breakdowns */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DemographicsReportResponse"];
+                    };
+                };
+                /** @description Missing or invalid filing year or filters */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/export": {
         parameters: {
             query?: never;
@@ -2153,6 +2281,40 @@ export interface components {
         };
         DashboardAnalyticsResponse: {
             data: components["schemas"]["DashboardAnalytics"];
+        };
+        ReportSummary: {
+            totalRecords: number;
+            draft: number;
+            submitted: number;
+            approved: number;
+            returned: number;
+            archived: number;
+            thisMonth: number;
+            totalBarangays: number;
+            totalAccounts: number;
+        };
+        ReportSummaryResponse: {
+            data: components["schemas"]["ReportSummary"];
+        };
+        DemographicBreakdown: {
+            label: string;
+            count: number;
+            percentage: number;
+        };
+        DemographicsReport: {
+            totalRecords: number;
+            sex: components["schemas"]["DemographicBreakdown"][];
+            civilStatus: components["schemas"]["DemographicBreakdown"][];
+            youthClassification: components["schemas"]["DemographicBreakdown"][];
+            youthAgeGroup: components["schemas"]["DemographicBreakdown"][];
+            educationalAttainment: components["schemas"]["DemographicBreakdown"][];
+            workStatus: components["schemas"]["DemographicBreakdown"][];
+            registeredVoter: components["schemas"]["DemographicBreakdown"][];
+            votedLastElection: components["schemas"]["DemographicBreakdown"][];
+            attendedAssembly: components["schemas"]["DemographicBreakdown"][];
+        };
+        DemographicsReportResponse: {
+            data: components["schemas"]["DemographicsReport"];
         };
         ApproveSubmittedByBarangayInput: {
             /** Format: uuid */

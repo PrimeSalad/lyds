@@ -5,7 +5,7 @@ import { getDemographics } from '../../application/use-cases/get-demographics';
 import { getByBarangay } from '../../application/use-cases/get-by-barangay';
 import { exportRecords } from '../../application/use-cases/export-records';
 import { getDashboardAnalytics } from '../../application/use-cases/get-dashboard-analytics';
-import { dashboardQuerySchema, exportRecordsQuerySchema } from './schema';
+import { dashboardQuerySchema, exportRecordsQuerySchema, reportQuerySchema } from './schema';
 
 export const reportController = {
   async dashboard(req: Request, res: Response) {
@@ -20,21 +20,29 @@ export const reportController = {
 
   async summary(req: Request, res: Response) {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const requestedBarangayId = typeof req.query.barangayId === 'string' ? req.query.barangayId : null;
-    const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : null;
-    const status = typeof req.query.status === 'string' ? req.query.status : null;
+    const query = reportQuerySchema.parse(req.query);
+    const requestedBarangayId = query.barangayId ?? null;
     const barangayId = ctx.role === 'ADMIN' ? requestedBarangayId : ctx.barangayId;
-    const data = await getSummary({ barangayId, categoryId, status });
+    const data = await getSummary({
+      barangayId,
+      categoryId: query.categoryId ?? null,
+      status: query.status ?? null,
+      filingYear: query.filingYear,
+    });
     res.json({ data });
   },
 
   async demographics(req: Request, res: Response) {
     const ctx = (req as AuthenticatedRequest).authContext!;
-    const requestedBarangayId = typeof req.query.barangayId === 'string' ? req.query.barangayId : null;
-    const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : null;
-    const status = typeof req.query.status === 'string' ? req.query.status : null;
+    const query = reportQuerySchema.parse(req.query);
+    const requestedBarangayId = query.barangayId ?? null;
     const barangayId = ctx.role === 'ADMIN' ? requestedBarangayId : ctx.barangayId;
-    const data = await getDemographics({ barangayId, categoryId, status });
+    const data = await getDemographics({
+      barangayId,
+      categoryId: query.categoryId ?? null,
+      status: query.status ?? null,
+      filingYear: query.filingYear,
+    });
     res.json({ data });
   },
 

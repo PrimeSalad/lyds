@@ -4,6 +4,7 @@ export const getSummary = async (filters: {
   barangayId?: string | null;
   categoryId?: string | null;
   status?: string | null;
+  filingYear: number;
 }) => {
   const summary = await reportRepository.getSummary(filters);
 

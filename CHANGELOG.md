@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Redesigned the Youth Records import setup around a prominent guided-template step, clearer destination/file guidance, a pre-validation summary, and disabled checking until the required setup is complete; the Excel template now mirrors live Youth Record choices with reliable dropdown lists, marked required columns, 1,000 prepared rows, and an instructions/field guide sheet.
 - Removed the redundant blank Category column from the Child Laborer Records table while retaining its registry-scoped year and category filters.
 - Separated Youth and Child Laborer category scopes across both record lists and forms: filing-year options now come only from matching registry categories, category options follow the selected available year, mixed registry payloads are rejected defensively, and fabricated year lists were removed.
 - Replaced decorative dashboard icon tiles and marketing-style hero panels with a shared, compact registry summary; Youth and Child Laborer dashboards now use the same icon-free KPI cards, five-column grid, spacing, radii, panel padding, and loading geometry.
@@ -78,6 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed Youth Reports combining profile, demographic, civic-response, and CSV totals across all years when no category was selected; both Youth and Child Laborer reports now require a real registry filing year and keep every metric, chart/table, detailed row, and export within that annual dataset.
+- Fixed spreadsheet imports accepting rows that omitted demographic fields required by the manual Youth Record form, accepting unrecognized Yes/No answers, and silently inventing a KK assembly count; dependent voter and attendance answers are now validated before import.
 - Made Playwright self-contained in CI by supplying non-secret browser-test environment values, and expanded smoke coverage to current list, detail, create, mobile-landscape, and reduced-motion routes.
 - Corrected the Youth Record Details heading hierarchy so each page exposes one unambiguous primary heading to assistive technology.
 - Prevented database readiness failures from exposing provider details to unauthenticated health-check clients.

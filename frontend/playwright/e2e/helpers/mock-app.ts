@@ -125,6 +125,42 @@ const childLaborerCategory2025 = {
   record_count: 0,
 };
 
+const youthReferenceGroups = [{
+  id: 'reference-group-youth-classification',
+  code: 'YOUTH_CLASSIFICATION',
+  name: 'Youth Classification',
+  description: 'Youth classification category',
+  record_type: 'YOUTH_PROFILE',
+  created_at: '2026-01-01T00:00:00.000Z',
+}];
+
+const childLaborerReferenceGroups = [
+  {
+    id: 'reference-group-child-grade',
+    code: 'CHILD_LABORER_HIGHEST_GRADE',
+    name: 'Highest Grade Completed',
+    description: 'Maintained grade-level suggestions for Child Laborer records.',
+    record_type: 'CHILD_LABORER',
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'reference-group-child-work',
+    code: 'CHILD_LABORER_NATURE_OF_WORK',
+    name: 'Nature of Work',
+    description: 'Standard work descriptions used by the Child Laborer registry and reports.',
+    record_type: 'CHILD_LABORER',
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'reference-group-child-occupation',
+    code: 'CHILD_LABORER_PARENT_GUARDIAN_OCCUPATION',
+    name: 'Parent or Guardian Occupation',
+    description: 'Standard occupation descriptions used for Child Laborer household details.',
+    record_type: 'CHILD_LABORER',
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+];
+
 const barangay = {
   id: 'barangay-agot',
   code: '174001001',
@@ -165,6 +201,65 @@ const childLaborer = {
   created_at: '2026-01-01T00:00:00.000Z',
   updated_at: '2026-01-01T00:00:00.000Z',
 };
+
+const importBatch = {
+  id: 'import-batch-1',
+  category_id: category.id,
+  barangay_id: barangay.id,
+  uploaded_by: 'profile-1',
+  file_name: 'kk-youth-agot-2026.xlsx',
+  status: 'VALIDATED',
+  total_rows: 3,
+  valid_rows: 1,
+  invalid_rows: 1,
+  duplicate_rows: 1,
+  error_message: null,
+  barangay_name: barangay.name,
+  category_name: category.name,
+  filing_year: 2026,
+  uploaded_by_name: 'Test Administrator',
+  created_at: '2026-08-03T00:00:00.000Z',
+  updated_at: '2026-08-03T00:00:00.000Z',
+};
+
+const importRows = [
+  {
+    id: 'import-row-ready',
+    row_number: 4,
+    raw_data: { Name: 'Alyssa Reyes' },
+    normalized_data: { display_name: 'Alyssa Reyes' },
+    is_valid: true,
+    is_duplicate: false,
+    duplicate_match_id: null,
+    validation_errors: [],
+    validation_warnings: [],
+  },
+  {
+    id: 'import-row-invalid',
+    row_number: 5,
+    raw_data: { Name: 'Brandon Santos' },
+    normalized_data: { display_name: 'Brandon Santos' },
+    is_valid: false,
+    is_duplicate: false,
+    duplicate_match_id: null,
+    validation_errors: [
+      'Birth date is required.',
+      'Youth classification was not recognized.',
+    ],
+    validation_warnings: ['Contact number is blank.'],
+  },
+  {
+    id: 'import-row-duplicate',
+    row_number: 6,
+    raw_data: { Name: 'Carla Mendoza' },
+    normalized_data: { display_name: 'Carla Mendoza' },
+    is_valid: true,
+    is_duplicate: true,
+    duplicate_match_id: 'existing-youth-record',
+    validation_errors: [],
+    validation_warnings: [],
+  },
+];
 
 export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
   const now = Math.floor(Date.now() / 1_000);
@@ -298,7 +393,14 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       return;
     }
     if (path === '/reference-data') {
-      await json(route, { data: [] });
+      const recordType = url.searchParams.get('recordType');
+      await json(route, {
+        data: recordType === 'CHILD_LABORER'
+          ? childLaborerReferenceGroups
+          : recordType === 'YOUTH_PROFILE'
+            ? youthReferenceGroups
+            : [...youthReferenceGroups, ...childLaborerReferenceGroups],
+      });
       return;
     }
     if (path.startsWith('/reference-data/')) {
@@ -410,6 +512,17 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
     }
     if (path === '/imports') {
       await json(route, { data: [], meta: emptyMeta });
+      return;
+    }
+    if (path === `/imports/${importBatch.id}`) {
+      await json(route, { data: importBatch });
+      return;
+    }
+    if (path === `/imports/${importBatch.id}/rows`) {
+      await json(route, {
+        data: importRows,
+        meta: { page: 1, pageSize: 25, totalItems: importRows.length, totalPages: 1 },
+      });
       return;
     }
     if (path === '/accounts') {

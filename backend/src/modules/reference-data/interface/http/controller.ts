@@ -3,11 +3,16 @@ import { listReferenceGroups } from '../../application/use-cases/list-reference-
 import { listReferenceOptions } from '../../application/use-cases/list-reference-options';
 import { createReferenceOption } from '../../application/use-cases/create-reference-option';
 import { updateReferenceOption } from '../../application/use-cases/update-reference-option';
-import { createReferenceOptionSchema, updateReferenceOptionSchema } from './schema';
+import {
+  createReferenceOptionSchema,
+  listReferenceGroupsQuerySchema,
+  updateReferenceOptionSchema,
+} from './schema';
 
 export const referenceDataController = {
-  async listGroups(_req: Request, res: Response) {
-    const groups = await listReferenceGroups();
+  async listGroups(req: Request, res: Response) {
+    const query = listReferenceGroupsQuerySchema.parse(req.query);
+    const groups = await listReferenceGroups(query.recordType);
     res.json({ data: groups });
   },
 

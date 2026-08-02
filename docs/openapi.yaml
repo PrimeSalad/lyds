@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SK Youth Information Management System API
-  version: 1.6.0
+  version: 1.7.0
   description: |
     Contract-first definition for the SK Youth Information Management System.
     Authentication is handled by Supabase Auth. Protected endpoints require an
@@ -668,6 +668,124 @@ paths:
                 $ref: '#/components/schemas/CategoryListResponse'
         '401':
           description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reference-data:
+    get:
+      tags: [app]
+      summary: List registry-scoped reference groups
+      description: Returns maintained reference groups, optionally limited to the Youth or Child Laborer registry.
+      parameters:
+        - in: query
+          name: recordType
+          description: Limits reference groups to one registry.
+          schema:
+            $ref: '#/components/schemas/CategoryRecordType'
+      responses:
+        '200':
+          description: Reference group list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceGroupListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reference-data/{groupCode}/options:
+    parameters:
+      - in: path
+        name: groupCode
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [app]
+      summary: List options in a reference group
+      responses:
+        '200':
+          description: Reference option list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceOptionListResponse'
+        '404':
+          description: Reference group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [app]
+      summary: Add an option to a reference group
+      description: Administrator-only. The option code is normalized to uppercase words separated by underscores.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReferenceOptionInput'
+      responses:
+        '201':
+          description: Reference option created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceOptionResponse'
+        '403':
+          description: Administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Option code already exists in the group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/reference-data/{groupCode}/options/{optionId}:
+    parameters:
+      - in: path
+        name: groupCode
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: optionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [app]
+      summary: Update a reference option
+      description: Administrator-only. Labels, sort order, status, descriptions, and metadata can be maintained without changing stable option codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReferenceOptionInput'
+      responses:
+        '200':
+          description: Reference option updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReferenceOptionResponse'
+        '403':
+          description: Administrator access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Reference group or option not found
           content:
             application/json:
               schema:
@@ -1724,6 +1842,116 @@ components:
     CategoryRecordType:
       type: string
       enum: [YOUTH_PROFILE, CHILD_LABORER]
+    ReferenceGroup:
+      type: object
+      required: [id, code, name, record_type, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: [string, "null"]
+        record_type:
+          $ref: '#/components/schemas/CategoryRecordType'
+        created_at:
+          type: string
+          format: date-time
+    ReferenceGroupListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceGroup'
+    ReferenceOption:
+      type: object
+      required: [id, group_code, code, label, sort_order, is_active, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_code:
+          type: string
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: [string, "null"]
+        sort_order:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        is_active:
+          type: boolean
+        metadata:
+          type: [object, "null"]
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+    ReferenceOptionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReferenceOption'
+    ReferenceOptionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ReferenceOption'
+    CreateReferenceOptionInput:
+      type: object
+      required: [code, label, sort_order]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: [string, "null"]
+        sort_order:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        is_active:
+          type: boolean
+          default: true
+        metadata:
+          type: [object, "null"]
+          additionalProperties: true
+    UpdateReferenceOptionInput:
+      type: object
+      minProperties: 1
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: [string, "null"]
+        sort_order:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        is_active:
+          type: boolean
+        metadata:
+          type: [object, "null"]
+          additionalProperties: true
     CategorySummary:
       type: object
       required:

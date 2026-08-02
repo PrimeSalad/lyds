@@ -1,12 +1,20 @@
 import { supabaseAdmin } from '../../../../config/supabase';
-import type { ReferenceGroup, ReferenceOption } from '../../domain/entities/reference-data';
+import type {
+  ReferenceGroup,
+  ReferenceOption,
+  ReferenceRecordType,
+} from '../../domain/entities/reference-data';
 
 export const referenceDataRepository = {
-  async listGroups(): Promise<ReferenceGroup[]> {
-    const { data, error } = await supabaseAdmin
+  async listGroups(recordType?: ReferenceRecordType): Promise<ReferenceGroup[]> {
+    let query = supabaseAdmin
       .from('reference_groups')
       .select('*')
       .order('name');
+
+    if (recordType) query = query.eq('record_type', recordType);
+
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },

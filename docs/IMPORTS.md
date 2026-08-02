@@ -8,6 +8,8 @@ The import workflow checks a spreadsheet before it creates any youth records:
 4. Review ready, invalid, and duplicate rows. Download the error report when corrections are needed.
 5. Confirm the import. All ready rows are created atomically as submitted youth profiles.
 
+The validation review preserves the exact worksheet row number beside the recognized youth name. Every row has one explicit outcome: **Ready to import**, **Needs correction**, or **Duplicate — skipped**. Errors and non-blocking warnings are listed separately instead of being collapsed into one message, and the correction report uses the same source-row references. Desktop uses a compact audit table; narrow screens use ordered review cards without hiding validation details.
+
 ## Supported workbook layouts
 
 The parser scans the first 50 rows of every worksheet and uses the best recognizable header row. This supports both the downloadable template and official KK Youth Profile workbooks that contain title/instruction rows before their column headings.

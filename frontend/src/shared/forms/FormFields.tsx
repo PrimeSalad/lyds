@@ -1,7 +1,9 @@
+import { useId } from 'react';
 import { Field, Input, Textarea, NativeSelect, Checkbox, Text, VStack } from '@chakra-ui/react';
 
 interface TextFieldProps {
   label: string;
+  ariaLabel?: string;
   name?: string;
   value?: string | number;
   onChange: (value: string) => void;
@@ -15,12 +17,14 @@ interface TextFieldProps {
   autoComplete?: string;
   min?: number | string;
   max?: number | string;
+  suggestions?: string[];
   onBlur?: () => void;
   ref?: React.Ref<HTMLInputElement>;
 }
 
 export const TextField = ({
   label,
+  ariaLabel,
   name,
   value,
   onChange,
@@ -34,34 +38,47 @@ export const TextField = ({
   autoComplete,
   min,
   max,
+  suggestions = [],
   onBlur,
   ref,
-}: TextFieldProps) => (
-  <Field.Root invalid={!!error} required={required}>
-    <Field.Label fontWeight="600" color="text.primary">{label}</Field.Label>
-    <Input
-      name={name}
-      type={type}
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      disabled={disabled}
-      readOnly={readOnly}
-      autoComplete={autoComplete}
-      min={min}
-      max={max}
-      onBlur={onBlur}
-      ref={ref}
-      minH="44px"
-      bg={readOnly ? 'surface.muted' : 'surface'}
-      borderColor="border.strong"
-      _hover={{ borderColor: readOnly ? 'border.strong' : 'gray.400' }}
-      _focusVisible={{ borderColor: 'primary.600', boxShadow: '0 0 0 1px var(--chakra-colors-primary-600)' }}
-    />
-    {helpText && !error && <Field.HelperText>{helpText}</Field.HelperText>}
-    {error && <Field.ErrorText>{error}</Field.ErrorText>}
-  </Field.Root>
-);
+}: TextFieldProps) => {
+  const suggestionListId = useId();
+  const hasSuggestions = suggestions.length > 0;
+
+  return (
+    <Field.Root invalid={!!error} required={required}>
+      <Field.Label fontWeight="600" color="text.primary">{label}</Field.Label>
+      <Input
+        name={name}
+        aria-label={ariaLabel}
+        type={type}
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        readOnly={readOnly}
+        autoComplete={autoComplete}
+        min={min}
+        max={max}
+        list={hasSuggestions ? suggestionListId : undefined}
+        onBlur={onBlur}
+        ref={ref}
+        minH="44px"
+        bg={readOnly ? 'surface.muted' : 'surface'}
+        borderColor="border.strong"
+        _hover={{ borderColor: readOnly ? 'border.strong' : 'gray.400' }}
+        _focusVisible={{ borderColor: 'primary.600', boxShadow: '0 0 0 1px var(--chakra-colors-primary-600)' }}
+      />
+      {hasSuggestions && (
+        <datalist id={suggestionListId}>
+          {suggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+        </datalist>
+      )}
+      {helpText && !error && <Field.HelperText>{helpText}</Field.HelperText>}
+      {error && <Field.ErrorText>{error}</Field.ErrorText>}
+    </Field.Root>
+  );
+};
 
 interface TextareaFieldProps {
   label: string;

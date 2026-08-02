@@ -1,8 +1,12 @@
+export const referenceRecordTypes = ['YOUTH_PROFILE', 'CHILD_LABORER'] as const;
+export type ReferenceRecordType = typeof referenceRecordTypes[number];
+
 export interface ReferenceGroup {
   id: string;
   code: string;
   name: string;
   description: string | null;
+  record_type: ReferenceRecordType;
   created_at: string;
 }
 

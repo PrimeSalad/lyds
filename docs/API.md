@@ -26,7 +26,7 @@ All groups except process health require a valid bearer token with a verified `a
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
 | `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
 | `/categories` | Registry-scoped annual categories and custom fields (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads scoped; writes admin-only |
-| `/reference-data` | Reference groups and options | Reads signed-in; writes admin-only |
+| `/reference-data` | Registry-scoped reference groups and options (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads signed-in; writes admin-only |
 | `/barangays` | Barangay directory and status | Admin-only |
 | `/accounts` | Account creation, temporary password and 2FA reset, status, assignment, and guarded permanent deletion with unapproved-data cleanup | AAL2 admin-only |
 | `/audit-logs` | Audit history | Admin-only |
@@ -59,6 +59,8 @@ The Reports UI derives Youth and Child Laborer year choices only from real categ
 A record can be marked `VALIDATED` only when remarks document the validation. Records without remarks remain `IDENTIFIED`, and report validation percentages are calculated from these current persisted statuses rather than from the spreadsheet name or visible table page.
 
 Child laborer writes also normalize known imported variants into professional, canonical wording for nature of work and parent/guardian occupation. Equivalent field notes are standardized as complete sentences, while blank remarks remain blank and do not become validation evidence.
+
+The Child Laborer form loads maintained `CHILD_LABORER_HIGHEST_GRADE`, `CHILD_LABORER_NATURE_OF_WORK`, and `CHILD_LABORER_PARENT_GUARDIAN_OCCUPATION` options as suggestions. Administrators maintain those lists through registry-scoped Reference Data. The persisted fields remain text so a verified detail that is more specific than the maintained list is not discarded.
 
 `GET /child-laborers/summary` accepts the same category, filing year, barangay, status, and search scope used by the report registry. It summarizes the complete filtered dataset—not only the visible table page—with school attendance, workflow status, gender, filing-year age bands, barangay concentration, leading canonical nature-of-work categories, and reporting-quality indicators. The completeness percentage measures the presence of highest grade, parent or guardian occupation, and a specified nature of work across all matched records; `Not Reported` remains incomplete.
 

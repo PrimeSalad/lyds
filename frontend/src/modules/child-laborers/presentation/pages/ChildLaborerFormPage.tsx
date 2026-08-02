@@ -20,6 +20,7 @@ import {
 import { CategoryCustomFields } from '../../../categories/presentation/components/CategoryCustomFields';
 import { categoryApi, type Category, type CategoryField } from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
+import { referenceDataApi, type ReferenceOption } from '../../../reference-data/infrastructure/reference-data-api';
 import {
   childLaborerApi,
   type ChildLaborerGender,
@@ -36,6 +37,35 @@ const workflowOptions: Array<{ value: ChildLaborerStatus; label: string }> = [
   { value: 'MONITORED', label: 'Monitored — follow-up ongoing' },
   { value: 'CLOSED', label: 'Closed — monitoring completed' },
 ];
+
+const childLaborerReferenceGroups = {
+  highestGrade: 'CHILD_LABORER_HIGHEST_GRADE',
+  natureOfWork: 'CHILD_LABORER_NATURE_OF_WORK',
+  parentGuardianOccupation: 'CHILD_LABORER_PARENT_GUARDIAN_OCCUPATION',
+} as const;
+
+type ChildLaborerReferenceLists = Record<keyof typeof childLaborerReferenceGroups, string[]>;
+
+const optionLabels = (options: ReferenceOption[]) => [...new Set(options
+  .filter((option) => option.is_active)
+  .sort((left, right) => left.sort_order - right.sort_order || left.label.localeCompare(right.label))
+  .map((option) => option.label))];
+
+const loadChildLaborerReferenceLists = async (): Promise<ChildLaborerReferenceLists> => {
+  const entries = await Promise.all((Object.entries(childLaborerReferenceGroups) as Array<[
+    keyof ChildLaborerReferenceLists,
+    string,
+  ]>).map(async ([key, groupCode]) => {
+    try {
+      const response = await referenceDataApi.listOptions(groupCode);
+      return [key, optionLabels(response.data)] as const;
+    } catch {
+      return [key, []] as const;
+    }
+  }));
+
+  return Object.fromEntries(entries) as ChildLaborerReferenceLists;
+};
 
 type ChildLaborerFormValues = {
   category_id: string;
@@ -88,6 +118,11 @@ const ChildLaborerFormPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([]);
   const [barangays, setBarangays] = useState<Barangay[]>([]);
+  const [referenceLists, setReferenceLists] = useState<ChildLaborerReferenceLists>({
+    highestGrade: [],
+    natureOfWork: [],
+    parentGuardianOccupation: [],
+  });
   const [recordVersion, setRecordVersion] = useState(1);
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -147,12 +182,14 @@ const ChildLaborerFormPage = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [barangayData, categoryResult, recordResult] = await Promise.all([
+        const [barangayData, categoryResult, recordResult, childReferenceLists] = await Promise.all([
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           categoryApi.list('CHILD_LABORER'),
           recordId ? childLaborerApi.get(recordId) : Promise.resolve(null),
+          loadChildLaborerReferenceLists(),
         ]);
         setBarangays(barangayData);
+        setReferenceLists(childReferenceLists);
         const categoryData: Category[] = categoriesForRegistry(categoryResult.data, 'CHILD_LABORER');
         if (recordResult && !categoryData.some((category) => category.id === recordResult.data.category_id)) {
           const recordCategory = await categoryApi.getById(recordResult.data.category_id);
@@ -396,11 +433,26 @@ const ChildLaborerFormPage = () => {
               <SelectField {...field} label="Attending School" required options={[{ value: 'YES', label: 'Yes' }, { value: 'NO', label: 'No' }]} error={fieldState.error?.message} />
             )} />
             <Controller name="highest_grade_completed" control={control} render={({ field, fieldState }) => (
-              <TextField {...field} label="Highest Grade Completed" placeholder="Example: Grade 8" error={fieldState.error?.message} />
+              <TextField
+                {...field}
+                label="Highest Grade Completed"
+                placeholder="Example: Grade 8"
+                suggestions={referenceLists.highestGrade}
+                helpText="Choose a maintained suggestion or enter the verified grade level."
+                error={fieldState.error?.message}
+              />
             )} />
             <GridItem colSpan={{ base: 1, md: 2 }}>
               <Controller name="nature_of_work" control={control} rules={{ required: 'Nature of work is required.' }} render={({ field, fieldState }) => (
-                <TextField {...field} label="Nature of Work" required placeholder="Describe the work performed" error={fieldState.error?.message} />
+                <TextField
+                  {...field}
+                  label="Nature of Work"
+                  required
+                  placeholder="Describe the work performed"
+                  suggestions={referenceLists.natureOfWork}
+                  helpText="Use a maintained description when it matches the work reported."
+                  error={fieldState.error?.message}
+                />
               )} />
             </GridItem>
           </Grid>
@@ -418,7 +470,13 @@ const ChildLaborerFormPage = () => {
             )} />
             <GridItem colSpan={{ base: 1, md: 3 }}>
               <Controller name="parent_guardian_occupation" control={control} render={({ field, fieldState }) => (
-                <TextField {...field} label="Parent/Guardian Occupation" error={fieldState.error?.message} />
+                <TextField
+                  {...field}
+                  label="Parent/Guardian Occupation"
+                  suggestions={referenceLists.parentGuardianOccupation}
+                  helpText="Use a maintained occupation when available; detailed verified entries remain allowed."
+                  error={fieldState.error?.message}
+                />
               )} />
             </GridItem>
           </Grid>

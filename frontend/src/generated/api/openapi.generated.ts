@@ -1129,6 +1129,220 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reference-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List registry-scoped reference groups
+         * @description Returns maintained reference groups, optionally limited to the Youth or Child Laborer registry.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Limits reference groups to one registry. */
+                    recordType?: components["schemas"]["CategoryRecordType"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reference group list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReferenceGroupListResponse"];
+                    };
+                };
+                /** @description Authentication required */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference-data/{groupCode}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupCode: string;
+            };
+            cookie?: never;
+        };
+        /** List options in a reference group */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    groupCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reference option list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReferenceOptionListResponse"];
+                    };
+                };
+                /** @description Reference group not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Add an option to a reference group
+         * @description Administrator-only. The option code is normalized to uppercase words separated by underscores.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    groupCode: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateReferenceOptionInput"];
+                };
+            };
+            responses: {
+                /** @description Reference option created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReferenceOptionResponse"];
+                    };
+                };
+                /** @description Administrator access required */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Option code already exists in the group */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference-data/{groupCode}/options/{optionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupCode: string;
+                optionId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a reference option
+         * @description Administrator-only. Labels, sort order, status, descriptions, and metadata can be maintained without changing stable option codes.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    groupCode: string;
+                    optionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateReferenceOptionInput"];
+                };
+            };
+            responses: {
+                /** @description Reference option updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReferenceOptionResponse"];
+                    };
+                };
+                /** @description Administrator access required */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Reference group or option not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/categories/{categoryId}": {
         parameters: {
             query?: never;
@@ -2146,6 +2360,60 @@ export interface components {
         };
         /** @enum {string} */
         CategoryRecordType: "YOUTH_PROFILE" | "CHILD_LABORER";
+        ReferenceGroup: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description?: string | null;
+            record_type: components["schemas"]["CategoryRecordType"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        ReferenceGroupListResponse: {
+            data: components["schemas"]["ReferenceGroup"][];
+        };
+        ReferenceOption: {
+            /** Format: uuid */
+            id: string;
+            group_code: string;
+            code: string;
+            label: string;
+            description?: string | null;
+            sort_order: number;
+            is_active: boolean;
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ReferenceOptionListResponse: {
+            data: components["schemas"]["ReferenceOption"][];
+        };
+        ReferenceOptionResponse: {
+            data: components["schemas"]["ReferenceOption"];
+        };
+        CreateReferenceOptionInput: {
+            code: string;
+            label: string;
+            description?: string | null;
+            sort_order: number;
+            /** @default true */
+            is_active: boolean;
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        UpdateReferenceOptionInput: {
+            label?: string;
+            description?: string | null;
+            sort_order?: number;
+            is_active?: boolean;
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
         CategorySummary: {
             /** Format: uuid */
             id: string;

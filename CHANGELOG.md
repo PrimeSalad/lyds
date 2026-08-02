@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Rebuilt the Imports validation review as an audit-friendly desktop table and ordered mobile cards with exact sheet-row recognition, clear ready/correction/duplicate outcomes, separately rendered errors and warnings, a calmer summary strip, and a direct correction-report action.
+- Added registry-scoped Reference Data with a URL-preserved Youth/Child Laborer switcher, production-backed Child Laborer grade/work/occupation lists, resilient list management, and form suggestions that preserve verified free-text details.
 - Added registry-scoped categories for both Youth Registry and Child Laborer records, including real child-record category ownership, custom values, required-field validation, live record totals, list filtering, and an accessible Categories dataset switcher.
 - Added an accessible, URL-preserved Dashboard workspace switcher with a full current-record child laborer analytics view, filing-year control, and direct registry action.
 - Added a protected yearly Child Laborer Records registry with birthday-derived annual ages, education and work details, parent or guardian information, workflow statuses, remarks, duplicate checks, archival, barangay scoping, audit history, responsive tables, and official CSV/XLSX consolidation exports.

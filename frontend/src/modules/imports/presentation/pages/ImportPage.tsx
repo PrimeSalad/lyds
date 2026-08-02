@@ -35,7 +35,6 @@ import {
 import type { RootState } from '../../../../redux/store';
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { PageHeader } from '../../../../shared/components/PageHeader';
-import { DataTable, type Column } from '../../../../shared/tables/DataTable';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
@@ -47,6 +46,7 @@ import {
   type ImportRow,
   type PaginationMeta,
 } from '../../infrastructure/import-api';
+import { ImportValidationTable } from '../components/ImportValidationTable';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = ['.xlsx', '.csv'];
@@ -76,16 +76,6 @@ const downloadBlob = (blob: Blob, fileName: string) => {
 const fileSize = (bytes: number) => bytes >= 1024 * 1024
   ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   : `${Math.max(1, Math.round(bytes / 1024))} KB`;
-
-const rowName = (row: ImportRow) => {
-  const normalized = String(row.normalized_data?.display_name ?? '').trim();
-  if (normalized) return normalized;
-  const rawName = Object.entries(row.raw_data).find(([key]) => key.trim().toLowerCase() === 'name')?.[1];
-  return String(rawName ?? 'Unnamed row');
-};
-
-const resultColor = (row: ImportRow) => row.is_duplicate ? 'orange' : row.is_valid ? 'green' : 'red';
-const resultLabel = (row: ImportRow) => row.is_duplicate ? 'Duplicate' : row.is_valid ? 'Ready' : 'Invalid';
 
 const ImportPage = () => {
   const navigate = useNavigate();
@@ -333,29 +323,6 @@ const ImportPage = () => {
     setRowMeta({ page: 1, pageSize: 25, totalItems: 0, totalPages: 1 });
     setSearchParams({}, { replace: true });
   };
-
-  const columns: Column<ImportRow>[] = [
-    { key: 'row_number', header: 'Sheet row', width: '100px', sortable: true, align: 'center' },
-    { key: 'name', header: 'Youth name', width: '240px', render: rowName },
-    {
-      key: 'result',
-      header: 'Result',
-      width: '120px',
-      align: 'center',
-      render: (row) => <Badge colorPalette={resultColor(row)}>{resultLabel(row)}</Badge>,
-    },
-    {
-      key: 'issues',
-      header: 'Validation details',
-      width: '460px',
-      render: (row) => {
-        const messages = [...(row.validation_errors ?? []), ...(row.validation_warnings ?? [])];
-        return messages.length > 0
-          ? <Text whiteSpace="normal" textAlign="left" lineHeight="1.5">{messages.join(' • ')}</Text>
-          : <Text color="text.muted">No issues</Text>;
-      },
-    },
-  ];
 
   return (
     <DashboardLayout>
@@ -648,55 +615,71 @@ const ImportPage = () => {
               </Card.Body>
             </Card.Root>
 
-            <SimpleGrid columns={{ base: 2, lg: 4 }} gap={3}>
-              {[
-                { label: 'Ready to import', value: batch.valid_rows, color: 'green' },
-                { label: 'Invalid rows', value: batch.invalid_rows, color: 'red' },
-                { label: 'Duplicates skipped', value: batch.duplicate_rows, color: 'orange' },
-                { label: 'Total checked', value: batch.total_rows, color: 'blue' },
-              ].map((item) => (
-                <Card.Root key={item.label} borderColor="border" borderRadius="lg">
-                  <Card.Body p={{ base: 4, md: 5 }}>
-                    <Text color="text.muted" fontSize="sm">{item.label}</Text>
-                    <Text color={`${item.color}.700`} fontSize={{ base: '2xl', md: '3xl' }} fontWeight="700" mt={1}>{item.value.toLocaleString()}</Text>
-                  </Card.Body>
-                </Card.Root>
-              ))}
-            </SimpleGrid>
+            <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" overflow="hidden">
+              <Card.Body p={0}>
+                <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={0}>
+                  {[
+                    { label: 'Total checked', value: batch.total_rows, color: 'blue', detail: 'All spreadsheet rows' },
+                    { label: 'Ready to import', value: batch.valid_rows, color: 'green', detail: 'Passed validation' },
+                    { label: 'Needs correction', value: batch.invalid_rows, color: 'red', detail: 'Will be skipped' },
+                    { label: 'Duplicate', value: batch.duplicate_rows, color: 'orange', detail: 'Already recorded' },
+                  ].map((item) => (
+                    <Box
+                      key={item.label}
+                      p={{ base: 4, md: 5 }}
+                      borderLeftWidth="4px"
+                      borderLeftColor={`${item.color}.400`}
+                      borderBottomWidth={{ base: '1px', lg: 0 }}
+                      borderBottomColor="border"
+                    >
+                      <Text color="text.muted" fontSize="sm" fontWeight="600">{item.label}</Text>
+                      <Text color={`${item.color}.700`} fontSize={{ base: '2xl', md: '3xl' }} fontWeight="700" lineHeight="1.1" mt={1} fontVariantNumeric="tabular-nums">
+                        {item.value.toLocaleString()}
+                      </Text>
+                      <Text color="text.muted" fontSize="xs" mt={2}>{item.detail}</Text>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </Card.Body>
+            </Card.Root>
 
             {(batch.invalid_rows > 0 || batch.duplicate_rows > 0) && (
-              <Alert.Root status="warning" borderRadius="md" alignItems="flex-start">
-                <LuTriangleAlert aria-hidden="true" />
-                <Box flex="1">
-                  <Alert.Title>{(batch.invalid_rows + batch.duplicate_rows).toLocaleString()} rows will be skipped</Alert.Title>
-                  <Text mt={1}>Download the report for exact spreadsheet row numbers and correction details.</Text>
-                </Box>
-                <Button variant="outline" minH="44px" onClick={handleDownloadErrors} loading={downloading}>
-                  <LuDownload aria-hidden="true" /> Error Report
-                </Button>
-              </Alert.Root>
+              <Card.Root borderColor="orange.200" borderRadius="lg" bg="orange.50">
+                <Card.Body p={{ base: 4, md: 5 }}>
+                  <Flex align={{ base: 'stretch', md: 'center' }} justify="space-between" direction={{ base: 'column', md: 'row' }} gap={4}>
+                    <HStack align="flex-start" gap={3}>
+                      <Box color="orange.700" pt={1} flexShrink={0}><LuTriangleAlert aria-hidden="true" /></Box>
+                      <Box>
+                        <Heading as="h3" size="sm">{(batch.invalid_rows + batch.duplicate_rows).toLocaleString()} rows will be skipped</Heading>
+                        <Text mt={1} color="orange.900" fontSize="sm">The review below explains each result. Download the correction report to work directly from the original sheet row numbers.</Text>
+                      </Box>
+                    </HStack>
+                    <Button variant="outline" borderColor="orange.300" minH="44px" flexShrink={0} onClick={handleDownloadErrors} loading={downloading}>
+                      <LuDownload aria-hidden="true" /> Download Correction Report
+                    </Button>
+                  </Flex>
+                </Card.Body>
+              </Card.Root>
             )}
 
             <Box>
-              <HStack justify="space-between" align="flex-end" mb={3} wrap="wrap">
-                <Box>
-                  <Heading size="sm">Row-by-row results</Heading>
-                  <Text color="text.muted" fontSize="sm" mt={1}>Spreadsheet row numbers are preserved for easy correction.</Text>
+              <Flex justify="space-between" align={{ base: 'flex-start', lg: 'flex-end' }} direction={{ base: 'column', lg: 'row' }} gap={3} mb={3}>
+                <Box maxW="680px">
+                  <Heading size="sm">Spreadsheet validation review</Heading>
+                  <Text color="text.muted" fontSize="sm" mt={1}>Find the exact sheet row, confirm the recognized youth name, then read corrections and warnings separately.</Text>
                 </Box>
-                <Text color="text.muted" fontSize="sm">{rowMeta.totalItems.toLocaleString()} rows</Text>
-              </HStack>
-              <DataTable
-                columns={columns}
-                data={rows}
+                <HStack gap={2} wrap="wrap" aria-label="Validation outcome legend">
+                  <Badge colorPalette="green" variant="subtle">Ready</Badge>
+                  <Badge colorPalette="red" variant="subtle">Needs correction</Badge>
+                  <Badge colorPalette="orange" variant="subtle">Duplicate</Badge>
+                  <Text color="text.muted" fontSize="sm" ml={{ lg: 2 }}>{rowMeta.totalItems.toLocaleString()} rows</Text>
+                </HStack>
+              </Flex>
+              <ImportValidationTable
+                rows={rows}
                 loading={loadingRows || validating}
-                emptyMessage="No spreadsheet rows were found."
-                variant="excel"
-                pagination={{
-                  page: rowMeta.page,
-                  totalPages: rowMeta.totalPages,
-                  totalItems: rowMeta.totalItems,
-                  onPageChange: (page) => setRowMeta((current) => ({ ...current, page })),
-                }}
+                pagination={rowMeta}
+                onPageChange={(page) => setRowMeta((current) => ({ ...current, page }))}
               />
             </Box>
 

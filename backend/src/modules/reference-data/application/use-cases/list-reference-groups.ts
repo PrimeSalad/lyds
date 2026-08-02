@@ -1,6 +1,6 @@
 import { referenceDataRepository } from '../../infrastructure/repositories/reference-data-repository';
-import type { ReferenceGroup } from '../../domain/entities/reference-data';
+import type { ReferenceGroup, ReferenceRecordType } from '../../domain/entities/reference-data';
 
-export const listReferenceGroups = async (): Promise<ReferenceGroup[]> => {
-  return referenceDataRepository.listGroups();
+export const listReferenceGroups = async (recordType?: ReferenceRecordType): Promise<ReferenceGroup[]> => {
+  return referenceDataRepository.listGroups(recordType);
 };

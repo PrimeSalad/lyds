@@ -17,6 +17,6 @@ export const createReferenceOption = async (groupCode: string, input: CreateRefe
   return referenceDataRepository.createOption({
     ...input,
     group_code: groupCode,
-    is_active: true,
+    is_active: input.is_active,
   });
 };

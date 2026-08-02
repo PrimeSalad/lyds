@@ -27,14 +27,31 @@ afterAll(async () => {
 
 describe('Express application', () => {
   it('serves health with security headers', async () => {
-    const response = await fetch(`${baseUrl}/api/v1/health`);
+    const previousDeploymentCommit = process.env.RENDER_GIT_COMMIT;
+    process.env.RENDER_GIT_COMMIT = 'test-deployment-commit';
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-    expect(response.headers.get('x-frame-options')).toBe('DENY');
-    expect(response.headers.get('referrer-policy')).toContain('strict-origin-when-cross-origin');
-    expect(response.headers.get('permissions-policy')).toContain('camera=()');
-    expect(response.headers.get('x-powered-by')).toBeNull();
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/health`);
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toEqual({
+        status: 'ok',
+        timestamp: expect.any(String),
+        deploymentCommit: 'test-deployment-commit',
+      });
+      expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+      expect(response.headers.get('x-frame-options')).toBe('DENY');
+      expect(response.headers.get('referrer-policy')).toContain('strict-origin-when-cross-origin');
+      expect(response.headers.get('permissions-policy')).toContain('camera=()');
+      expect(response.headers.get('x-powered-by')).toBeNull();
+    } finally {
+      if (previousDeploymentCommit === undefined) {
+        delete process.env.RENDER_GIT_COMMIT;
+      } else {
+        process.env.RENDER_GIT_COMMIT = previousDeploymentCommit;
+      }
+    }
   });
 
   it('rejects protected API access without a bearer token', async () => {

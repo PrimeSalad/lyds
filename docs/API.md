@@ -33,6 +33,8 @@ All groups except process health require a valid bearer token with a verified `a
 
 The router files under `backend/src/routes/` and `backend/src/modules/*/interface/http/routes.ts` compose these groups. Backend middleware is authoritative even when the frontend also hides inaccessible navigation.
 
+The public `GET /health` response includes `deploymentCommit` when Render supplies its runtime Git revision. This non-secret marker makes production rollout verification deterministic without exposing environment configuration.
+
 ## Request and response conventions
 
 - JSON response bodies wrap successful resources in `data`; paginated lists also include `meta`.

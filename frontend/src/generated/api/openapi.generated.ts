@@ -2068,6 +2068,8 @@ export interface components {
             status: "ok";
             /** Format: date-time */
             timestamp: string;
+            /** @description Render Git commit for the running deployment, when supplied by the host. */
+            deploymentCommit?: string;
         };
         AuthContext: {
             /** Format: uuid */

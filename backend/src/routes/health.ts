@@ -3,7 +3,13 @@ import { Router } from 'express';
 export const healthRouter = Router();
 
 healthRouter.get('/', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const deploymentCommit = process.env.RENDER_GIT_COMMIT;
+
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    ...(deploymentCommit ? { deploymentCommit } : {}),
+  });
 });
 
 healthRouter.get('/ready', async (_req, res) => {

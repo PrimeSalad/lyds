@@ -5,7 +5,7 @@ const OutOfSchoolYouthPage = () => (
     recordType="OUT_OF_SCHOOL_YOUTH"
     title="Out-of-School Youth Records"
     registryLabel="Out-of-School Youth"
-    description="Review the 2025 OSY consolidation with clear validation status, barangay coverage, and export-ready records."
+    description="Manage each annual OSY consolidation with validated CSV imports, searchable records, and CSV or Excel exports."
   />
 );
 

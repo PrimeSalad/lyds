@@ -16,6 +16,8 @@ At 12:05 AM Asia/Manila every January 1, the Supabase Cron job `annual-kk-youth-
 8. Keeps one source row per barangay and normalized youth name, even when repeated source names have different birthdays.
 9. Skips a name already present in the same target-year barangay, so a retried Cron run does not duplicate it.
 
+At 12:06 AM Asia/Manila every January 1, `annual-osy-category` publishes the new `Out-of-School Youth <year>` category. The annual OSY category intentionally starts with zero records: prior-year people are never copied forward, and the new consolidation is populated only through validated CSV imports or later verified entry. Migration `033` also prepares the current year immediately, so 2026 is available even though it begins empty.
+
 The database rejects attempts to prepare a year later than the current Asia/Manila year. The schedule runs at 16:05 UTC on December 31, which is 12:05 AM in the Philippines on January 1.
 
 Because the automated schedule was installed after January 1, 2026, migration `019_backfill_2026_youth_profiles.sql` performs the same guarded rollover once for 2026. The live backfill copied 2,918 unique eligible names from 2025, excluded 427 rows without birthdays and 268 rows outside the target age range, and skipped two repeated source rows from one same-barangay name collision. Re-running the function copies zero additional rows.
@@ -52,6 +54,7 @@ Supabase stores the recurring job and its run history through `pg_cron`. The sch
 
 ```sql
 SELECT * FROM public.annual_kk_rollover_schedule_status();
+SELECT * FROM public.annual_osy_category_schedule_status();
 ```
 
 Job execution history is also available in the Supabase Dashboard under **Integrations → Cron → Jobs**.

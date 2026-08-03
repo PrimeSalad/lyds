@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added an automatic annual OSY category schedule, including an empty published 2026 category, with no prior-year record copying.
+- Added direct Import CSV actions and explicit CSV/Excel export labeling to both Youth and OSY record pages.
 - Added Out-of-School Youth as a third first-class registry with its own sidebar destination, annual categories, imports, CSV/XLSX exports, records workspace, and URL-preserved dashboard view.
 - Added an idempotent, privacy-conscious 2025 OSY workbook importer that loads all 653 source records, preserves normalization findings, maps workbook validation status, and verifies the imported production count without committing personal source data to Git.
 - Added import-compatible CSV exports for both Youth and Child Laborer registries, including embedded registry/year metadata, preserved custom values, and Child Laborer atomic batch commits with duplicate protection.
@@ -43,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Clarified the Imports registry choices and OSY guidance so Youth, OSY, and Child Laborer files are visibly distinct and responsive across desktop and mobile.
 - Scoped youth-shaped list and report APIs by `YOUTH_PROFILE` or `OUT_OF_SCHOOL_YOUTH`, defaulting to Youth so regular youth totals never silently include OSY records.
 - Youth Records can now export either a re-importable CSV or the existing print-ready Excel workbook; Child Laborer CSV downloads retain all active list filters and clearly link back to Imports.
 - Generalized the Imports validation review from Youth-only wording to recognized-person and registry-specific decisions while preserving its responsive audit table and mobile cards.

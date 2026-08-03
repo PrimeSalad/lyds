@@ -4,7 +4,7 @@ The import workflow supports both **Youth Records** and **Child Laborer Records*
 
 1. Choose the destination registry, then select its published category for the intended filing year.
 2. Administrators select the destination barangay. SK officials automatically use their active barangay assignment.
-3. For Youth, use the guided `.xlsx`, an official KK workbook, or a Youth CSV export. For Child Laborer, use a CSV exported from the filtered Child Laborer list. Files may be up to 10 MB.
+3. For Youth, use the guided `.xlsx`, an official KK workbook, or a Youth CSV export. For OSY and Child Laborer, use a CSV exported from the matching filtered registry list. Files may be up to 10 MB.
 4. Review ready, invalid, and duplicate rows. Download the error report when corrections are needed.
 5. Confirm the import. All ready rows are created atomically in the selected registry.
 
@@ -29,9 +29,9 @@ The downloadable template mirrors the controlled fields in the Youth Record form
 
 ## Export-to-import CSV round trip
 
-Youth and Child Laborer CSV exports include `Registry`, `Filing Year`, all standard record fields, and `Custom Values JSON`. The Imports page validates the embedded registry and year against the selected category, validates a supplied barangay against the destination, and preserves category custom values. A mismatched Youth/Child dataset or filing year is rejected per row instead of being silently filed in the wrong registry.
+Youth, OSY, and Child Laborer CSV exports include `Registry`, `Filing Year`, all standard record fields, and `Custom Values JSON`. The Imports page validates the embedded registry and year against the selected category, validates a supplied barangay against the destination, and preserves category custom values. A mismatched registry or filing year is rejected per row instead of being silently filed in the wrong dataset.
 
-- Youth Records can export a selected filing-year category and barangay as **CSV · Re-importable** or **Excel · Print-ready**. Administrators must choose one barangay for CSV because each import batch has one destination.
+- Youth Records and Out-of-School Youth can export a selected filing-year category and barangay as **CSV · Re-importable** or **Excel · Print-ready**. Administrators must choose one barangay for CSV because each import batch has one destination.
 - Child Laborer Records exports the currently filtered category, filing year, barangay, status, and search results. Its CSV can be opened from the direct **Import CSV** action.
 - Select the same filing year and destination barangay before checking an exported CSV.
 

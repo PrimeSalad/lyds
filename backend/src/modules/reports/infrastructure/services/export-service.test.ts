@@ -167,4 +167,18 @@ describe('exportService', () => {
     expect(worksheet?.getCell('A8').value).toContain('Total records: 0');
     expect(worksheet?.getCell('A12').value).toBe('No youth records found for filing year 2026.');
   });
+
+  it('exports an empty annual OSY category as a valid print-ready workbook', async () => {
+    const output = await exportService.generateXlsx([], {
+      filingYear: 2026,
+      recordType: 'OUT_OF_SCHOOL_YOUTH',
+      generatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(output as unknown as ExcelJS.Buffer);
+    const worksheet = workbook.getWorksheet('OSY 2026');
+
+    expect(worksheet?.getCell('A8').value).toContain('Total records: 0');
+    expect(worksheet?.getCell('A12').value).toBe('No OSY records found for filing year 2026.');
+  });
 });

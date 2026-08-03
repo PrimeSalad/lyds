@@ -1525,10 +1525,10 @@ export interface paths {
         put?: never;
         /**
          * Upload and validate a registry spreadsheet
-         * @description Uses the selected category to choose Youth Profile or Child Laborer
-         *     parsing and validation. Generated CSV exports are accepted directly,
-         *     while embedded registry and filing-year metadata must match the selected
-         *     category. This step does not create records.
+         * @description Uses the selected category to choose Youth Profile, Out-of-School Youth,
+         *     or Child Laborer parsing and validation. Generated registry CSV exports
+         *     are accepted directly, while embedded registry and filing-year metadata
+         *     must match the selected category. This step does not create records.
          */
         post: {
             parameters: {
@@ -2051,13 +2051,12 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Export youth records
-         * @description Exports all non-deleted youth records in scope. When `filingYear` is
-         *     supplied with XLSX format, the workbook uses the official KK Youth
-         *     Profile layout and filename `KK Youth Profile <year>.xlsx`. CSV output
-         *     is self-describing and can be uploaded directly to Imports under a
-         *     matching Youth Profile category. SK officials are always restricted to
-         *     their assigned barangay.
+         * Export Youth Profile or Out-of-School Youth records
+         * @description Exports all non-deleted records in the selected Youth Profile or OSY
+         *     registry scope. XLSX produces a print-ready annual workbook; CSV is
+         *     self-describing and can be uploaded directly to Imports under a matching
+         *     registry and filing-year category. SK officials are always restricted
+         *     to their assigned barangay.
          */
         get: {
             parameters: {

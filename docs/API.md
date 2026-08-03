@@ -58,6 +58,8 @@ Imported source files can omit demographic and civic answers. Nullable fields re
 
 OSY uses the established youth-profile field shape because the official consolidation contains the same demographic, education, employment, voter, and KK-assembly columns. It remains a distinct `OUT_OF_SCHOOL_YOUTH` category type throughout categories, record lists, dashboard analytics, exports, and imports. CSV exports embed that marker and the filing year for round-trip validation.
 
+The yearly OSY category is created automatically every January 1 and begins empty. Records are not copied from the prior year; operators populate the new annual dataset through the registry-aware CSV import flow. Youth and OSY record pages both expose re-importable CSV and print-ready Excel downloads.
+
 The tracked `backend/scripts/import-osy-workbook.ts` command reads the official 2025 master and validation-summary sheets. It defaults to a dry run; `--apply` performs deterministic, idempotent upserts and verifies the final category count. The workbook itself remains an operator-supplied local file and is not committed to source control.
 
 The Reports UI derives Youth and Child Laborer year choices only from real categories in the selected registry. Every visible metric, response table/chart, detailed row, CSV, and XLSX export follows the active filing year.

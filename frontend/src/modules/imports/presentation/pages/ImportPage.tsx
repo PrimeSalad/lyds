@@ -59,24 +59,28 @@ const steps = ['Prepare', 'Review', 'Complete'];
 const registryDetails: Record<CategoryRecordType, {
   label: string;
   shortLabel: string;
+  description: string;
   destination: string;
   queryValue: string;
 }> = {
   YOUTH_PROFILE: {
     label: 'Youth Records',
     shortLabel: 'Youth',
+    description: 'KK youth profile dataset',
     destination: '/youth-records',
     queryValue: 'youth',
   },
   OUT_OF_SCHOOL_YOUTH: {
     label: 'Out-of-School Youth Records',
     shortLabel: 'OSY',
+    description: 'Annual out-of-school youth dataset',
     destination: '/out-of-school-youth',
     queryValue: 'out-of-school-youth',
   },
   CHILD_LABORER: {
     label: 'Child Laborer Records',
     shortLabel: 'Child Laborer',
+    description: 'Child labor monitoring dataset',
     destination: '/child-laborers',
     queryValue: 'child-laborer',
   },
@@ -446,7 +450,7 @@ const ImportPage = () => {
                   <Text color="text.secondary" mt={2}>
                     The selected registry controls the expected columns and prevents a Youth file from being filed as Child Laborer data, or vice versa.
                   </Text>
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3} mt={4}>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} gap={3} mt={4}>
                     {(Object.keys(registryDetails) as CategoryRecordType[]).map((type) => {
                       const details = registryDetails[type];
                       const selected = recordType === type;
@@ -469,7 +473,7 @@ const ImportPage = () => {
                           <Box>
                             <Text fontWeight="700">{details.label}</Text>
                             <Text fontSize="xs" color="text.secondary" mt={1}>
-                              {type === 'YOUTH_PROFILE' ? 'KK youth profile dataset' : 'Child labor monitoring dataset'}
+                              {details.description}
                             </Text>
                           </Box>
                         </Button>

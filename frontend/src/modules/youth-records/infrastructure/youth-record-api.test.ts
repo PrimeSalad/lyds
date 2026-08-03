@@ -26,4 +26,17 @@ describe('youthRecordApi exports', () => {
       '/reports/export?format=csv&filingYear=2026&categoryId=22222222-2222-4222-8222-222222222222&barangayId=11111111-1111-4111-8111-111111111111&status=APPROVED',
     );
   });
+
+  it.each(['csv', 'xlsx'] as const)('exports OSY filing years as %s', async (format) => {
+    request.mockResolvedValueOnce(new Blob());
+
+    await youthRecordApi.exportFilingYear(2026, format, {
+      categoryId: '33333333-3333-4333-8333-333333333333',
+      recordType: 'OUT_OF_SCHOOL_YOUTH',
+    });
+
+    expect(request).toHaveBeenCalledWith(
+      `/reports/export?format=${format}&filingYear=2026&categoryId=33333333-3333-4333-8333-333333333333&recordType=OUT_OF_SCHOOL_YOUTH`,
+    );
+  });
 });

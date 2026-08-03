@@ -55,6 +55,33 @@ test.describe('Record registry category scope', () => {
     expect(errors).toEqual([]);
   });
 
+  test('shows the empty OSY 2026 category with CSV import and CSV or Excel export actions', async ({ page }) => {
+    const errors = runtimeErrors(page);
+    await installApiMocks(page);
+    await page.goto('/out-of-school-youth');
+
+    const year = page.getByLabel('Filter by year');
+    const category = page.getByLabel('Filter by category');
+    await expect(year).toHaveValue('2025');
+    expect(await optionLabels(year)).toEqual(['2026', '2025']);
+
+    await year.selectOption('2026');
+    expect(await optionLabels(category)).toEqual([
+      'All Out-of-School Youth Categories',
+      'Out-of-School Youth 2026',
+    ]);
+
+    await expect(page.getByRole('button', { name: 'Import CSV' })).toBeVisible();
+    await page.getByRole('button', { name: 'Export CSV / Excel' }).click();
+    await expect(page.getByRole('button', { name: 'CSV · Re-importable' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Excel · Print-ready' })).toBeVisible();
+    await page.getByLabel('Close export dialog').click();
+
+    await page.getByRole('button', { name: 'Import CSV' }).click();
+    await expect(page).toHaveURL('/imports?type=out-of-school-youth');
+    expect(errors).toEqual([]);
+  });
+
   test('uses filing year as the parent selector in both record forms', async ({ page }) => {
     await installApiMocks(page);
 

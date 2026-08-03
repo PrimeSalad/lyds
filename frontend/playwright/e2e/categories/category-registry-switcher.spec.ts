@@ -21,6 +21,7 @@ test.describe('Category registry switching', () => {
 
     await page.getByRole('button', { name: 'Out-of-School Youth', exact: true }).click();
     await expect(page).toHaveURL('/categories?type=out-of-school-youth');
+    await expect(page.getByRole('heading', { name: 'Out-of-School Youth 2026' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Out-of-School Youth 2025' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Child Laborer Records 2026' })).toHaveCount(0);
     expect(errors).toEqual([]);

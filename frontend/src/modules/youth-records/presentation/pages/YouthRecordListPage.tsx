@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Dialog, Field, HStack, IconButton, Input, NativeSelect, Portal, SimpleGrid, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
-import { LuDownload, LuFileSpreadsheet, LuPlus, LuX } from 'react-icons/lu';
+import { LuDownload, LuFileSpreadsheet, LuPlus, LuUpload, LuX } from 'react-icons/lu';
 import { type RootState } from '../../../../redux/store';
 import { DataTable, type Action, type Column } from '../../../../shared/tables/DataTable';
 import { PageHeader } from '../../../../shared/components/PageHeader';
@@ -437,8 +437,17 @@ export const YouthRegistryRecordsPage = ({
                 Approve Drafts
               </Button>
             )}
+            <Button
+              variant="outline"
+              colorPalette="blue"
+              onClick={() => navigate(recordType === 'OUT_OF_SCHOOL_YOUTH'
+                ? '/imports?type=out-of-school-youth'
+                : '/imports')}
+            >
+              <LuUpload aria-hidden="true" /> Import CSV
+            </Button>
             <Button variant="outline" colorPalette="green" onClick={openExportDialog} disabled={exportYears.length === 0}>
-              <LuDownload aria-hidden="true" /> Export Records
+              <LuDownload aria-hidden="true" /> Export CSV / Excel
             </Button>
             {recordType === 'YOUTH_PROFILE' && (
               <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
@@ -520,7 +529,9 @@ export const YouthRegistryRecordsPage = ({
         actions={actions}
         loading={loading}
         variant="excel"
-        emptyMessage={`No ${registryLabel.toLowerCase()} records match these filters.`}
+        emptyMessage={search || status || categoryId || barangayId
+          ? `No ${registryLabel.toLowerCase()} records match these filters.`
+          : `No ${registryLabel.toLowerCase()} records have been added for ${filingYear || 'this filing year'} yet. Use Import CSV to add the annual dataset.`}
         pagination={{
           page: meta.page,
           totalPages: meta.totalPages,

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '../../../../config/supabase';
 import type { Category, CategoryField, CategoryRecordType, CategoryWithFields } from '../../domain/entities/category';
+import { getCategoryRecordCountSource } from './category-record-count-source';
 
 export const categoryRepository = {
   async listCategories(options?: {
@@ -30,14 +31,14 @@ export const categoryRepository = {
     if (error) throw error;
 
     return await Promise.all((data ?? []).map(async (category) => {
-      const recordTable = category.record_type === 'CHILD_LABORER'
-        ? 'child_laborer_records'
-        : 'youth_profiles';
+      const recordSource = getCategoryRecordCountSource(category.record_type);
       let recordCountQuery = supabaseAdmin
-        .from(recordTable)
+        .from(recordSource.table)
         .select('id', { count: 'exact', head: true })
-        .eq('category_id', category.id)
-        .is('deleted_at', null);
+        .eq('category_id', category.id);
+      if (recordSource.supportsSoftDelete) {
+        recordCountQuery = recordCountQuery.is('deleted_at', null);
+      }
       if (options?.recordBarangayId) {
         recordCountQuery = recordCountQuery.eq('barangay_id', options.recordBarangayId);
       }

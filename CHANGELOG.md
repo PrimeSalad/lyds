@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed Child Laborer category loading by avoiding a youth-only soft-delete filter on the child laborer records table, restoring the published 2026 category and its live record count.
+
 ### Added
 
 - Added Out-of-School Youth as a third first-class registry with its own sidebar destination, annual categories, imports, CSV/XLSX exports, records workspace, and URL-preserved dashboard view.

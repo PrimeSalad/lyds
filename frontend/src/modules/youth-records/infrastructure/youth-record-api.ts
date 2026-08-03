@@ -32,6 +32,7 @@ export type YouthRecord = {
   province_name?: string | null;
   category_name?: string | null;
   category_filing_year?: number | null;
+  category_record_type?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH' | 'CHILD_LABORER' | null;
   updated_at?: string;
   submitted_at?: string | null;
   approved_at?: string | null;
@@ -58,6 +59,7 @@ export type AuditLog = {
 };
 
 export interface ListParams {
+  record_type?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
   page?: number;
   pageSize?: number;
   search?: string;
@@ -97,6 +99,7 @@ export type UpdateInput = Partial<CreateInput> & { version: number; submit_on_up
 export const youthRecordApi = {
   async list(params: ListParams = {}): Promise<{ data: YouthRecord[]; meta: { page: number; pageSize: number; totalItems: number; totalPages: number } }> {
     const query = new URLSearchParams();
+    if (params.record_type) query.append('recordType', params.record_type);
     if (params.page) query.append('page', params.page.toString());
     if (params.pageSize) query.append('pageSize', params.pageSize.toString());
     if (params.search) query.append('search', params.search);
@@ -170,12 +173,18 @@ export const youthRecordApi = {
   async exportFilingYear(
     filingYear: number,
     format: 'csv' | 'xlsx' = 'xlsx',
-    filters: { categoryId?: string; barangayId?: string; status?: string } = {},
+    filters: {
+      categoryId?: string;
+      barangayId?: string;
+      status?: string;
+      recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
+    } = {},
   ): Promise<Blob> {
     const query = new URLSearchParams({ format, filingYear: filingYear.toString() });
     if (filters.categoryId) query.set('categoryId', filters.categoryId);
     if (filters.barangayId) query.set('barangayId', filters.barangayId);
     if (filters.status) query.set('status', filters.status);
+    if (filters.recordType) query.set('recordType', filters.recordType);
     return await apiClient.request<Blob>(`/reports/export?${query.toString()}`);
   },
 

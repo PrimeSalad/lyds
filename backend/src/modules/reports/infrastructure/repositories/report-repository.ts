@@ -7,6 +7,7 @@ type ReportFilters = {
   categoryId?: string | null;
   status?: string | null;
   filingYear?: number | null;
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 };
 
 const pageSize = 1000;
@@ -45,20 +46,23 @@ const applyFilters = (query: any, filters: ReportFilters) => {
   return filtered;
 };
 
-const getAnnualCategoryIds = async (filingYear: number) => {
-  const { data, error } = await supabaseAdmin
+const getRegistryCategoryIds = async (
+  filingYear: number | null | undefined,
+  recordType: ReportFilters['recordType'] = 'YOUTH_PROFILE',
+) => {
+  let query = supabaseAdmin
     .from('categories')
     .select('id')
-    .eq('filing_year', filingYear)
-    .eq('record_type', 'YOUTH_PROFILE')
+    .eq('record_type', recordType)
     .is('deleted_at', null);
+  if (filingYear) query = query.eq('filing_year', filingYear);
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []).map((category) => category.id);
 };
 
 const getScopedAnnualCategoryIds = async (filters: ReportFilters) => {
-  if (!filters.filingYear) return null;
-  const annualCategoryIds = await getAnnualCategoryIds(filters.filingYear);
+  const annualCategoryIds = await getRegistryCategoryIds(filters.filingYear, filters.recordType);
   if (filters.categoryId && !annualCategoryIds.includes(filters.categoryId)) return [];
   return annualCategoryIds;
 };
@@ -113,10 +117,8 @@ export const reportRepository = {
     };
   },
 
-  async getDashboardAnalytics(filters: Pick<ReportFilters, 'barangayId' | 'filingYear'> = {}) {
-    const annualCategoryIds = filters.filingYear
-      ? await getAnnualCategoryIds(filters.filingYear)
-      : null;
+  async getDashboardAnalytics(filters: Pick<ReportFilters, 'barangayId' | 'filingYear' | 'recordType'> = {}) {
+    const annualCategoryIds = await getRegistryCategoryIds(filters.filingYear, filters.recordType);
     const profiles = annualCategoryIds?.length === 0 ? [] : await fetchAllPages((from, to) => {
       let query = supabaseAdmin.from('youth_profiles').select(`
         id, barangay_id, display_name, first_name, last_name, birth_date, age_at_submission,

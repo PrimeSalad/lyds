@@ -1,5 +1,5 @@
 export type CategoryStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-export const categoryRecordTypes = ['YOUTH_PROFILE', 'CHILD_LABORER'] as const;
+export const categoryRecordTypes = ['YOUTH_PROFILE', 'OUT_OF_SCHOOL_YOUTH', 'CHILD_LABORER'] as const;
 export type CategoryRecordType = typeof categoryRecordTypes[number];
 export type CategoryPermissionMode = 'SK_FILLABLE' | 'SK_VIEW_ONLY' | 'ADMIN_ONLY' | 'PUBLIC' | 'RESTRICTED' | 'PRIVATE';
 export type CustomFieldType =

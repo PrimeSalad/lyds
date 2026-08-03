@@ -116,6 +116,18 @@ const youthCategory2025 = {
   record_count: 0,
 };
 
+const osyCategory2025 = {
+  ...category,
+  id: 'osy-category-2025',
+  code: 'OSY_2025',
+  name: 'Out-of-School Youth 2025',
+  description: 'Municipality-wide OSY consolidation.',
+  record_type: 'OUT_OF_SCHOOL_YOUTH',
+  filing_year: 2025,
+  permission_mode: 'SK_FILLABLE',
+  record_count: 653,
+};
+
 const childLaborerCategory2025 = {
   ...childLaborerCategory,
   id: 'child-category-2025',
@@ -355,9 +367,11 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       await json(route, {
         data: recordType === 'YOUTH_PROFILE'
           ? [category, youthCategory2025]
+          : recordType === 'OUT_OF_SCHOOL_YOUTH'
+            ? [osyCategory2025]
           : recordType === 'CHILD_LABORER'
             ? [childLaborerCategory, childLaborerCategory2025]
-            : [category, youthCategory2025, childLaborerCategory, childLaborerCategory2025],
+            : [category, youthCategory2025, osyCategory2025, childLaborerCategory, childLaborerCategory2025],
       });
       return;
     }
@@ -374,6 +388,14 @@ export const installApiMocks = async (page: Page, role: MockRole = 'ADMIN') => {
       return;
     }
     if (path === `/categories/${youthCategory2025.id}/fields`) {
+      await json(route, { data: [] });
+      return;
+    }
+    if (path === `/categories/${osyCategory2025.id}`) {
+      await json(route, { data: { ...osyCategory2025, fields: [] } });
+      return;
+    }
+    if (path === `/categories/${osyCategory2025.id}/fields`) {
       await json(route, { data: [] });
       return;
     }

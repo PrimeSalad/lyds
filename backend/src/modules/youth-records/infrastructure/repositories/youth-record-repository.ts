@@ -19,6 +19,7 @@ const isMissingStatusCompatibilityColumn = (error: any) =>
   error.message.includes('column');
 
 export interface ListRecordsFilters {
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
   barangayId?: string;
   categoryId?: string;
   status?: RecordStatus;
@@ -56,13 +57,19 @@ export const youthRecordRepository = {
     if (filters.search) {
       query = query.ilike('display_name', `%${filters.search}%`);
     }
-    if (filters.filingYear) {
-      const { data: yearCategories } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('filing_year', filters.filingYear)
-        .is('deleted_at', null);
-      const categoryIds = (yearCategories ?? []).map((c: { id: string }) => c.id);
+    let categoryQuery = supabaseAdmin
+      .from('categories')
+      .select('id')
+      .eq('record_type', filters.recordType ?? 'YOUTH_PROFILE')
+      .is('deleted_at', null);
+    if (filters.filingYear) categoryQuery = categoryQuery.eq('filing_year', filters.filingYear);
+    const { data: registryCategories, error: categoryError } = await categoryQuery;
+    if (categoryError) throw new Error(categoryError.message);
+    const categoryIds = (registryCategories ?? []).map((category: { id: string }) => category.id);
+    if (filters.categoryId && !categoryIds.includes(filters.categoryId)) {
+      return { data: [], meta: { page, pageSize, totalItems: 0, totalPages: 1 } };
+    }
+    if (!filters.categoryId) {
       if (categoryIds.length === 0) {
         return { data: [], meta: { page, pageSize, totalItems: 0, totalPages: 1 } };
       }
@@ -92,7 +99,7 @@ export const youthRecordRepository = {
       .from('youth_profiles')
       .select(
         '*, barangay:barangays!barangay_id(name, municipality, province), '
-        + 'category:categories!category_id(name, filing_year), '
+        + 'category:categories!category_id(name, filing_year, record_type), '
         + 'sex:reference_options!sex_assigned_at_birth_id(label), '
         + 'civil:reference_options!civil_status_id(label), '
         + 'classification:reference_options!youth_classification_id(label), '
@@ -161,6 +168,15 @@ export const youthRecordRepository = {
   },
 
   async approveDraftRecords(actorId: string) {
+    const { data: categories, error: categoryError } = await supabaseAdmin
+      .from('categories')
+      .select('id')
+      .eq('record_type', 'YOUTH_PROFILE')
+      .is('deleted_at', null);
+    if (categoryError) throw new Error(categoryError.message);
+    const categoryIds = (categories ?? []).map((category) => category.id);
+    if (categoryIds.length === 0) return 0;
+
     const approvedAt = new Date().toISOString();
     const { data, error } = await supabaseAdmin
       .from('youth_profiles')
@@ -173,6 +189,7 @@ export const youthRecordRepository = {
         updated_by: actorId,
       })
       .eq('status', 'DRAFT')
+      .in('category_id', categoryIds)
       .is('deleted_at', null)
       .select('id');
 

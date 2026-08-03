@@ -48,7 +48,11 @@ export const validateRegistryMetadata = (
 ): Record<string, unknown> => {
   const registry = importValue(lookup, ['REGISTRY', 'RECORD TYPE', 'DATASET']);
   if (registry && normalizeValue(registry) !== context.recordType) {
-    const expected = context.recordType === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth Profile';
+    const expected = context.recordType === 'CHILD_LABORER'
+      ? 'Child Laborer'
+      : context.recordType === 'OUT_OF_SCHOOL_YOUTH'
+        ? 'Out-of-School Youth'
+        : 'Youth Profile';
     errors.push(`This CSV is for ${registry}; select a matching ${expected} category.`);
   }
 

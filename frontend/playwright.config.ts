@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const playwrightPort = Number(process.env.PLAYWRIGHT_PORT ?? 5173);
+const playwrightBaseUrl = `http://localhost:${playwrightPort}`;
+
 export default defineConfig({
   testDir: './playwright/e2e',
   fullyParallel: true,
@@ -9,7 +12,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: playwrightBaseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -24,8 +27,8 @@ export default defineConfig({
   // In CI: always starts a fresh server.
   // In local dev: reuses an existing server on port 5173 if one is already running.
   webServer: {
-    command: 'npm run dev -- --host localhost --port 5173 --strictPort',
-    url: 'http://localhost:5173',
+    command: `npm run dev -- --host localhost --port ${playwrightPort} --strictPort`,
+    url: playwrightBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
     env: {

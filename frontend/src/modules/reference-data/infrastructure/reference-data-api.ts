@@ -7,7 +7,7 @@ import type {
   UpdateReferenceOptionInput,
 } from '../../../generated/api/api-types';
 
-export type ReferenceRecordType = CategoryRecordType;
+export type ReferenceRecordType = Exclude<CategoryRecordType, 'OUT_OF_SCHOOL_YOUTH'>;
 export type CreateOptionInput = CreateReferenceOptionInput;
 export type UpdateOptionInput = UpdateReferenceOptionInput;
 export type { ReferenceGroup, ReferenceOption };

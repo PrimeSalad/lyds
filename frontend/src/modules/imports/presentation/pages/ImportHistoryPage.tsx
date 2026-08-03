@@ -118,8 +118,8 @@ const ImportHistoryPage = () => {
         <Box>
           <Text fontWeight="600">{batch.barangay_name ?? '—'}</Text>
           <HStack gap={2} mt={1} wrap="wrap">
-            <Badge colorPalette={batch.record_type === 'CHILD_LABORER' ? 'orange' : 'blue'} size="sm">
-              {batch.record_type === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth'}
+            <Badge colorPalette={batch.record_type === 'CHILD_LABORER' ? 'orange' : batch.record_type === 'OUT_OF_SCHOOL_YOUTH' ? 'purple' : 'blue'} size="sm">
+              {batch.record_type === 'CHILD_LABORER' ? 'Child Laborer' : batch.record_type === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'Youth'}
             </Badge>
             <Text fontSize="xs" color="text.muted">{batch.category_name ?? 'Registry category'}{batch.filing_year ? ` · ${batch.filing_year}` : ''}</Text>
           </HStack>

@@ -42,6 +42,7 @@ export const approveSubmittedByBarangaySchema = z.object({
 });
 
 export const listYouthRecordsQuerySchema = z.object({
+  recordType: z.enum(['YOUTH_PROFILE', 'OUT_OF_SCHOOL_YOUTH']).optional().default('YOUTH_PROFILE'),
   barangayId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   status: z.enum(['DRAFT', 'SUBMITTED', 'RETURNED', 'APPROVED', 'ARCHIVED']).optional(),

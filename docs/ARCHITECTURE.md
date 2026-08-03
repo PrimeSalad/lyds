@@ -13,7 +13,7 @@ Browser (React/Vite, port 5173)
 Express API (port 4000, /api/v1)
   ├─ Auth middleware: verifies Supabase token and active profile
   ├─ Role/scope checks: ADMIN or barangay-scoped SK_OFFICIAL
-  ├─ Modules: accounts, barangays, categories, youth records,
+  ├─ Modules: accounts, barangays, categories, youth/OSY records,
   │           child laborers, imports, reports, announcements, and audit logs
   └─ Supabase service client
              │
@@ -60,6 +60,7 @@ docs/openapi.yaml             API contract source of truth
 
 ## Youth record and reporting flow
 
+- Youth Profile and Out-of-School Youth records share the `youth_profiles` field model but belong to different annual category types. Every list, analytics, and export query resolves registry-scoped category IDs before reading rows, preventing cross-registry totals.
 - Records move through draft, submitted, returned, approved, and archived states.
 - Spreadsheet imports preserve missing answers as `null`; they are not converted to “No.”
 - Reports require an active registry filing year, include every in-scope record from that annual dataset only, and expose missing source answers as **No response**.

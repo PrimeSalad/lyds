@@ -12,7 +12,6 @@ import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
 import {
   availableCategoryYears,
-  categoriesForRegistry,
   categoriesForYear,
   preferredCategoryYear,
 } from '../../../categories/domain/category-scope';
@@ -223,6 +222,9 @@ const YouthRecordFormPage = () => {
     categories.filter((category) => category.status === 'PUBLISHED' || category.id === selectedCategoryId),
     formFilingYear ? Number(formFilingYear) : null,
   ), [categories, formFilingYear, selectedCategoryId]);
+  const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+  const isOsyRecord = selectedCategory?.record_type === 'OUT_OF_SCHOOL_YOUTH';
+  const registryFormLabel = isOsyRecord ? 'Out-of-School Youth' : 'Youth Registry';
 
   useEffect(() => {
     if (!submissionError || pendingSubmitData) return;
@@ -242,8 +244,8 @@ const YouthRecordFormPage = () => {
 
       try {
         const res = await categoryApi.getById(selectedCategoryId);
-        if (res.data.record_type !== 'YOUTH_PROFILE') {
-          throw new Error('The selected category does not belong to Youth Records.');
+        if (!['YOUTH_PROFILE', 'OUT_OF_SCHOOL_YOUTH'].includes(res.data.record_type)) {
+          throw new Error('The selected category does not belong to a youth-shaped registry.');
         }
         setCategories((current) => current.some((category) => category.id === res.data.id)
           ? current
@@ -275,7 +277,7 @@ const YouthRecordFormPage = () => {
           educationalAttainmentRes,
           workStatusRes,
         ] = await Promise.all([
-          categoryApi.list('YOUTH_PROFILE'),
+          categoryApi.list(recordId ? undefined : 'YOUTH_PROFILE'),
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           referenceDataApi.listOptions('SEX_ASSIGNED_AT_BIRTH'),
           referenceDataApi.listOptions('CIVIL_STATUS'),
@@ -284,7 +286,8 @@ const YouthRecordFormPage = () => {
           referenceDataApi.listOptions('WORK_STATUS'),
         ]);
 
-        const youthCategories = categoriesForRegistry(categoryRes.data, 'YOUTH_PROFILE')
+        const youthCategories = categoryRes.data
+          .filter((category) => ['YOUTH_PROFILE', 'OUT_OF_SCHOOL_YOUTH'].includes(category.record_type))
           .filter((category) => category.permission_mode !== 'ADMIN_ONLY');
         setCategories(youthCategories);
         if (!recordId) {
@@ -523,7 +526,7 @@ const YouthRecordFormPage = () => {
   return (
     <DashboardLayout>
       <PageHeader
-        title={isEditing ? 'Edit Youth Record' : 'Add Youth Record'}
+        title={isEditing ? `Edit ${isOsyRecord ? 'Out-of-School Youth' : 'Youth'} Record` : 'Add Youth Record'}
         description={isEditing
           ? `Update the person's information${recordStatus ? ` while keeping this record ${recordStatus.toLowerCase()}` : ''}.`
           : 'Capture required KK profile details before submission.'}
@@ -599,8 +602,8 @@ const YouthRecordFormPage = () => {
               placeholder="Select filing year"
               value={formFilingYear}
               options={categoryYears.map((year) => ({ value: String(year), label: String(year) }))}
-              disabled={formOptionsLoading || categoryYears.length === 0}
-              helpText="Only years with Youth Registry categories are available."
+              disabled={isEditing || formOptionsLoading || categoryYears.length === 0}
+              helpText={`Only years with ${registryFormLabel} categories are available.`}
               onChange={(nextYear) => {
                 setFormFilingYear(nextYear);
                 const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
@@ -613,16 +616,16 @@ const YouthRecordFormPage = () => {
           <GridItem>
             <Controller name="category_id" control={control} rules={{ required: 'Select a category' }} render={({ field, fieldState }) => (
               <SelectField
-                label="Youth Registry Category"
+                label={`${registryFormLabel} Category`}
                 required
                 placeholder={formFilingYear ? 'Select youth category' : 'Select a filing year first'}
                 options={yearCategories.map((category) => ({ value: category.id, label: category.name }))}
                 error={fieldState.error?.message}
-                disabled={formOptionsLoading || !formFilingYear}
+                disabled={isEditing || formOptionsLoading || !formFilingYear}
                 helpText={formOptionsLoading
-                  ? 'Loading Youth Registry categories...'
+                  ? `Loading ${registryFormLabel} categories...`
                   : formFilingYear
-                    ? `Showing Youth Registry categories for ${formFilingYear} only.`
+                    ? `Showing ${registryFormLabel} categories for ${formFilingYear} only.`
                     : undefined}
                 {...field}
               />

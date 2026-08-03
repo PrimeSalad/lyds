@@ -4,7 +4,7 @@ export interface ImportBatch {
   id: string;
   barangay_id: string;
   category_id: string;
-  record_type: 'YOUTH_PROFILE' | 'CHILD_LABORER';
+  record_type: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH' | 'CHILD_LABORER';
   uploaded_by: string;
   file_name: string;
   status: ImportBatchStatus;

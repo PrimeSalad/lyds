@@ -72,6 +72,46 @@ describe('exportService', () => {
     });
   });
 
+  it('preserves the OSY registry marker through CSV validation', async () => {
+    const csv = exportService.generateCsv([{
+      id: 'osy-record-1',
+      status: 'SUBMITTED',
+      barangay: { name: 'Agot' },
+      first_name: 'Maria',
+      last_name: 'Santos',
+      birth_date: '2005-06-10',
+      sex: { label: 'Female' },
+      civil_status: { label: 'Single' },
+      youth_classification: { label: 'Out of School Youth' },
+      youth_age_group: { label: 'Core Youth' },
+      work_status: { label: 'Unemployed' },
+      educational_attainment: { label: 'High School Graduate' },
+      is_registered_voter: true,
+      voted_last_election: true,
+      attended_kk_assembly: false,
+      kk_assembly_count: 0,
+    }], { filingYear: 2025, recordType: 'OUT_OF_SCHOOL_YOUTH' });
+    const parsed = await spreadsheetParser.parse(csv, 'text/csv', 'osy-2025.csv', 'OUT_OF_SCHOOL_YOUTH');
+    const result = rowValidator.validate(parsed.rows[0].data, {
+      recordType: 'OUT_OF_SCHOOL_YOUTH',
+      filingYear: 2025,
+      barangayName: 'Agot',
+      categoryFields: [],
+      referenceOptions: [
+        { id: 'age-core', group_code: 'YOUTH_AGE_GROUP', code: 'CORE_YOUTH', label: 'Core Youth' },
+        { id: 'sex-female', group_code: 'SEX_ASSIGNED_AT_BIRTH', code: 'FEMALE', label: 'Female' },
+        { id: 'civil-single', group_code: 'CIVIL_STATUS', code: 'SINGLE', label: 'Single' },
+        { id: 'class-osy', group_code: 'YOUTH_CLASSIFICATION', code: 'OUT_OF_SCHOOL', label: 'Out of School Youth' },
+        { id: 'education-high-school', group_code: 'EDUCATIONAL_ATTAINMENT', code: 'HIGH_SCHOOL_GRAD', label: 'High School Graduate' },
+        { id: 'work-unemployed', group_code: 'WORK_STATUS', code: 'UNEMPLOYED', label: 'Unemployed' },
+      ],
+    });
+
+    expect(csv.toString('utf8')).toContain('"OUT_OF_SCHOOL_YOUTH","2025"');
+    expect(result.isValid).toBe(true);
+    expect(result.validationErrors).toEqual([]);
+  });
+
   it('generates the official filing-year XLSX layout with calculated age and protected text', async () => {
     const output = await exportService.generateXlsx([{
       id: 'record-1',

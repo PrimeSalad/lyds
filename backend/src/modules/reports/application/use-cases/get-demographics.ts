@@ -5,6 +5,7 @@ export const getDemographics = async (filters: {
   categoryId?: string | null;
   status?: string | null;
   filingYear: number;
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 }) => {
   return reportRepository.getDemographics(filters);
 };

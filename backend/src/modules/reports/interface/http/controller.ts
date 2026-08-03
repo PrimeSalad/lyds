@@ -14,6 +14,7 @@ export const reportController = {
     const data = await getDashboardAnalytics({
       barangayId: ctx.role === 'ADMIN' ? null : ctx.barangayId,
       filingYear: query.filingYear ?? null,
+      recordType: query.recordType,
     });
     res.json({ data });
   },
@@ -28,6 +29,7 @@ export const reportController = {
       categoryId: query.categoryId ?? null,
       status: query.status ?? null,
       filingYear: query.filingYear,
+      recordType: query.recordType,
     });
     res.json({ data });
   },
@@ -42,6 +44,7 @@ export const reportController = {
       categoryId: query.categoryId ?? null,
       status: query.status ?? null,
       filingYear: query.filingYear,
+      recordType: query.recordType,
     });
     res.json({ data });
   },
@@ -59,6 +62,7 @@ export const reportController = {
     const status = query.status ?? null;
     const filingYear = query.filingYear ?? null;
     const format = query.format;
+    const recordType = query.recordType;
     const barangayId = ctx.role === 'ADMIN' ? requestedBarangayId : ctx.barangayId;
     const buffer = await exportRecords({
       barangayId,
@@ -68,13 +72,15 @@ export const reportController = {
       actorId: ctx.profileId,
       actorRole: ctx.role,
       format,
+      recordType,
     });
     
     const dateStr = new Date().toISOString().split('T')[0];
     const scope = barangayId ? 'Barangay' : 'All';
-    const filename = format === 'xlsx' && filingYear
-      ? `KK Youth Profile ${filingYear}.xlsx`
-      : `Youth_Profiles_${scope}_${dateStr}.${format}`;
+    const registryName = recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'Out-of-School Youth' : 'KK Youth Profile';
+    const filename = filingYear
+      ? `${registryName} ${filingYear}.${format}`
+      : `${registryName.replace(/\s+/g, '_')}_${scope}_${dateStr}.${format}`;
     
     res.setHeader('Content-Type', format === 'csv'
       ? 'text/csv; charset=utf-8'

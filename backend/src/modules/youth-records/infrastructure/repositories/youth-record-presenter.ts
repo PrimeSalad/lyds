@@ -10,6 +10,7 @@ export const toYouthRecordPresentation = (record: any, rowNumber?: number) => ({
   province_name: relationField(record.barangay, 'province'),
   category_name: relationField(record.category, 'name'),
   category_filing_year: relationField(record.category, 'filing_year'),
+  category_record_type: relationField(record.category, 'record_type'),
   sex_label: relationField(record.sex, 'label'),
   civil_status_label: relationField(record.civil, 'label'),
   youth_classification_label: relationField(record.classification, 'label'),

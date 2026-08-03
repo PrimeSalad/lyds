@@ -141,13 +141,20 @@ const CategoryFieldsPage = () => {
   const sortedFields = [...fields].sort((a, b) => a.sort_order - b.sort_order);
   const categoryListPath = category?.record_type === 'CHILD_LABORER'
     ? '/categories?type=child-laborer'
-    : '/categories';
+    : category?.record_type === 'OUT_OF_SCHOOL_YOUTH'
+      ? '/categories?type=out-of-school-youth'
+      : '/categories';
+  const recordLabel = category?.record_type === 'CHILD_LABORER'
+    ? 'child laborer'
+    : category?.record_type === 'OUT_OF_SCHOOL_YOUTH'
+      ? 'out-of-school youth'
+      : 'youth registry';
 
   return (
     <DashboardLayout>
       <PageHeader
         title={`Fields for ${category?.name ?? 'Category'}`}
-        description={`Manage custom fields shown on ${category?.record_type === 'CHILD_LABORER' ? 'child laborer' : 'youth registry'} records.`}
+        description={`Manage custom fields shown on ${recordLabel} records.`}
         actions={(
           <Button variant="outline" minH="44px" onClick={() => navigate(categoryListPath)}>Back to Categories</Button>
         )}

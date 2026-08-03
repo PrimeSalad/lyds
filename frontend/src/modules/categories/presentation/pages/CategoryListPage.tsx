@@ -19,6 +19,7 @@ import {
   LuFilePlus2,
   LuListChecks,
   LuPencil,
+  LuGraduationCap,
   LuTrash2,
   LuUsersRound,
 } from 'react-icons/lu';
@@ -45,6 +46,12 @@ const categoryViews: Record<CategoryRecordType, {
     icon: LuUsersRound,
     query: 'youth',
   },
+  OUT_OF_SCHOOL_YOUTH: {
+    label: 'Out-of-School Youth',
+    description: 'Annual OSY consolidations, validation scope, and registry-specific fields.',
+    icon: LuGraduationCap,
+    query: 'out-of-school-youth',
+  },
   CHILD_LABORER: {
     label: 'Child Laborer',
     description: 'Protected child labor monitoring datasets and case-specific custom fields.',
@@ -67,7 +74,9 @@ const CategoryListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const recordType: CategoryRecordType = searchParams.get('type') === 'child-laborer'
     ? 'CHILD_LABORER'
-    : 'YOUTH_PROFILE';
+    : searchParams.get('type') === 'out-of-school-youth'
+      ? 'OUT_OF_SCHOOL_YOUTH'
+      : 'YOUTH_PROFILE';
   const view = categoryViews[recordType];
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +107,7 @@ const CategoryListPage = () => {
   const changeRecordType = (nextType: CategoryRecordType) => {
     const nextParams = new URLSearchParams(searchParams);
     if (nextType === 'CHILD_LABORER') nextParams.set('type', 'child-laborer');
+    else if (nextType === 'OUT_OF_SCHOOL_YOUTH') nextParams.set('type', 'out-of-school-youth');
     else nextParams.delete('type');
     setSearchParams(nextParams, { replace: true });
   };

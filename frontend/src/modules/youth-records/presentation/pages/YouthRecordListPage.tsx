@@ -15,7 +15,7 @@ import {
   categoriesForYear,
   preferredCategoryYear,
 } from '../../../categories/domain/category-scope';
-import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
+import { categoryApi, type Category, type CategoryRecordType } from '../../../categories/infrastructure/category-api';
 import {
   youthRecordApi,
   type YouthRecord,
@@ -35,7 +35,19 @@ const formatBirthDate = (dateStr: string | null) => {
 
 const boolLabel = (val: boolean | null | undefined) => (val === true ? 'Yes' : val === false ? 'No' : '—');
 
-const YouthRecordListPage = () => {
+type YouthRegistryRecordsPageProps = {
+  recordType?: Extract<CategoryRecordType, 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH'>;
+  title?: string;
+  description?: string;
+  registryLabel?: string;
+};
+
+export const YouthRegistryRecordsPage = ({
+  recordType = 'YOUTH_PROFILE',
+  title = 'Youth Records',
+  description,
+  registryLabel = 'Youth Registry',
+}: YouthRegistryRecordsPageProps) => {
   const navigate = useNavigate();
   const profile = useSelector((state: RootState) => state.auth.profile);
   const isAdmin = profile?.role === 'ADMIN';
@@ -104,10 +116,10 @@ const YouthRecordListPage = () => {
       try {
         const [barangayData, categoryResponse] = await Promise.all([
           isAdmin ? barangayApi.list() : Promise.resolve([]),
-          categoryApi.list('YOUTH_PROFILE'),
+          categoryApi.list(recordType),
         ]);
         setBarangays(barangayData.filter((barangay) => barangay.is_active));
-        const youthCategories = categoriesForRegistry(categoryResponse.data, 'YOUTH_PROFILE')
+        const youthCategories = categoriesForRegistry(categoryResponse.data, recordType)
           .filter((category) => category.status === 'PUBLISHED');
         setCategories(youthCategories);
         const preferredYear = preferredCategoryYear(youthCategories);
@@ -124,7 +136,7 @@ const YouthRecordListPage = () => {
       }
     };
     void loadFilters();
-  }, [isAdmin]);
+  }, [isAdmin, recordType]);
 
   useEffect(() => {
     if (!categoryOptionsReady) return;
@@ -149,6 +161,7 @@ const YouthRecordListPage = () => {
                 : ['created_at', 'desc'] as const;
       try {
         const response = await youthRecordApi.list({
+          record_type: recordType,
           page,
           pageSize: 25,
           search,
@@ -164,7 +177,7 @@ const YouthRecordListPage = () => {
       } catch (error) {
         setRecords([]);
         showToast.error({
-          title: 'Youth records could not be loaded',
+        title: `${registryLabel} records could not be loaded`,
           description: error instanceof Error ? error.message : 'Refresh the page and try again.',
         });
       } finally {
@@ -172,7 +185,7 @@ const YouthRecordListPage = () => {
       }
     }, search ? 300 : 0);
     return () => window.clearTimeout(delay);
-  }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin, categoryOptionsReady]);
+  }, [search, status, categoryId, barangayId, filingYear, sort, page, isAdmin, categoryOptionsReady, recordType, registryLabel]);
 
   const columns = useMemo(() => {
     const result: Column<YouthRecord>[] = [
@@ -339,11 +352,12 @@ const YouthRecordListPage = () => {
         categoryId: exportCategoryId,
         barangayId: isAdmin ? exportBarangayId || undefined : undefined,
         status: status || undefined,
+        recordType,
       });
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      const fileName = `KK Youth Profile ${selectedYear}.${exportFormat}`;
+      const fileName = `${recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'Out-of-School Youth' : 'KK Youth Profile'} ${selectedYear}.${exportFormat}`;
       anchor.download = fileName;
       anchor.click();
       window.URL.revokeObjectURL(url);
@@ -386,6 +400,7 @@ const YouthRecordListPage = () => {
                 ? ['display_name', 'desc'] as const
                 : ['created_at', 'desc'] as const;
       const refreshed = await youthRecordApi.list({
+        record_type: recordType,
         page,
         pageSize: 25,
         search,
@@ -411,13 +426,13 @@ const YouthRecordListPage = () => {
   return (
     <DashboardLayout>
       <PageHeader
-        title="Youth Records"
-        description={isAdmin
-          ? 'Review and compare youth records by barangay, status, and category.'
-          : 'Create drafts, submit records, and monitor returned items.'}
+        title={title}
+        description={description ?? (isAdmin
+          ? `Review and compare ${registryLabel.toLowerCase()} records by barangay, status, and category.`
+          : `View ${registryLabel.toLowerCase()} records for your assigned barangay.`)}
         actions={(
           <HStack gap={2} wrap="wrap">
-            {isAdmin && (
+            {isAdmin && recordType === 'YOUTH_PROFILE' && (
               <Button variant="outline" colorPalette="orange" onClick={() => setBulkApproveOpen(true)}>
                 Approve Drafts
               </Button>
@@ -425,9 +440,11 @@ const YouthRecordListPage = () => {
             <Button variant="outline" colorPalette="green" onClick={openExportDialog} disabled={exportYears.length === 0}>
               <LuDownload aria-hidden="true" /> Export Records
             </Button>
-            <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
-              <LuPlus aria-hidden="true" /> Add Record
-            </Button>
+            {recordType === 'YOUTH_PROFILE' && (
+              <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
+                <LuPlus aria-hidden="true" /> Add Record
+              </Button>
+            )}
           </HStack>
         )}
       />
@@ -435,8 +452,8 @@ const YouthRecordListPage = () => {
       <Box bg="white" p={{ base: 3, md: 4 }} borderRadius="md" border="1px solid" borderColor="border" mb={4}>
         <HStack gap={3} align="stretch" wrap="wrap">
           <Input
-            aria-label="Search youth records"
-            placeholder="Search by youth name"
+            aria-label={`Search ${registryLabel.toLowerCase()} records`}
+            placeholder={`Search ${recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'youth'} by name`}
             value={search}
             onChange={(event) => { setSearch(event.target.value); resetPage(); }}
             flex={{ base: '1 1 100%', lg: '1 1 260px' }}
@@ -468,14 +485,14 @@ const YouthRecordListPage = () => {
               setCategoryId('');
               resetPage();
             }} minH="44px">
-              {uniqueYears.length === 0 && <option value="">No Youth Registry years available</option>}
+              {uniqueYears.length === 0 && <option value="">No {registryLabel} years available</option>}
               {uniqueYears.map((year) => <option key={year} value={year}>{year}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />
           </NativeSelect.Root>
           <NativeSelect.Root flex={{ base: '1 1 100%', sm: '1 1 210px' }} maxW={{ lg: '240px' }} disabled={!categoryOptionsReady || !filingYear}>
             <NativeSelect.Field aria-label="Filter by category" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); resetPage(); }} minH="44px">
-              <option value="">All Youth Registry Categories</option>
+              <option value="">All {registryLabel} Categories</option>
               {yearCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </NativeSelect.Field>
             <NativeSelect.Indicator />
@@ -493,7 +510,7 @@ const YouthRecordListPage = () => {
           </NativeSelect.Root>
         </HStack>
         <Text mt={3} color="text.muted" fontSize="sm" aria-live="polite">
-          {loading ? 'Loading youth records...' : `${meta.totalItems.toLocaleString()} record${meta.totalItems === 1 ? '' : 's'} found`}
+          {loading ? `Loading ${registryLabel.toLowerCase()} records...` : `${meta.totalItems.toLocaleString()} record${meta.totalItems === 1 ? '' : 's'} found`}
         </Text>
       </Box>
 
@@ -503,7 +520,7 @@ const YouthRecordListPage = () => {
         actions={actions}
         loading={loading}
         variant="excel"
-        emptyMessage="No youth records match these filters."
+        emptyMessage={`No ${registryLabel.toLowerCase()} records match these filters.`}
         pagination={{
           page: meta.page,
           totalPages: meta.totalPages,
@@ -523,7 +540,7 @@ const YouthRecordListPage = () => {
                     <LuFileSpreadsheet size={22} aria-hidden="true" />
                   </Box>
                   <Box>
-                    <Dialog.Title fontFamily="heading" fontWeight="650">Export Youth Records</Dialog.Title>
+                    <Dialog.Title fontFamily="heading" fontWeight="650">Export {registryLabel} Records</Dialog.Title>
                     <Text color="text.muted" fontSize="sm" mt={1}>Choose the exact annual dataset and file format.</Text>
                   </Box>
                 </HStack>
@@ -543,7 +560,7 @@ const YouthRecordListPage = () => {
                       >
                         {exportYears.map(({ year, recordCount }) => (
                           <option key={year} value={year}>
-                            {`KK Youth Profile ${year} — ${recordCount.toLocaleString()} record${recordCount === 1 ? '' : 's'}`}
+                            {`${recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'KK Youth Profile'} ${year} — ${recordCount.toLocaleString()} record${recordCount === 1 ? '' : 's'}`}
                           </option>
                         ))}
                       </NativeSelect.Field>
@@ -552,7 +569,7 @@ const YouthRecordListPage = () => {
                   </Field.Root>
                   <Field.Root>
                     <Field.Label htmlFor="export-category" fontWeight="600" fontSize="sm">
-                      Youth Registry category
+                      {registryLabel} category
                     </Field.Label>
                     <NativeSelect.Root width="full" disabled={exporting || exportCategories.length === 0}>
                       <NativeSelect.Field
@@ -620,7 +637,7 @@ const YouthRecordListPage = () => {
                   </Field.Root>
                   <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
                     <Text fontWeight="700" fontSize="sm">
-                      {exportFormat === 'csv' ? 'Import-compatible Youth dataset' : 'Official KK youth profile layout'}
+                      {exportFormat === 'csv' ? `Import-compatible ${registryLabel} dataset` : `${registryLabel} annual workbook`}
                     </Text>
                     <Text color="text.secondary" fontSize="sm" lineHeight="1.6" mt={1}>
                       {exportFormat === 'csv'
@@ -629,7 +646,7 @@ const YouthRecordListPage = () => {
                     </Text>
                   </Box>
                   <Text color="text.muted" fontSize="sm">
-                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {exportYear || 'Year'}.{exportFormat}</Text>
+                    Filename: <Text as="span" fontWeight="700" color="text.secondary">{recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'Out-of-School Youth' : 'KK Youth Profile'} {exportYear || 'Year'}.{exportFormat}</Text>
                   </Text>
                 </VStack>
               </Dialog.Body>
@@ -670,5 +687,7 @@ const YouthRecordListPage = () => {
     </DashboardLayout>
   );
 };
+
+const YouthRecordListPage = () => <YouthRegistryRecordsPage />;
 
 export default YouthRecordListPage;

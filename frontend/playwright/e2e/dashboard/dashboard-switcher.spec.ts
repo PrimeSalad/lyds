@@ -25,6 +25,10 @@ test.describe('Dashboard dataset switcher', () => {
     await page.getByLabel('Registry', { exact: true }).selectOption('YOUTH');
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Youth Registry Dashboard' })).toBeVisible();
+    await page.getByLabel('Registry', { exact: true }).selectOption('OUT_OF_SCHOOL_YOUTH');
+    await expect(page).toHaveURL('/?view=out-of-school-youth');
+    await expect(page.getByRole('heading', { name: 'Out-of-School Youth Dashboard' })).toBeVisible();
+    await expect(page.getByLabel('Filing year')).toHaveValue('2025');
     expect(errors).toEqual([]);
   });
 

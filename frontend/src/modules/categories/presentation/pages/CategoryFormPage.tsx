@@ -14,7 +14,9 @@ const CategoryFormPage = () => {
   const isEditing = !!categoryId;
   const initialRecordType: CategoryRecordType = searchParams.get('type') === 'child-laborer'
     ? 'CHILD_LABORER'
-    : 'YOUTH_PROFILE';
+    : searchParams.get('type') === 'out-of-school-youth'
+      ? 'OUT_OF_SCHOOL_YOUTH'
+      : 'YOUTH_PROFILE';
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -27,7 +29,14 @@ const CategoryFormPage = () => {
   const [fetching, setFetching] = useState(isEditing);
   const categoryListPath = recordType === 'CHILD_LABORER'
     ? '/categories?type=child-laborer'
-    : '/categories';
+    : recordType === 'OUT_OF_SCHOOL_YOUTH'
+      ? '/categories?type=out-of-school-youth'
+      : '/categories';
+  const registryLabel = recordType === 'CHILD_LABORER'
+    ? 'Child Laborer'
+    : recordType === 'OUT_OF_SCHOOL_YOUTH'
+      ? 'Out-of-School Youth'
+      : 'Youth Registry';
 
   useEffect(() => {
     if (categoryId) {
@@ -101,7 +110,7 @@ const CategoryFormPage = () => {
   return (
     <DashboardLayout>
       <PageHeader
-        title={isEditing ? `Edit ${recordType === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth Registry'} Category` : `Add ${recordType === 'CHILD_LABORER' ? 'Child Laborer' : 'Youth Registry'} Category`}
+        title={`${isEditing ? 'Edit' : 'Add'} ${registryLabel} Category`}
         description="Define the annual dataset, access permissions, and custom record fields."
       />
 
@@ -140,6 +149,7 @@ const CategoryFormPage = () => {
             disabled={isEditing}
             options={[
               { value: 'YOUTH_PROFILE', label: 'Youth Registry' },
+              { value: 'OUT_OF_SCHOOL_YOUTH', label: 'Out-of-School Youth' },
               { value: 'CHILD_LABORER', label: 'Child Laborer Records' },
             ]}
           />

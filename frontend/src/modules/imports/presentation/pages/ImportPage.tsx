@@ -68,6 +68,12 @@ const registryDetails: Record<CategoryRecordType, {
     destination: '/youth-records',
     queryValue: 'youth',
   },
+  OUT_OF_SCHOOL_YOUTH: {
+    label: 'Out-of-School Youth Records',
+    shortLabel: 'OSY',
+    destination: '/out-of-school-youth',
+    queryValue: 'out-of-school-youth',
+  },
   CHILD_LABORER: {
     label: 'Child Laborer Records',
     shortLabel: 'Child Laborer',
@@ -107,7 +113,11 @@ const ImportPage = () => {
   const profile = useSelector((state: RootState) => state.auth.profile);
   const isAdmin = profile?.role === 'ADMIN';
   const [recordType, setRecordType] = useState<CategoryRecordType>(
-    searchParams.get('type') === 'child-laborer' ? 'CHILD_LABORER' : 'YOUTH_PROFILE',
+    searchParams.get('type') === 'child-laborer'
+      ? 'CHILD_LABORER'
+      : searchParams.get('type') === 'out-of-school-youth'
+        ? 'OUT_OF_SCHOOL_YOUTH'
+        : 'YOUTH_PROFILE',
   );
   const [file, setFile] = useState<File | null>(null);
   const [categoryId, setCategoryId] = useState('');
@@ -263,7 +273,7 @@ const ImportPage = () => {
     setFile(null);
     setFormError(null);
     setSearchParams(
-      nextRecordType === 'CHILD_LABORER' ? { type: registryDetails[nextRecordType].queryValue } : {},
+      nextRecordType === 'YOUTH_PROFILE' ? {} : { type: registryDetails[nextRecordType].queryValue },
       { replace: true },
     );
   };
@@ -496,12 +506,12 @@ const ImportPage = () => {
                       <Box>
                         <Badge colorPalette="green" mb={2}>{recordType === 'YOUTH_PROFILE' ? 'Recommended' : 'Round-trip ready'}</Badge>
                         <Heading size="md">
-                          {recordType === 'YOUTH_PROFILE' ? 'Start with the guided Excel template' : 'Use an exported Child Laborer CSV'}
+                          {recordType === 'YOUTH_PROFILE' ? 'Start with the guided Excel template' : `Use an exported ${activeRegistry.shortLabel} CSV`}
                         </Heading>
                         <Text color="text.secondary" mt={2} maxW="68ch">
                           {recordType === 'YOUTH_PROFILE'
                             ? 'Its dropdown choices match the Youth Record form, so classifications, education, work status, and Yes/No answers arrive consistently.'
-                            : 'Filter the Child Laborer list by year, barangay, status, or search, then download CSV. That same file can be checked and imported here without remapping columns.'}
+                            : `Filter the ${activeRegistry.shortLabel} list by year, barangay, or status, then download CSV. That same file can be checked and imported here without remapping columns.`}
                         </Text>
                       </Box>
                     </HStack>
@@ -512,12 +522,12 @@ const ImportPage = () => {
                       flexShrink={0}
                       onClick={recordType === 'YOUTH_PROFILE'
                         ? handleDownloadTemplate
-                        : () => navigate('/child-laborers')}
+                        : () => navigate(activeRegistry.destination)}
                       loading={recordType === 'YOUTH_PROFILE' && downloading}
                     >
                       {recordType === 'YOUTH_PROFILE'
                         ? <><LuDownload aria-hidden="true" /> Download Guided Template</>
-                        : <>Open Child Laborer Records</>}
+                        : <>Open {activeRegistry.shortLabel} Records</>}
                     </Button>
                   </Flex>
                   <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3} mt={4}>
@@ -544,7 +554,7 @@ const ImportPage = () => {
                     Choose carefully: every ready row will be filed under this category and barangay.
                     {recordType === 'YOUTH_PROFILE'
                       ? ' Youth age eligibility is calculated on December 31 of the selected filing year.'
-                      : ' The file metadata must match the selected Child Laborer filing year.'}
+                      : ` The file metadata must match the selected ${activeRegistry.shortLabel} filing year.`}
                   </Text>
                 </Box>
 
@@ -592,7 +602,7 @@ const ImportPage = () => {
                   <Text color="text.secondary" mt={2}>
                     {recordType === 'YOUTH_PROFILE'
                       ? 'Guided templates, official KK workbooks, and Youth CSV exports are supported. Only the guided .xlsx template includes dropdown validation.'
-                      : 'Use a Child Laborer CSV exported by this system. Registry, filing year, barangay, required fields, and duplicates are checked before import.'}{' '}
+                      : `Use an ${activeRegistry.shortLabel} CSV exported by this system. Registry, filing year, barangay, required fields, and duplicates are checked before import.`}{' '}
                     Maximum file size: 10 MB.
                   </Text>
                 </Box>

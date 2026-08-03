@@ -24,6 +24,7 @@ import {
   LuUpload,
   LuUserCog,
   LuUsersRound,
+  LuGraduationCap,
   LuX,
 } from 'react-icons/lu';
 
@@ -49,6 +50,7 @@ const adminSections: NavigationSection[] = [
     label: 'Records and review',
     links: [
       { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+      { label: 'Out-of-School Youth', path: '/out-of-school-youth', icon: LuGraduationCap },
       { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
       { label: 'Review Queue', path: '/review-queue', icon: LuClipboardCheck },
       { label: 'Imports', path: '/imports', icon: LuUpload },
@@ -79,6 +81,7 @@ const skSections: NavigationSection[] = [
     label: 'Records',
     links: [
       { label: 'Youth Records', path: '/youth-records', icon: LuUsersRound },
+      { label: 'Out-of-School Youth', path: '/out-of-school-youth', icon: LuGraduationCap },
       { label: 'Child Laborer Records', path: '/child-laborers', icon: LuBriefcaseBusiness },
       { label: 'Add Record', path: '/youth-records/new', icon: LuFilePlus2, exact: true },
       { label: 'Bulk Import', path: '/imports/new', icon: LuUpload, exact: true },
@@ -166,8 +169,8 @@ export const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         <IconButton
           aria-label="Close navigation"
           variant="ghost"
-          minW="44px"
-          minH="44px"
+          minW="45px"
+          minH="45px"
           display={{ base: 'inline-flex', lg: 'none' }}
           onClick={onClose}
         >

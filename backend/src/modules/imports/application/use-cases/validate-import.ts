@@ -26,7 +26,7 @@ export const validateImport = async (input: ValidateImportInput): Promise<Import
     barangayRepository.findById(input.barangayId),
   ]);
   if (!category || category.status !== 'PUBLISHED') {
-    throw API_ERRORS.validation('Select a published Youth Profile or Child Laborer category.');
+    throw API_ERRORS.validation('Select a published Youth Profile, Out-of-School Youth, or Child Laborer category.');
   }
   if (input.actorRole === 'SK_OFFICIAL' && !['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode)) {
     throw API_ERRORS.forbidden('This category does not allow SK spreadsheet imports.');
@@ -53,7 +53,7 @@ export const validateImport = async (input: ValidateImportInput): Promise<Import
       input.fileName,
       category.record_type,
     );
-    const referenceResult = category.record_type === 'YOUTH_PROFILE'
+    const referenceResult = category.record_type !== 'CHILD_LABORER'
       ? await supabaseAdmin
         .from('reference_options')
         .select('id, group_code, category_code, code, label')

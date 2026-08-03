@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SK Youth Information Management System API
-  version: 1.8.0
+  version: 1.9.0
   description: |
     Contract-first definition for the SK Youth Information Management System.
     Authentication is handled by Supabase Auth. Protected endpoints require an
@@ -205,6 +205,83 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /api/v1/youth-records:
+    get:
+      tags: [app]
+      summary: List youth-shaped registry records
+      description: |
+        Lists records from either the Youth Profile or Out-of-School Youth
+        registry within the authenticated account's barangay scope. The
+        registry type defaults to Youth Profile so existing clients never mix
+        OSY records into the regular youth list.
+      parameters:
+        - in: query
+          name: recordType
+          schema:
+            $ref: '#/components/schemas/YouthRegistryRecordType'
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: filingYear
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        - in: query
+          name: barangayId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: sortField
+          schema:
+            type: string
+            enum: [created_at, display_name, birth_date, status, barangay_name]
+        - in: query
+          name: sortDir
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Paginated registry records
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/YouthRecordDetail'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
     post:
       tags: [app]
       summary: Create a youth record
@@ -1032,6 +1109,10 @@ paths:
         to annual Youth Profile categories for that filing year.
       parameters:
         - in: query
+          name: recordType
+          schema:
+            $ref: '#/components/schemas/YouthRegistryRecordType'
+        - in: query
           name: filingYear
           schema:
             type: integer
@@ -1065,6 +1146,10 @@ paths:
         year is required so annual reports never silently combine datasets.
         SK officials remain restricted to their assigned barangay.
       parameters:
+        - in: query
+          name: recordType
+          schema:
+            $ref: '#/components/schemas/YouthRegistryRecordType'
         - in: query
           name: filingYear
           required: true
@@ -1115,6 +1200,10 @@ paths:
         filing year. Missing answers remain visible as `No response` and every
         percentage uses the complete year-filtered record count.
       parameters:
+        - in: query
+          name: recordType
+          schema:
+            $ref: '#/components/schemas/YouthRegistryRecordType'
         - in: query
           name: filingYear
           required: true
@@ -1168,6 +1257,11 @@ paths:
         matching Youth Profile category. SK officials are always restricted to
         their assigned barangay.
       parameters:
+        - in: query
+          name: recordType
+          description: Selects the Youth Profile or Out-of-School Youth dataset.
+          schema:
+            $ref: '#/components/schemas/YouthRegistryRecordType'
         - in: query
           name: format
           schema:
@@ -1831,6 +1925,10 @@ components:
               type: [string, "null"]
             category_filing_year:
               type: [integer, "null"]
+            category_record_type:
+              oneOf:
+                - $ref: '#/components/schemas/CategoryRecordType'
+                - type: "null"
             is_registered_voter:
               type: [boolean, "null"]
             voted_last_election:
@@ -1850,7 +1948,10 @@ components:
           $ref: '#/components/schemas/YouthRecordDetail'
     CategoryRecordType:
       type: string
-      enum: [YOUTH_PROFILE, CHILD_LABORER]
+      enum: [YOUTH_PROFILE, OUT_OF_SCHOOL_YOUTH, CHILD_LABORER]
+    YouthRegistryRecordType:
+      type: string
+      enum: [YOUTH_PROFILE, OUT_OF_SCHOOL_YOUTH]
     ReferenceGroup:
       type: object
       required: [id, code, name, record_type, created_at]

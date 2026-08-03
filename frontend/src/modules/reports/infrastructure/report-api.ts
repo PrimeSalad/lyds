@@ -7,6 +7,8 @@ import type {
 
 export type SummaryData = ReportSummary;
 export type DemographicBreakdown = GeneratedDemographicBreakdown;
+export type DemographicsData = DemographicsReport;
+export type YouthRegistryRecordType = 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 
 export type DashboardAnalytics = {
   summary: SummaryData;
@@ -68,37 +70,41 @@ type BarangaySummary = {
 };
 
 export const reportApi = {
-  getDashboard: (params?: { filingYear?: number }) => {
+  getDashboard: (params?: { filingYear?: number; recordType?: YouthRegistryRecordType }) => {
     const searchParams = new URLSearchParams();
     if (params?.filingYear) searchParams.set('filingYear', params.filingYear.toString());
+    if (params?.recordType) searchParams.set('recordType', params.recordType);
     const qs = searchParams.toString();
     return apiClient.request<{ data: DashboardAnalytics }>(`/reports/dashboard${qs ? `?${qs}` : ''}`);
   },
-  getSummary: (params?: { barangayId?: string; categoryId?: string; status?: string; filingYear?: number }) => {
+  getSummary: (params?: { barangayId?: string; categoryId?: string; status?: string; filingYear?: number; recordType?: YouthRegistryRecordType }) => {
     const searchParams = new URLSearchParams();
     if (params?.barangayId) searchParams.set('barangayId', params.barangayId);
     if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params?.status) searchParams.set('status', params.status);
     if (params?.filingYear) searchParams.set('filingYear', params.filingYear.toString());
+    if (params?.recordType) searchParams.set('recordType', params.recordType);
     const qs = searchParams.toString();
     return apiClient.request<{ data: SummaryData }>(`/reports/summary${qs ? `?${qs}` : ''}`);
   },
-  getDemographics: (params?: { barangayId?: string; categoryId?: string; status?: string; filingYear?: number }) => {
+  getDemographics: (params?: { barangayId?: string; categoryId?: string; status?: string; filingYear?: number; recordType?: YouthRegistryRecordType }) => {
     const searchParams = new URLSearchParams();
     if (params?.barangayId) searchParams.set('barangayId', params.barangayId);
     if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params?.status) searchParams.set('status', params.status);
     if (params?.filingYear) searchParams.set('filingYear', params.filingYear.toString());
+    if (params?.recordType) searchParams.set('recordType', params.recordType);
     const qs = searchParams.toString();
     return apiClient.request<{ data: DemographicsReport }>(`/reports/demographics${qs ? `?${qs}` : ''}`);
   },
   getByBarangay: () => apiClient.request<{ data: BarangaySummary[] }>('/reports/by-barangay'),
-  exportRecords: (params: { format: 'csv' | 'xlsx'; barangayId?: string; categoryId?: string; status?: string; filingYear?: number }) => {
+  exportRecords: (params: { format: 'csv' | 'xlsx'; barangayId?: string; categoryId?: string; status?: string; filingYear?: number; recordType?: YouthRegistryRecordType }) => {
     const searchParams = new URLSearchParams({ format: params.format });
     if (params.barangayId) searchParams.set('barangayId', params.barangayId);
     if (params.categoryId) searchParams.set('categoryId', params.categoryId);
     if (params.status) searchParams.set('status', params.status);
     if (params.filingYear) searchParams.set('filingYear', params.filingYear.toString());
+    if (params.recordType) searchParams.set('recordType', params.recordType);
     return apiClient.request<Blob>(`/reports/export?${searchParams.toString()}`);
   },
 };

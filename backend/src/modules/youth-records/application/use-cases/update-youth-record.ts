@@ -42,8 +42,14 @@ export const updateYouthRecord = async (id: string, input: any, authContext: any
   if ('birth_date' in updateData || 'category_id' in updateData) {
     const categoryId = updateData.category_id ?? existingRecord.category_id;
     const category = await categoryRepository.getCategoryById(categoryId);
-    if (!category || category.record_type !== 'YOUTH_PROFILE') {
-      throw API_ERRORS.validation('Select a youth registry category.');
+    if (!category || !['YOUTH_PROFILE', 'OUT_OF_SCHOOL_YOUTH'].includes(category.record_type)) {
+      throw API_ERRORS.validation('Select a Youth Profile or Out-of-School Youth category.');
+    }
+    if (categoryId !== existingRecord.category_id) {
+      const existingCategory = await categoryRepository.getCategoryById(existingRecord.category_id);
+      if (!existingCategory || existingCategory.record_type !== category.record_type) {
+        throw API_ERRORS.validation('A record cannot be moved to a different registry.');
+      }
     }
     const birthDate = 'birth_date' in updateData ? updateData.birth_date : existingRecord.birth_date;
 

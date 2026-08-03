@@ -5,6 +5,7 @@ export const getSummary = async (filters: {
   categoryId?: string | null;
   status?: string | null;
   filingYear: number;
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 }) => {
   const summary = await reportRepository.getSummary(filters);
 

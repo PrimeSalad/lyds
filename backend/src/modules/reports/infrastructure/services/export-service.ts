@@ -29,6 +29,7 @@ const excelColumnWidths = [
 type ExportOptions = {
   filingYear?: number;
   generatedAt?: Date;
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 };
 
 const sanitize = (value: unknown) => {
@@ -101,8 +102,12 @@ const excelRow = (row: any, index: number, filingYear?: number) => {
   ];
 };
 
-const csvRow = (row: any, filingYear?: number) => [
-  'YOUTH_PROFILE',
+const csvRow = (
+  row: any,
+  filingYear?: number,
+  recordType: ExportOptions['recordType'] = 'YOUTH_PROFILE',
+) => [
+  recordType,
   filingYear ?? '',
   sanitize(row.id),
   sanitize(row.status),
@@ -136,6 +141,7 @@ const applyWorkbookHeader = (
   filingYear: number | undefined,
   recordCount: number,
   generatedAt: Date,
+  recordType: ExportOptions['recordType'],
 ) => {
   const titleRows = [
     'Republic of the Philippines',
@@ -155,7 +161,9 @@ const applyWorkbookHeader = (
   });
 
   worksheet.mergeCells('A6:V6');
-  worksheet.getCell('A6').value = 'KATIPUNAN NG KABATAAN YOUTH PROFILE';
+  worksheet.getCell('A6').value = recordType === 'OUT_OF_SCHOOL_YOUTH'
+    ? 'OUT-OF-SCHOOL YOUTH REGISTRY'
+    : 'KATIPUNAN NG KABATAAN YOUTH PROFILE';
   worksheet.getCell('A6').font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FF166534' } };
   worksheet.getCell('A6').alignment = { horizontal: 'center', vertical: 'middle' };
   worksheet.getRow(6).height = 30;
@@ -232,9 +240,10 @@ export const exportService = {
     workbook.created = generatedAt;
     workbook.modified = generatedAt;
 
+    const registryName = options.recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'KK Youth Profile';
     const worksheetName = options.filingYear
-      ? `KK Youth Profile ${options.filingYear}`
-      : 'KK Youth Profiles';
+      ? `${registryName} ${options.filingYear}`
+      : `${registryName} Records`;
     const worksheet = workbook.addWorksheet(worksheetName, {
       properties: { defaultRowHeight: 20 },
       pageSetup: {
@@ -249,15 +258,15 @@ export const exportService = {
     });
 
     worksheet.columns = excelColumnWidths.map((width) => ({ width }));
-    applyWorkbookHeader(worksheet, options.filingYear, data.length, generatedAt);
+    applyWorkbookHeader(worksheet, options.filingYear, data.length, generatedAt, options.recordType);
     applyTableHeader(worksheet);
 
     if (data.length === 0) {
       worksheet.mergeCells('A12:V13');
       const emptyCell = worksheet.getCell('A12');
       emptyCell.value = options.filingYear
-        ? `No youth records found for filing year ${options.filingYear}.`
-        : 'No youth records found for this export.';
+        ? `No ${options.recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'youth'} records found for filing year ${options.filingYear}.`
+        : `No ${options.recordType === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'youth'} records found for this export.`;
       emptyCell.font = { name: 'Arial', size: 11, italic: true, color: { argb: 'FF64748B' } };
       emptyCell.alignment = { horizontal: 'center', vertical: 'middle' };
     } else {
@@ -275,8 +284,8 @@ export const exportService = {
     return Buffer.from(buffer as ArrayBuffer);
   },
 
-  generateCsv(data: any[], options: Pick<ExportOptions, 'filingYear'> = {}): Buffer {
-    const rows = [csvHeaders, ...data.map((row) => csvRow(row, options.filingYear))];
+  generateCsv(data: any[], options: Pick<ExportOptions, 'filingYear' | 'recordType'> = {}): Buffer {
+    const rows = [csvHeaders, ...data.map((row) => csvRow(row, options.filingYear, options.recordType))];
     const csv = rows.map((row) => row.map((value) => csvCell(String(value))).join(',')).join('\r\n');
     return Buffer.from(`\uFEFF${csv}`, 'utf8');
   },

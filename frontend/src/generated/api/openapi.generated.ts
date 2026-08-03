@@ -398,7 +398,47 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List youth-shaped registry records
+         * @description Lists records from either the Youth Profile or Out-of-School Youth
+         *     registry within the authenticated account's barangay scope. The
+         *     registry type defaults to Youth Profile so existing clients never mix
+         *     OSY records into the regular youth list.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    recordType?: components["schemas"]["YouthRegistryRecordType"];
+                    categoryId?: string;
+                    filingYear?: number;
+                    barangayId?: string;
+                    status?: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+                    search?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sortField?: "created_at" | "display_name" | "birth_date" | "status" | "barangay_name";
+                    sortDir?: "asc" | "desc";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Paginated registry records */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["YouthRecordDetail"][];
+                            meta: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+        };
         put?: never;
         /**
          * Create a youth record
@@ -1823,6 +1863,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    recordType?: components["schemas"]["YouthRegistryRecordType"];
                     filingYear?: number;
                 };
                 header?: never;
@@ -1884,6 +1925,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
+                    recordType?: components["schemas"]["YouthRegistryRecordType"];
                     filingYear: number;
                     barangayId?: string;
                     categoryId?: string;
@@ -1948,6 +1990,7 @@ export interface paths {
         get: {
             parameters: {
                 query: {
+                    recordType?: components["schemas"]["YouthRegistryRecordType"];
                     filingYear: number;
                     barangayId?: string;
                     categoryId?: string;
@@ -2015,6 +2058,8 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
+                    /** @description Selects the Youth Profile or Out-of-School Youth dataset. */
+                    recordType?: components["schemas"]["YouthRegistryRecordType"];
                     format?: "csv" | "xlsx";
                     filingYear?: number;
                     barangayId?: string;
@@ -2356,6 +2401,7 @@ export interface components {
             province_name?: string | null;
             category_name?: string | null;
             category_filing_year?: number | null;
+            category_record_type?: components["schemas"]["CategoryRecordType"] | null;
             is_registered_voter?: boolean | null;
             voted_last_election?: boolean | null;
             attended_kk_assembly?: boolean | null;
@@ -2368,7 +2414,9 @@ export interface components {
             data: components["schemas"]["YouthRecordDetail"];
         };
         /** @enum {string} */
-        CategoryRecordType: "YOUTH_PROFILE" | "CHILD_LABORER";
+        CategoryRecordType: "YOUTH_PROFILE" | "OUT_OF_SCHOOL_YOUTH" | "CHILD_LABORER";
+        /** @enum {string} */
+        YouthRegistryRecordType: "YOUTH_PROFILE" | "OUT_OF_SCHOOL_YOUTH";
         ReferenceGroup: {
             /** Format: uuid */
             id: string;

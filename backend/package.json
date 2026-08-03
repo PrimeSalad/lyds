@@ -18,7 +18,8 @@
     "db:sync:dry": "tsx --env-file=.env scripts/sync-supabase.ts --dry-run",
     "db:baseline": "tsx --env-file=.env scripts/sync-supabase.ts --baseline-existing",
     "auth:harden": "tsx --env-file=.env scripts/harden-supabase-auth.ts",
-    "auth:harden:check": "tsx --env-file=.env scripts/harden-supabase-auth.ts --check"
+    "auth:harden:check": "tsx --env-file=.env scripts/harden-supabase-auth.ts --check",
+    "import:osy": "tsx --env-file=.env scripts/import-osy-workbook.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",

@@ -10,6 +10,7 @@ type ExportRecordsInput = {
   actorId: string;
   actorRole: string;
   format: 'csv' | 'xlsx';
+  recordType?: 'YOUTH_PROFILE' | 'OUT_OF_SCHOOL_YOUTH';
 };
 
 export const exportRecords = async ({
@@ -20,11 +21,12 @@ export const exportRecords = async ({
   actorId,
   actorRole,
   format,
+  recordType = 'YOUTH_PROFILE',
 }: ExportRecordsInput): Promise<Buffer> => {
-  const data = await reportRepository.getExportData({ barangayId, categoryId, status, filingYear });
+  const data = await reportRepository.getExportData({ barangayId, categoryId, status, filingYear, recordType });
   const buffer = format === 'csv'
-    ? exportService.generateCsv(data, { filingYear: filingYear ?? undefined })
-    : await exportService.generateXlsx(data, { filingYear: filingYear ?? undefined });
+    ? exportService.generateCsv(data, { filingYear: filingYear ?? undefined, recordType })
+    : await exportService.generateXlsx(data, { filingYear: filingYear ?? undefined, recordType });
   
   await auditService.log({
     actor_profile_id: actorId,
@@ -32,7 +34,7 @@ export const exportRecords = async ({
     action: 'EXPORT_RECORDS',
     entity_type: 'REPORT',
     barangay_id: barangayId ?? undefined,
-    metadata: { record_count: data.length, category_id: categoryId, filing_year: filingYear, status, format }
+    metadata: { record_count: data.length, category_id: categoryId, filing_year: filingYear, status, format, record_type: recordType }
   });
   
   return buffer;

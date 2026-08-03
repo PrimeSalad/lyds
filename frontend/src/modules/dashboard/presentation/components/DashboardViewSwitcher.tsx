@@ -1,7 +1,7 @@
 import { Box, Button, Field, Flex, NativeSelect } from '@chakra-ui/react';
 import { LuArrowUpRight } from 'react-icons/lu';
 
-export type DashboardView = 'YOUTH' | 'CHILD_LABORERS';
+export type DashboardView = 'YOUTH' | 'OUT_OF_SCHOOL_YOUTH' | 'CHILD_LABORERS';
 
 type DashboardViewSwitcherProps = {
   view: DashboardView;
@@ -48,6 +48,7 @@ export const DashboardViewSwitcher = ({
             onChange={(event) => onViewChange(event.target.value as DashboardView)}
           >
             <option value="YOUTH">Youth Registry</option>
+            <option value="OUT_OF_SCHOOL_YOUTH">Out-of-School Youth</option>
             <option value="CHILD_LABORERS">Child Laborer Records</option>
           </NativeSelect.Field>
           <NativeSelect.Indicator />

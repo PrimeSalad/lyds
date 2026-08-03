@@ -13,7 +13,7 @@ import { TopBar } from '../components/TopBar';
 import { AnnouncementFeed } from '../../../announcements/presentation/components/AnnouncementFeed';
 import { SkipLink } from '../../../../ui/components/skip-link';
 import { PageHeader } from '../../../../shared/components/PageHeader';
-import { reportApi, type DashboardAnalytics, type DemographicBreakdown } from '../../../reports/infrastructure/report-api';
+import { reportApi, type DashboardAnalytics, type DemographicBreakdown, type DemographicsData } from '../../../reports/infrastructure/report-api';
 import { categoryApi } from '../../../categories/infrastructure/category-api';
 import { childLaborerApi, type ChildLaborerSummary } from '../../../child-laborers/infrastructure/child-laborer-api';
 import { ChildLaborerAnalytics } from '../../../child-laborers/presentation/components/ChildLaborerAnalytics';
@@ -102,16 +102,18 @@ const statusPalettes: Record<string, string> = {
   ARCHIVED: 'gray',
 };
 
-const YouthRegistrySummary = ({ data, year, scopeLabel }: {
+const YouthRegistrySummary = ({ data, year, scopeLabel, registryLabel }: {
   data: DashboardAnalytics;
   year: number;
   scopeLabel: string;
+  registryLabel: string;
 }) => {
   const total = data.summary.totalRecords;
+  const isOsy = registryLabel === 'Out-of-School Youth';
   const approvalRate = total === 0 ? 0 : (data.summary.approved / total) * 100;
   const summaryText = total === 0
-    ? `No youth registry records are filed for ${year} in this scope.`
-    : `${formatNumber(total)} youth profile${total === 1 ? '' : 's'} across ${formatNumber(data.coverage.barangaysWithRecords)} barangay${data.coverage.barangaysWithRecords === 1 ? '' : 's'}. ${formatNumber(data.summary.approved)} approved (${approvalRate.toFixed(1)}%) and ${formatNumber(data.summary.submitted)} awaiting review.`;
+    ? `No ${registryLabel.toLowerCase()} records are filed for ${year} in this scope.`
+    : `${formatNumber(total)} ${registryLabel.toLowerCase()} record${total === 1 ? '' : 's'} across ${formatNumber(data.coverage.barangaysWithRecords)} barangay${data.coverage.barangaysWithRecords === 1 ? '' : 's'}. ${formatNumber(data.summary.approved)} ${isOsy ? 'validated' : 'approved'} (${approvalRate.toFixed(1)}%) and ${formatNumber(data.summary.submitted)} awaiting ${isOsy ? 'validation' : 'review'}.`;
 
   return <RegistrySummary year={year} scopeLabel={scopeLabel} summary={summaryText} />;
 };
@@ -152,12 +154,13 @@ const DemographicPanel = ({ title, description, items }: {
   );
 };
 
-const YouthDecisionBrief = ({ data }: { data: DashboardAnalytics }) => {
+const YouthDecisionBrief = ({ data, registryLabel }: { data: DashboardAnalytics; registryLabel: string }) => {
   const uncoveredBarangays = Math.max(0, data.coverage.totalBarangays - data.coverage.barangaysWithRecords);
+  const isOsy = registryLabel === 'Out-of-School Youth';
   const items = [
     {
-      title: `${formatNumber(data.summary.submitted)} profile${data.summary.submitted === 1 ? '' : 's'} awaiting review`,
-      text: 'Prioritize submitted profiles so current-year participation data can move into the approved registry.',
+      title: `${formatNumber(data.summary.submitted)} record${data.summary.submitted === 1 ? '' : 's'} awaiting ${isOsy ? 'validation' : 'review'}`,
+      text: `Prioritize submitted ${registryLabel.toLowerCase()} records so the annual dataset can move into the ${isOsy ? 'validated' : 'approved'} registry.`,
     },
     {
       title: `${data.dataQuality.completionRate.toFixed(1)}% core profile completion`,
@@ -174,7 +177,7 @@ const YouthDecisionBrief = ({ data }: { data: DashboardAnalytics }) => {
   return (
     <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
       <Card.Header p={{ base: 4, md: 5 }} pb={2}>
-        <RegistrySectionHeading title="Decision brief" description="A concise reading of the current youth registry." />
+        <RegistrySectionHeading title="Decision brief" description={`A concise reading of the current ${registryLabel.toLowerCase()} registry.`} />
       </Card.Header>
       <Card.Body px={{ base: 4, md: 5 }} pt={2} pb={{ base: 4, md: 5 }}>
         <RegistryBriefList items={items} />
@@ -280,7 +283,11 @@ const TrendPanel = ({ data }: { data: DashboardAnalytics }) => {
   );
 };
 
-const DataQualityPanel = ({ data, onOpenRecords }: { data: DashboardAnalytics; onOpenRecords: () => void }) => {
+const DataQualityPanel = ({ data, onOpenRecords, registryLabel }: {
+  data: DashboardAnalytics;
+  onOpenRecords: () => void;
+  registryLabel: string;
+}) => {
   const qualityItems = [
     { label: 'Incomplete core profiles', value: data.dataQuality.incompleteCore },
     { label: 'No contact information', value: data.dataQuality.missingContact },
@@ -309,7 +316,7 @@ const DataQualityPanel = ({ data, onOpenRecords }: { data: DashboardAnalytics; o
           ))}
         </VStack>
         <Button mt={3} variant="ghost" size="sm" onClick={onOpenRecords} px={0} color="primary.700">
-          Review youth records <LuArrowRight />
+          Review {registryLabel.toLowerCase()} records <LuArrowRight />
         </Button>
       </Card.Body>
     </Card.Root>
@@ -440,10 +447,14 @@ const BarangayPanel = ({
   </Card.Root>
 );
 
-const RecentRecordsPanel = ({ data, onOpenRecord }: { data: DashboardAnalytics; onOpenRecord: (id: string) => void }) => (
+const RecentRecordsPanel = ({ data, onOpenRecord, registryLabel }: {
+  data: DashboardAnalytics;
+  onOpenRecord: (id: string) => void;
+  registryLabel: string;
+}) => (
   <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" height="full">
     <Card.Header p={{ base: 4, md: 5 }} pb={2}>
-      <RegistrySectionHeading title="Recent record activity" description="Most recently updated youth profiles." />
+      <RegistrySectionHeading title="Recent record activity" description={`Most recently updated ${registryLabel.toLowerCase()} records.`} />
     </Card.Header>
     <Card.Body px={{ base: 4, md: 5 }} pt={3} pb={{ base: 4, md: 5 }}>
       {data.recentRecords.length === 0 ? (
@@ -499,13 +510,18 @@ export const DashboardPage = () => {
   const isAdmin = profile?.role === 'ADMIN';
   const dashboardView: DashboardView = searchParams.get('view') === 'child-laborers'
     ? 'CHILD_LABORERS'
-    : 'YOUTH';
+    : searchParams.get('view') === 'out-of-school-youth'
+      ? 'OUT_OF_SCHOOL_YOUTH'
+      : 'YOUTH';
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [osyDemographics, setOsyDemographics] = useState<DemographicsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [youthYears, setYouthYears] = useState<number[]>([currentYear]);
   const [youthYear, setYouthYear] = useState(currentYear);
+  const [osyYears, setOsyYears] = useState<number[]>([2025]);
+  const [osyYear, setOsyYear] = useState(2025);
   const childLaborerRequestId = useRef(0);
   const [childLaborerYear, setChildLaborerYear] = useState(currentYear);
   const [childLaborerYears, setChildLaborerYears] = useState<number[]>(fallbackFilingYears);
@@ -513,36 +529,58 @@ export const DashboardPage = () => {
   const [childLaborerLoading, setChildLaborerLoading] = useState(false);
   const [childLaborerRefreshing, setChildLaborerRefreshing] = useState(false);
   const [childLaborerError, setChildLaborerError] = useState<string | null>(null);
+  const analyticsRecordType = dashboardView === 'OUT_OF_SCHOOL_YOUTH'
+    ? 'OUT_OF_SCHOOL_YOUTH'
+    : 'YOUTH_PROFILE';
+  const analyticsYear = dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? osyYear : youthYear;
+  const registryLabel = dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? 'Out-of-School Youth' : 'Youth Registry';
+  const registryRecordsPath = dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? '/out-of-school-youth' : '/youth-records';
+  const isOsyView = dashboardView === 'OUT_OF_SCHOOL_YOUTH';
 
   const loadAnalytics = useCallback(async (refresh = false) => {
     if (refresh) setRefreshing(true);
-    else setLoading(true);
+    else {
+      setLoading(true);
+      setAnalytics(null);
+      setOsyDemographics(null);
+    }
     setError(null);
     try {
-      const response = await reportApi.getDashboard({ filingYear: youthYear });
-      setAnalytics(response.data);
+      const [dashboardResponse, demographicResponse] = await Promise.all([
+        reportApi.getDashboard({ filingYear: analyticsYear, recordType: analyticsRecordType }),
+        analyticsRecordType === 'OUT_OF_SCHOOL_YOUTH'
+          ? reportApi.getDemographics({ filingYear: analyticsYear, recordType: analyticsRecordType })
+          : Promise.resolve(null),
+      ]);
+      setAnalytics(dashboardResponse.data);
+      setOsyDemographics(demographicResponse?.data ?? null);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Dashboard analytics could not be loaded.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [youthYear]);
+  }, [analyticsRecordType, analyticsYear]);
 
   useEffect(() => {
-    void loadAnalytics();
-  }, [loadAnalytics]);
+    if (dashboardView !== 'CHILD_LABORERS') void loadAnalytics();
+  }, [dashboardView, loadAnalytics]);
 
   useEffect(() => {
     categoryApi.list()
       .then((response) => {
         const youthCategories = response.data.filter((category) => category.record_type === 'YOUTH_PROFILE');
+        const osyCategories = response.data.filter((category) => category.record_type === 'OUT_OF_SCHOOL_YOUTH');
         const childCategories = response.data.filter((category) => category.record_type === 'CHILD_LABORER');
         const years = [...new Set(youthCategories
           .map((category) => category.filing_year)
           .filter((year): year is number => Number.isInteger(year)))]
           .sort((left, right) => right - left);
         const childYears = [...new Set(childCategories
+          .map((category) => category.filing_year)
+          .filter((year): year is number => Number.isInteger(year)))]
+          .sort((left, right) => right - left);
+        const availableOsyYears = [...new Set(osyCategories
           .map((category) => category.filing_year)
           .filter((year): year is number => Number.isInteger(year)))]
           .sort((left, right) => right - left);
@@ -562,9 +600,18 @@ export const DashboardPage = () => {
           ))[0];
           setChildLaborerYear(preferredChild?.filing_year ?? childYears[0]);
         }
+        if (availableOsyYears.length > 0) {
+          setOsyYears(availableOsyYears);
+          const preferredOsy = [...osyCategories].sort((left, right) => (
+            Number((right.record_count ?? 0) > 0) - Number((left.record_count ?? 0) > 0)
+            || right.filing_year - left.filing_year
+          ))[0];
+          setOsyYear(preferredOsy?.filing_year ?? availableOsyYears[0]);
+        }
       })
       .catch(() => {
         setYouthYears([currentYear]);
+        setOsyYears([2025]);
         setChildLaborerYears(fallbackFilingYears);
       });
   }, []);
@@ -615,6 +662,7 @@ export const DashboardPage = () => {
   const changeDashboardView = (view: DashboardView) => {
     const nextParams = new URLSearchParams(searchParams);
     if (view === 'CHILD_LABORERS') nextParams.set('view', 'child-laborers');
+    else if (view === 'OUT_OF_SCHOOL_YOUTH') nextParams.set('view', 'out-of-school-youth');
     else nextParams.delete('view');
     setSearchParams(nextParams, { replace: true });
   };
@@ -623,17 +671,25 @@ export const DashboardPage = () => {
     ? childLaborerRefreshing || childLaborerLoading
     : refreshing;
 
-  const activeFilingYear = dashboardView === 'CHILD_LABORERS' ? childLaborerYear : youthYear;
-  const activeFilingYears = dashboardView === 'CHILD_LABORERS' ? childLaborerYears : youthYears;
+  const activeFilingYear = dashboardView === 'CHILD_LABORERS'
+    ? childLaborerYear
+    : dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? osyYear : youthYear;
+  const activeFilingYears = dashboardView === 'CHILD_LABORERS'
+    ? childLaborerYears
+    : dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? osyYears : youthYears;
 
   return (
     <DashboardLayout>
       <PageHeader
         title={dashboardView === 'CHILD_LABORERS'
           ? 'Child Laborer Dashboard'
-          : 'Youth Registry Dashboard'}
+          : dashboardView === 'OUT_OF_SCHOOL_YOUTH'
+            ? 'Out-of-School Youth Dashboard'
+            : 'Youth Registry Dashboard'}
         description={dashboardView === 'CHILD_LABORERS'
           ? 'Current child labor records, validation progress, demographics, education status, and reported work.'
+          : dashboardView === 'OUT_OF_SCHOOL_YOUTH'
+            ? 'A focused view of the 2025 OSY consolidation, validation progress, barangay coverage, and data quality.'
           : isAdmin
             ? 'Live youth registry, review workload, coverage, and data quality across Boac.'
             : 'Live record activity and review status for your assigned barangay.'}
@@ -650,8 +706,10 @@ export const DashboardPage = () => {
         filingYear={activeFilingYear}
         filingYears={activeFilingYears}
         onViewChange={changeDashboardView}
-        onFilingYearChange={dashboardView === 'CHILD_LABORERS' ? setChildLaborerYear : setYouthYear}
-        onOpenRecords={() => navigate(dashboardView === 'CHILD_LABORERS' ? '/child-laborers' : '/youth-records')}
+        onFilingYearChange={dashboardView === 'CHILD_LABORERS'
+          ? setChildLaborerYear
+          : dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? setOsyYear : setYouthYear}
+        onOpenRecords={() => navigate(dashboardView === 'CHILD_LABORERS' ? '/child-laborers' : registryRecordsPath)}
       />
 
       {dashboardView === 'CHILD_LABORERS' ? (
@@ -682,14 +740,15 @@ export const DashboardPage = () => {
             <VStack align="stretch" gap={5}>
               <YouthRegistrySummary
                 data={analytics}
-                year={youthYear}
+                year={analyticsYear}
                 scopeLabel={isAdmin ? 'All barangays' : 'Assigned barangay'}
+                registryLabel={registryLabel}
               />
 
               <SimpleGrid data-dashboard-metrics="true" columns={{ base: 1, sm: 2, xl: 5 }} gap={4}>
                 <RegistryMetricCard label="Records represented" value={youthTotal} helper={`${summary?.thisMonth ?? 0} added this month`} loading={loading} />
-                <RegistryMetricCard label="Approved records" value={youthPercentage(summary?.approved ?? 0)} helper={`${formatNumber(summary?.approved ?? 0)} completed reviews`} loading={loading} />
-                <RegistryMetricCard label="Pending review" value={youthPercentage(summary?.submitted ?? 0)} helper={`${formatNumber(summary?.submitted ?? 0)} awaiting action`} loading={loading} />
+                <RegistryMetricCard label={isOsyView ? 'Validated records' : 'Approved records'} value={youthPercentage(summary?.approved ?? 0)} helper={`${formatNumber(summary?.approved ?? 0)} ${isOsyView ? 'workbook-validated' : 'completed reviews'}`} loading={loading} />
+                <RegistryMetricCard label={isOsyView ? 'Pending validation' : 'Pending review'} value={youthPercentage(summary?.submitted ?? 0)} helper={`${formatNumber(summary?.submitted ?? 0)} awaiting action`} loading={loading} />
                 <RegistryMetricCard label="Profile completion" value={`${analytics.dataQuality.completionRate.toFixed(1)}%`} helper={`${formatNumber(analytics.dataQuality.incompleteCore)} incomplete profiles`} loading={loading} />
                 <RegistryMetricCard label="Barangays represented" value={analytics.coverage.barangaysWithRecords} helper={isAdmin ? `of ${analytics.coverage.totalBarangays} barangays` : 'Assigned barangay scope'} loading={loading} />
               </SimpleGrid>
@@ -699,23 +758,30 @@ export const DashboardPage = () => {
                   <StatusPanel data={analytics} />
                 </GridItem>
                 <GridItem colSpan={{ base: 1, xl: 5 }}>
-                  <DataQualityPanel data={analytics} onOpenRecords={() => navigate('/youth-records')} />
+                  <DataQualityPanel data={analytics} registryLabel={registryLabel} onOpenRecords={() => navigate(registryRecordsPath)} />
                 </GridItem>
               </Grid>
 
               <TrendPanel data={analytics} />
 
-              <Grid templateColumns={{ base: '1fr', xl: 'repeat(2, minmax(0, 1fr))' }} gap={5} alignItems="stretch">
+              <Grid templateColumns={{ base: '1fr', xl: `repeat(${isOsyView ? 3 : 2}, minmax(0, 1fr))` }} gap={5} alignItems="stretch">
                 <DemographicPanel
-                  title="Youth age profile"
+                  title={`${dashboardView === 'OUT_OF_SCHOOL_YOUTH' ? 'OSY' : 'Youth'} age profile`}
                   description="Age-group composition for the selected filing year."
                   items={analytics.demographics.ageGroups}
                 />
                 <DemographicPanel
-                  title="Youth classification"
-                  description="Registry composition by reported youth classification."
-                  items={analytics.demographics.youthClassifications}
+                  title={isOsyView ? 'Educational attainment' : 'Youth classification'}
+                  description={isOsyView ? 'Highest reported education level in the OSY consolidation.' : 'Registry composition by reported youth classification.'}
+                  items={isOsyView ? osyDemographics?.educationalAttainment ?? [] : analytics.demographics.youthClassifications}
                 />
+                {isOsyView && (
+                  <DemographicPanel
+                    title="Work status"
+                    description="Reported employment status and missing responses in the OSY source."
+                    items={osyDemographics?.workStatus ?? []}
+                  />
+                )}
               </Grid>
 
               <Grid templateColumns={{ base: '1fr', xl: 'repeat(12, minmax(0, 1fr))' }} gap={5} alignItems="start">
@@ -723,15 +789,15 @@ export const DashboardPage = () => {
                   <GridItem colSpan={{ base: 1, xl: 7 }}>
                     <BarangayPanel
                       data={coverageData}
-                      filingYear={youthYear}
+                      filingYear={analyticsYear}
                       onOpenReports={() => navigate('/reports')}
                     />
                   </GridItem>
                 )}
                 <GridItem colSpan={{ base: 1, xl: isAdmin ? 5 : 12 }}>
                   <VStack align="stretch" gap={5}>
-                    <YouthDecisionBrief data={analytics} />
-                    <RecentRecordsPanel data={analytics} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
+                    <YouthDecisionBrief data={analytics} registryLabel={registryLabel} />
+                    <RecentRecordsPanel data={analytics} registryLabel={registryLabel} onOpenRecord={(id) => navigate(`/youth-records/${id}`)} />
                   </VStack>
                 </GridItem>
               </Grid>

@@ -3,7 +3,7 @@ import { dashboardQuerySchema, exportRecordsQuerySchema, reportQuerySchema } fro
 
 describe('dashboardQuerySchema', () => {
   it('coerces a valid coverage filing year', () => {
-    expect(dashboardQuerySchema.parse({ filingYear: '2025' })).toEqual({ filingYear: 2025 });
+    expect(dashboardQuerySchema.parse({ filingYear: '2025' })).toEqual({ filingYear: 2025, recordType: 'YOUTH_PROFILE' });
   });
 
   it('rejects a filing year outside the supported range', () => {
@@ -16,6 +16,7 @@ describe('exportRecordsQuerySchema', () => {
     expect(exportRecordsQuerySchema.parse({ filingYear: '2026' })).toEqual({
       filingYear: 2026,
       format: 'xlsx',
+      recordType: 'YOUTH_PROFILE',
     });
   });
 
@@ -30,7 +31,16 @@ describe('reportQuerySchema', () => {
     expect(reportQuerySchema.parse({ filingYear: '2025', status: 'APPROVED' })).toEqual({
       filingYear: 2025,
       status: 'APPROVED',
+      recordType: 'YOUTH_PROFILE',
     });
+  });
+
+  it('accepts the Out-of-School Youth registry without mixing it into Youth defaults', () => {
+    expect(reportQuerySchema.parse({ filingYear: '2025', recordType: 'OUT_OF_SCHOOL_YOUTH' })).toMatchObject({
+      filingYear: 2025,
+      recordType: 'OUT_OF_SCHOOL_YOUTH',
+    });
+    expect(() => reportQuerySchema.parse({ filingYear: '2025', recordType: 'CHILD_LABORER' })).toThrow();
   });
 
   it('rejects invalid report years and statuses', () => {

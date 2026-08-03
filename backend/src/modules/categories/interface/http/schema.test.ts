@@ -9,6 +9,9 @@ describe('category HTTP schemas', () => {
     expect(listCategoriesQuerySchema.parse({ recordType: 'CHILD_LABORER' })).toEqual({
       recordType: 'CHILD_LABORER',
     });
+    expect(listCategoriesQuerySchema.parse({ recordType: 'OUT_OF_SCHOOL_YOUTH' })).toEqual({
+      recordType: 'OUT_OF_SCHOOL_YOUTH',
+    });
   });
 
   it('rejects unsupported record types when creating categories', () => {
@@ -21,6 +24,7 @@ describe('category HTTP schemas', () => {
     };
 
     expect(createCategorySchema.safeParse({ ...base, record_type: 'CHILD_LABORER' }).success).toBe(true);
+    expect(createCategorySchema.safeParse({ ...base, record_type: 'OUT_OF_SCHOOL_YOUTH' }).success).toBe(true);
     expect(createCategorySchema.safeParse({ ...base, record_type: 'UNSUPPORTED' }).success).toBe(false);
   });
 });

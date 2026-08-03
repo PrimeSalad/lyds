@@ -271,15 +271,18 @@ const YouthRecordDetailPage = () => {
   const municipalityName = record.municipality_name ?? record.barangay?.municipality ?? '';
   const provinceName = record.province_name ?? record.barangay?.province ?? '';
   const customValues = visibleCustomValues(record.custom_values ?? {});
+  const isOsyRecord = record.category_record_type === 'OUT_OF_SCHOOL_YOUTH';
+  const recordLabel = isOsyRecord ? 'Out-of-School Youth' : 'Youth';
+  const recordsPath = isOsyRecord ? '/out-of-school-youth' : '/youth-records';
 
   return (
     <DashboardLayout>
       <PageHeader
-        title="Youth Record Details"
-        description="Review personal information, update the profile, and manage its workflow status."
+        title={`${recordLabel} Record Details`}
+        description={`Review ${isOsyRecord ? 'OSY consolidation' : 'personal'} information, update the profile, and manage its workflow status.`}
         actions={(
           <>
-            <Button variant="ghost" onClick={() => navigate('/youth-records')} disabled={actionLoading} width={{ base: 'full', sm: 'auto' }}>
+            <Button variant="ghost" onClick={() => navigate(recordsPath)} disabled={actionLoading} width={{ base: 'full', sm: 'auto' }}>
               <LuArrowLeft aria-hidden="true" /> Back to Records
             </Button>
             {canEdit && (

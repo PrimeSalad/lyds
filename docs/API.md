@@ -20,12 +20,12 @@ All groups except process health require a valid bearer token with a verified `a
 |---|---|---|
 | `/health` | Process and database readiness | Public |
 | `/auth` | Current authorization context, account settings, and password-change completion | AAL2 signed-in user |
-| `/youth-records` | Profiles, workflow actions, history | Barangay-scoped; admin-only review actions |
+| `/youth-records` | Youth Profile and OSY-shaped records, workflow actions, history (`recordType` keeps the registries separate) | Barangay-scoped; admin-only review actions |
 | `/child-laborers` | Yearly child laborer registry, status summaries, archival, and consolidation exports | AAL2 and barangay-scoped; administrators can access all barangays |
-| `/imports` | Youth/Child registry validation, batches, atomic commit, template, and error files | Barangay-scoped |
+| `/imports` | Youth/OSY/Child registry validation, batches, atomic commit, template, and error files | Barangay-scoped |
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
 | `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
-| `/categories` | Registry-scoped annual categories and custom fields (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads scoped; writes admin-only |
+| `/categories` | Registry-scoped annual categories and custom fields (`YOUTH_PROFILE`, `OUT_OF_SCHOOL_YOUTH`, or `CHILD_LABORER`) | Reads scoped; writes admin-only |
 | `/reference-data` | Registry-scoped reference groups and options (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads signed-in; writes admin-only |
 | `/barangays` | Barangay directory and status | Admin-only |
 | `/accounts` | Account creation, temporary password and 2FA reset, status, assignment, and guarded permanent deletion with unapproved-data cleanup | AAL2 admin-only |
@@ -50,7 +50,13 @@ Imported source files can omit demographic and civic answers. Nullable fields re
 
 ## Annual report scoping
 
-`GET /reports/summary` and `GET /reports/demographics` require `filingYear`. The API resolves that year to `YOUTH_PROFILE` category IDs before querying profiles, so workflow totals, profile/demographic responses, and civic-participation responses cannot silently combine annual datasets. Optional barangay, category, and status filters are applied inside the selected year; a category from another year produces an empty scoped result rather than falling back to overall data.
+`GET /reports/summary` and `GET /reports/demographics` require `filingYear`. Their optional `recordType` accepts `YOUTH_PROFILE` or `OUT_OF_SCHOOL_YOUTH` and defaults to Youth Profile. The API resolves both the registry and year to category IDs before querying profiles, so regular Youth and OSY totals cannot silently combine. Optional barangay, category, and status filters are applied inside the selected dataset; a category from another registry or year produces an empty scoped result rather than falling back to overall data.
+
+## Out-of-School Youth registry
+
+OSY uses the established youth-profile field shape because the official consolidation contains the same demographic, education, employment, voter, and KK-assembly columns. It remains a distinct `OUT_OF_SCHOOL_YOUTH` category type throughout categories, record lists, dashboard analytics, exports, and imports. CSV exports embed that marker and the filing year for round-trip validation.
+
+The tracked `backend/scripts/import-osy-workbook.ts` command reads the official 2025 master and validation-summary sheets. It defaults to a dry run; `--apply` performs deterministic, idempotent upserts and verifies the final category count. The workbook itself remains an operator-supplied local file and is not committed to source control.
 
 The Reports UI derives Youth and Child Laborer year choices only from real categories in the selected registry. Every visible metric, response table/chart, detailed row, CSV, and XLSX export follows the active filing year.
 

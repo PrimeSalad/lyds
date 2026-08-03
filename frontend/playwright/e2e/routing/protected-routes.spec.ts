@@ -6,6 +6,7 @@ const adminRoutes = [
   '/youth-records',
   '/youth-records/new',
   '/youth-records/record-unanswered',
+  '/out-of-school-youth',
   '/child-laborers',
   '/child-laborers/new',
   '/child-laborers/child-laborer-1/edit',

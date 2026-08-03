@@ -37,7 +37,11 @@ import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog';
 import { PageHeader } from '../../../../shared/components/PageHeader';
 import { showToast } from '../../../../shared/toast';
 import { barangayApi, type Barangay } from '../../../barangays/infrastructure/barangay-api';
-import { categoryApi, type Category } from '../../../categories/infrastructure/category-api';
+import {
+  categoryApi,
+  type Category,
+  type CategoryRecordType,
+} from '../../../categories/infrastructure/category-api';
 import { DashboardLayout } from '../../../dashboard/presentation/pages/DashboardPage';
 import {
   importApi,
@@ -51,6 +55,26 @@ import { ImportValidationTable } from '../components/ImportValidationTable';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_EXTENSIONS = ['.xlsx', '.csv'];
 const steps = ['Prepare', 'Review', 'Complete'];
+
+const registryDetails: Record<CategoryRecordType, {
+  label: string;
+  shortLabel: string;
+  destination: string;
+  queryValue: string;
+}> = {
+  YOUTH_PROFILE: {
+    label: 'Youth Records',
+    shortLabel: 'Youth',
+    destination: '/youth-records',
+    queryValue: 'youth',
+  },
+  CHILD_LABORER: {
+    label: 'Child Laborer Records',
+    shortLabel: 'Child Laborer',
+    destination: '/child-laborers',
+    queryValue: 'child-laborer',
+  },
+};
 
 const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader();
@@ -82,6 +106,9 @@ const ImportPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const profile = useSelector((state: RootState) => state.auth.profile);
   const isAdmin = profile?.role === 'ADMIN';
+  const [recordType, setRecordType] = useState<CategoryRecordType>(
+    searchParams.get('type') === 'child-laborer' ? 'CHILD_LABORER' : 'YOUTH_PROFILE',
+  );
   const [file, setFile] = useState<File | null>(null);
   const [categoryId, setCategoryId] = useState('');
   const [barangayId, setBarangayId] = useState('');
@@ -105,10 +132,10 @@ const ImportPage = () => {
   const availableCategories = useMemo(() => categories
     .filter((category) => (
       category.status === 'PUBLISHED'
-      && category.record_type === 'YOUTH_PROFILE'
+      && category.record_type === recordType
       && (isAdmin || ['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode))
     ))
-    .sort((a, b) => (b.filing_year ?? 0) - (a.filing_year ?? 0)), [categories, isAdmin]);
+    .sort((a, b) => (b.filing_year ?? 0) - (a.filing_year ?? 0)), [categories, isAdmin, recordType]);
 
   const selectedCategory = useMemo(
     () => availableCategories.find((category) => category.id === categoryId) ?? null,
@@ -121,13 +148,15 @@ const ImportPage = () => {
   const setupReady = Boolean(categoryId && destinationBarangayId && file && !loadingContext);
 
   const currentStep = completed ? 2 : batch ? 1 : 0;
+  const activeRecordType = batch?.record_type ?? recordType;
+  const activeRegistry = registryDetails[activeRecordType];
 
   useEffect(() => {
     const loadContext = async () => {
       setLoadingContext(true);
       try {
         const [categoryResponse, barangayResponse, assignedResponse] = await Promise.all([
-          categoryApi.list('YOUTH_PROFILE'),
+          categoryApi.list(),
           isAdmin ? barangayApi.list() : Promise.resolve([]),
           !isAdmin && profile?.barangayId
             ? barangayApi.getById(profile.barangayId)
@@ -141,7 +170,7 @@ const ImportPage = () => {
         const eligible = categoryResponse.data
           .filter((category) => (
             category.status === 'PUBLISHED'
-            && category.record_type === 'YOUTH_PROFILE'
+            && category.record_type === recordType
             && (isAdmin || ['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode))
           ))
           .sort((a, b) => (b.filing_year ?? 0) - (a.filing_year ?? 0));
@@ -154,7 +183,14 @@ const ImportPage = () => {
       }
     };
     void loadContext();
-  }, [isAdmin, profile?.barangayId]);
+  }, [isAdmin, profile?.barangayId, recordType]);
+
+  useEffect(() => {
+    if (loadingContext) return;
+    if (!availableCategories.some((category) => category.id === categoryId)) {
+      setCategoryId(availableCategories[0]?.id ?? '');
+    }
+  }, [availableCategories, categoryId, loadingContext]);
 
   useEffect(() => {
     if (!resumeBatchId) return;
@@ -167,6 +203,7 @@ const ImportPage = () => {
           throw new Error('Only a validated import can be resumed. Start a new import instead.');
         }
         setBatch(response.data);
+        setRecordType(response.data.record_type);
         setCategoryId(response.data.category_id);
         setBarangayId(response.data.barangay_id);
       } catch (error) {
@@ -217,6 +254,18 @@ const ImportPage = () => {
       return;
     }
     setFile(selectedFile);
+  };
+
+  const chooseRegistry = (nextRecordType: CategoryRecordType) => {
+    if (nextRecordType === recordType) return;
+    setRecordType(nextRecordType);
+    setCategoryId('');
+    setFile(null);
+    setFormError(null);
+    setSearchParams(
+      nextRecordType === 'CHILD_LABORER' ? { type: registryDetails[nextRecordType].queryValue } : {},
+      { replace: true },
+    );
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -303,7 +352,7 @@ const ImportPage = () => {
     setBatch(response.data.batch);
     setCompleted(response.data);
     setSearchParams({}, { replace: true });
-    showToast.success(`${response.data.imported_count.toLocaleString()} youth records imported`);
+    showToast.success(`${response.data.imported_count.toLocaleString()} ${activeRegistry.shortLabel.toLowerCase()} records imported`);
   };
 
   const resetImport = async () => {
@@ -328,8 +377,8 @@ const ImportPage = () => {
     <DashboardLayout>
       <Box maxW="1120px" mx="auto">
         <PageHeader
-          title="Import Youth Records"
-          description="Upload one barangay spreadsheet, review every issue, then import only clean and non-duplicate rows."
+          title="Import Registry Records"
+          description="Choose a registry, match its filing year and barangay, then review every row before anything is saved."
           actions={(
             <Button variant="outline" onClick={() => navigate('/imports')}>
               <LuArrowLeft aria-hidden="true" /> Import History
@@ -382,6 +431,43 @@ const ImportPage = () => {
           <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel">
             <Card.Body p={{ base: 4, md: 7 }}>
               <VStack align="stretch" gap={6}>
+                <Box>
+                  <Heading size="md">Choose the destination registry</Heading>
+                  <Text color="text.secondary" mt={2}>
+                    The selected registry controls the expected columns and prevents a Youth file from being filed as Child Laborer data, or vice versa.
+                  </Text>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3} mt={4}>
+                    {(Object.keys(registryDetails) as CategoryRecordType[]).map((type) => {
+                      const details = registryDetails[type];
+                      const selected = recordType === type;
+                      return (
+                        <Button
+                          key={type}
+                          variant="outline"
+                          minH="68px"
+                          height="auto"
+                          justifyContent="flex-start"
+                          textAlign="left"
+                          whiteSpace="normal"
+                          borderWidth="2px"
+                          borderColor={selected ? 'primary.600' : 'border.strong'}
+                          bg={selected ? 'primary.50' : 'surface'}
+                          color={selected ? 'primary.800' : 'text.primary'}
+                          onClick={() => chooseRegistry(type)}
+                          aria-pressed={selected}
+                        >
+                          <Box>
+                            <Text fontWeight="700">{details.label}</Text>
+                            <Text fontSize="xs" color="text.secondary" mt={1}>
+                              {type === 'YOUTH_PROFILE' ? 'KK youth profile dataset' : 'Child labor monitoring dataset'}
+                            </Text>
+                          </Box>
+                        </Button>
+                      );
+                    })}
+                  </SimpleGrid>
+                </Box>
+
                 <Box
                   borderWidth="1px"
                   borderColor="green.200"
@@ -408,11 +494,14 @@ const ImportPage = () => {
                         <LuFileSpreadsheet size={22} aria-hidden="true" />
                       </Flex>
                       <Box>
-                        <Badge colorPalette="green" mb={2}>Recommended</Badge>
-                        <Heading size="md">Start with the guided Excel template</Heading>
+                        <Badge colorPalette="green" mb={2}>{recordType === 'YOUTH_PROFILE' ? 'Recommended' : 'Round-trip ready'}</Badge>
+                        <Heading size="md">
+                          {recordType === 'YOUTH_PROFILE' ? 'Start with the guided Excel template' : 'Use an exported Child Laborer CSV'}
+                        </Heading>
                         <Text color="text.secondary" mt={2} maxW="68ch">
-                          Its dropdown choices match the Youth Record form, so names, classifications,
-                          education, work status, and Yes/No answers arrive in a consistent format.
+                          {recordType === 'YOUTH_PROFILE'
+                            ? 'Its dropdown choices match the Youth Record form, so classifications, education, work status, and Yes/No answers arrive consistently.'
+                            : 'Filter the Child Laborer list by year, barangay, status, or search, then download CSV. That same file can be checked and imported here without remapping columns.'}
                         </Text>
                       </Box>
                     </HStack>
@@ -421,18 +510,26 @@ const ImportPage = () => {
                       variant="solid"
                       minH="44px"
                       flexShrink={0}
-                      onClick={handleDownloadTemplate}
-                      loading={downloading}
+                      onClick={recordType === 'YOUTH_PROFILE'
+                        ? handleDownloadTemplate
+                        : () => navigate('/child-laborers')}
+                      loading={recordType === 'YOUTH_PROFILE' && downloading}
                     >
-                      <LuDownload aria-hidden="true" /> Download Guided Template
+                      {recordType === 'YOUTH_PROFILE'
+                        ? <><LuDownload aria-hidden="true" /> Download Guided Template</>
+                        : <>Open Child Laborer Records</>}
                     </Button>
                   </Flex>
                   <SimpleGrid columns={{ base: 1, sm: 3 }} gap={3} mt={4}>
-                    {[
+                    {(recordType === 'YOUTH_PROFILE' ? [
                       'Built-in dropdown choices',
                       'Required fields clearly marked',
                       'Instructions and field examples',
-                    ].map((benefit) => (
+                    ] : [
+                      'Registry and filing year embedded',
+                      'Current filters carried into CSV',
+                      'Custom fields preserved as JSON',
+                    ]).map((benefit) => (
                       <HStack key={benefit} gap={2} align="flex-start">
                         <LuCircleCheck color="var(--chakra-colors-green-700)" aria-hidden="true" />
                         <Text fontSize="sm" color="text.secondary">{benefit}</Text>
@@ -445,7 +542,9 @@ const ImportPage = () => {
                   <Heading size="md">1. Confirm the import destination</Heading>
                   <Text color="text.secondary" mt={2}>
                     Choose carefully: every ready row will be filed under this category and barangay.
-                    Age eligibility is calculated on December 31 of the selected filing year.
+                    {recordType === 'YOUTH_PROFILE'
+                      ? ' Youth age eligibility is calculated on December 31 of the selected filing year.'
+                      : ' The file metadata must match the selected Child Laborer filing year.'}
                   </Text>
                 </Box>
 
@@ -491,8 +590,10 @@ const ImportPage = () => {
                 <Box>
                   <Heading size="md">2. Add the completed spreadsheet</Heading>
                   <Text color="text.secondary" mt={2}>
-                    Guided templates and official KK workbooks are supported. CSV files are accepted,
-                    but only the guided .xlsx template includes dropdown validation. Maximum file size: 10 MB.
+                    {recordType === 'YOUTH_PROFILE'
+                      ? 'Guided templates, official KK workbooks, and Youth CSV exports are supported. Only the guided .xlsx template includes dropdown validation.'
+                      : 'Use a Child Laborer CSV exported by this system. Registry, filing year, barangay, required fields, and duplicates are checked before import.'}{' '}
+                    Maximum file size: 10 MB.
                   </Text>
                 </Box>
 
@@ -572,7 +673,7 @@ const ImportPage = () => {
                   <LuInfo aria-hidden="true" />
                   <Box>
                     <Alert.Title>Nothing is imported during checking</Alert.Title>
-                    <Text mt={1}>You will review ready, invalid, and duplicate rows before any youth record is created.</Text>
+                    <Text mt={1}>You will review ready, invalid, and duplicate rows before any {activeRegistry.shortLabel.toLowerCase()} record is created.</Text>
                   </Box>
                 </Alert.Root>
 
@@ -605,7 +706,7 @@ const ImportPage = () => {
                     </HStack>
                     <Heading size="md">Review before importing</Heading>
                     <Text color="text.secondary" mt={2}>
-                      {batch.barangay_name ?? 'Selected barangay'} · {batch.category_name ?? 'Youth Profile'}{batch.filing_year ? ` (${batch.filing_year})` : ''}
+                      {activeRegistry.label} · {batch.barangay_name ?? 'Selected barangay'} · {batch.category_name ?? activeRegistry.shortLabel}{batch.filing_year ? ` (${batch.filing_year})` : ''}
                     </Text>
                   </Box>
                   <Button variant="outline" minH="44px" onClick={() => void resetImport()}>
@@ -693,7 +794,7 @@ const ImportPage = () => {
                 <Box maxW="680px">
                   <Heading size="sm">Validation results</Heading>
                   <Text color="text.muted" fontSize="sm" mt={1} lineHeight="1.5">
-                    Every result stays tied to its exact source row, recognized youth, import decision, and field-level finding.
+                    Every result stays tied to its exact source row, recognized person, import decision, and field-level finding.
                   </Text>
                 </Box>
                 <Badge variant="outline" color="text.secondary" px={2.5} py={1.5} borderRadius="md">
@@ -732,7 +833,7 @@ const ImportPage = () => {
                 <Box>
                   <Heading size="lg">Import complete</Heading>
                   <Text color="text.secondary" mt={3}>
-                    {completed.imported_count.toLocaleString()} youth records were added to {batch?.barangay_name ?? 'the selected barangay'}.
+                    {completed.imported_count.toLocaleString()} {activeRegistry.shortLabel.toLowerCase()} records were added to {batch?.barangay_name ?? 'the selected barangay'}.
                   </Text>
                 </Box>
                 <SimpleGrid columns={3} gap={3} width="full">
@@ -741,7 +842,7 @@ const ImportPage = () => {
                   <Box p={4} bg="orange.50" borderRadius="md"><Text fontWeight="700" fontSize="2xl">{completed.duplicate_rows}</Text><Text fontSize="sm">Duplicates</Text></Box>
                 </SimpleGrid>
                 <Flex gap={3} wrap="wrap" justify="center" width="full">
-                  <Button colorPalette="green" minH="44px" onClick={() => navigate('/youth-records')}>View Youth Records</Button>
+                  <Button colorPalette="green" minH="44px" onClick={() => navigate(activeRegistry.destination)}>View {activeRegistry.label}</Button>
                   <Button variant="outline" minH="44px" onClick={() => navigate('/imports')}>Import History</Button>
                   <Button variant="ghost" minH="44px" onClick={() => void resetImport()}><LuRefreshCw /> New Import</Button>
                 </Flex>
@@ -754,8 +855,8 @@ const ImportPage = () => {
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={({ open }) => setConfirmOpen(open)}
-        title="Import validated youth records?"
-        description={`This will create ${batch?.valid_rows.toLocaleString() ?? 0} submitted youth records for ${batch?.barangay_name ?? 'the selected barangay'}. Invalid and duplicate rows will remain skipped.`}
+        title={`Import validated ${activeRegistry.shortLabel.toLowerCase()} records?`}
+        description={`This will create ${batch?.valid_rows.toLocaleString() ?? 0} ${activeRegistry.shortLabel.toLowerCase()} records for ${batch?.barangay_name ?? 'the selected barangay'}. Invalid and duplicate rows will remain skipped.`}
         confirmLabel="Confirm Import"
         onConfirm={handleCommit}
       />

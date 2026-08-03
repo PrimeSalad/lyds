@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Box, Button, Dialog, Field, HStack, IconButton, Input, NativeSelect, Portal, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Dialog, Field, HStack, IconButton, Input, NativeSelect, Portal, SimpleGrid, Text, VStack } from '@chakra-ui/react';
 import { useSelector } from 'react-redux';
 import { LuDownload, LuFileSpreadsheet, LuPlus, LuX } from 'react-icons/lu';
 import { type RootState } from '../../../../redux/store';
@@ -51,6 +51,9 @@ const YouthRecordListPage = () => {
   const [filingYear, setFilingYear] = useState('');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportYear, setExportYear] = useState('');
+  const [exportCategoryId, setExportCategoryId] = useState('');
+  const [exportBarangayId, setExportBarangayId] = useState('');
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('csv');
   const [exporting, setExporting] = useState(false);
   const [bulkApproveOpen, setBulkApproveOpen] = useState(false);
   const [sort, setSort] = useState<SortValue>(isAdmin ? 'barangay-asc' : 'newest');
@@ -71,6 +74,10 @@ const YouthRecordListPage = () => {
       .filter((category) => category.filing_year === year)
       .reduce((total, category) => total + (category.record_count ?? 0), 0),
   })), [categories, uniqueYears]);
+  const exportCategories = useMemo(
+    () => categoriesForYear(categories, exportYear ? Number(exportYear) : null),
+    [categories, exportYear],
+  );
 
   useEffect(() => {
     if (exportYears.length === 0) {
@@ -81,6 +88,12 @@ const YouthRecordListPage = () => {
       setExportYear(String(exportYears[0].year));
     }
   }, [exportYear, exportYears]);
+
+  useEffect(() => {
+    if (!exportCategories.some((category) => category.id === exportCategoryId)) {
+      setExportCategoryId(exportCategories[0]?.id ?? '');
+    }
+  }, [exportCategories, exportCategoryId]);
 
   useEffect(() => {
     if (categoryId && !yearCategories.some((category) => category.id === categoryId)) setCategoryId('');
@@ -303,30 +316,47 @@ const YouthRecordListPage = () => {
       ? filingYear
       : String(uniqueYears[0] ?? '');
     setExportYear(preferredYear);
+    const preferredCategory = categoriesForYear(categories, Number(preferredYear))
+      .find((category) => category.id === categoryId)
+      ?? categoriesForYear(categories, Number(preferredYear))[0];
+    setExportCategoryId(preferredCategory?.id ?? '');
+    setExportBarangayId(barangayId);
     setExportDialogOpen(true);
   };
 
   const handleExport = async () => {
     const selectedYear = Number(exportYear);
     if (!Number.isInteger(selectedYear)) return;
+    if (!exportCategoryId) return;
+    if (exportFormat === 'csv' && isAdmin && !exportBarangayId) {
+      showToast.error('Select one barangay so the CSV can be re-imported safely.');
+      return;
+    }
 
     setExporting(true);
     try {
-      const blob = await youthRecordApi.exportFilingYear(selectedYear);
+      const blob = await youthRecordApi.exportFilingYear(selectedYear, exportFormat, {
+        categoryId: exportCategoryId,
+        barangayId: isAdmin ? exportBarangayId || undefined : undefined,
+        status: status || undefined,
+      });
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `KK Youth Profile ${selectedYear}.xlsx`;
+      const fileName = `KK Youth Profile ${selectedYear}.${exportFormat}`;
+      anchor.download = fileName;
       anchor.click();
       window.URL.revokeObjectURL(url);
       setExportDialogOpen(false);
       showToast.success({
-        title: 'Excel export downloaded',
-        description: `KK Youth Profile ${selectedYear}.xlsx contains the complete ${selectedYear} dataset available to your account.`,
+        title: `${exportFormat.toUpperCase()} export downloaded`,
+        description: exportFormat === 'csv'
+          ? `${fileName} is ready to check and re-import from Import Records.`
+          : `${fileName} contains the complete ${selectedYear} dataset available to your account.`,
       });
     } catch (error) {
       showToast.error({
-        title: 'Excel export failed',
+        title: `${exportFormat.toUpperCase()} export failed`,
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     } finally {
@@ -393,7 +423,7 @@ const YouthRecordListPage = () => {
               </Button>
             )}
             <Button variant="outline" colorPalette="green" onClick={openExportDialog} disabled={exportYears.length === 0}>
-              <LuDownload aria-hidden="true" /> Export Excel
+              <LuDownload aria-hidden="true" /> Export Records
             </Button>
             <Button colorPalette="green" onClick={() => navigate('/youth-records/new')}>
               <LuPlus aria-hidden="true" /> Add Record
@@ -494,7 +524,7 @@ const YouthRecordListPage = () => {
                   </Box>
                   <Box>
                     <Dialog.Title fontFamily="heading" fontWeight="650">Export Youth Records</Dialog.Title>
-                    <Text color="text.muted" fontSize="sm" mt={1}>Download one complete filing year.</Text>
+                    <Text color="text.muted" fontSize="sm" mt={1}>Choose the exact annual dataset and file format.</Text>
                   </Box>
                 </HStack>
               </Dialog.Header>
@@ -520,14 +550,86 @@ const YouthRecordListPage = () => {
                       <NativeSelect.Indicator />
                     </NativeSelect.Root>
                   </Field.Root>
+                  <Field.Root>
+                    <Field.Label htmlFor="export-category" fontWeight="600" fontSize="sm">
+                      Youth Registry category
+                    </Field.Label>
+                    <NativeSelect.Root width="full" disabled={exporting || exportCategories.length === 0}>
+                      <NativeSelect.Field
+                        id="export-category"
+                        value={exportCategoryId}
+                        onChange={(event) => setExportCategoryId(event.target.value)}
+                        minH="44px"
+                      >
+                        {exportCategories.map((category) => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Field.Root>
+                  {isAdmin && (
+                    <Field.Root required={exportFormat === 'csv'}>
+                      <Field.Label htmlFor="export-barangay" fontWeight="600" fontSize="sm">
+                        Barangay {exportFormat === 'csv' && <Field.RequiredIndicator />}
+                      </Field.Label>
+                      <NativeSelect.Root width="full" disabled={exporting}>
+                        <NativeSelect.Field
+                          id="export-barangay"
+                          value={exportBarangayId}
+                          onChange={(event) => setExportBarangayId(event.target.value)}
+                          minH="44px"
+                        >
+                          <option value="">{exportFormat === 'csv' ? 'Select one barangay' : 'All barangays'}</option>
+                          {barangays.map((barangay) => (
+                            <option key={barangay.id} value={barangay.id}>{barangay.name}</option>
+                          ))}
+                        </NativeSelect.Field>
+                        <NativeSelect.Indicator />
+                      </NativeSelect.Root>
+                      <Field.HelperText>
+                        {exportFormat === 'csv'
+                          ? 'Imports accept one destination barangay per batch.'
+                          : 'Excel may include all barangays or one selected barangay.'}
+                      </Field.HelperText>
+                    </Field.Root>
+                  )}
+                  <Field.Root>
+                    <Field.Label fontWeight="600" fontSize="sm">File format</Field.Label>
+                    <SimpleGrid columns={2} gap={3}>
+                      {(['csv', 'xlsx'] as const).map((format) => {
+                        const selected = exportFormat === format;
+                        return (
+                          <Button
+                            key={format}
+                            minH="52px"
+                            variant="outline"
+                            borderWidth="2px"
+                            borderColor={selected ? 'primary.600' : 'border.strong'}
+                            bg={selected ? 'primary.50' : 'surface'}
+                            color={selected ? 'primary.800' : 'text.primary'}
+                            onClick={() => setExportFormat(format)}
+                            aria-pressed={selected}
+                            disabled={exporting}
+                          >
+                            {format === 'csv' ? 'CSV · Re-importable' : 'Excel · Print-ready'}
+                          </Button>
+                        );
+                      })}
+                    </SimpleGrid>
+                  </Field.Root>
                   <Box p={4} bg="surface.muted" borderWidth="1px" borderColor="border" borderRadius="md">
-                    <Text fontWeight="700" fontSize="sm">Official KK youth profile layout</Text>
+                    <Text fontWeight="700" fontSize="sm">
+                      {exportFormat === 'csv' ? 'Import-compatible Youth dataset' : 'Official KK youth profile layout'}
+                    </Text>
                     <Text color="text.secondary" fontSize="sm" lineHeight="1.6" mt={1}>
-                      Includes all non-deleted records for the selected year, grouped by barangay with formatted headers, birthdays, and print-ready columns. Barangay access is enforced automatically.
+                      {exportFormat === 'csv'
+                        ? 'Preserves registry, filing year, category fields, and one barangay scope. Select the same destination on the Imports page to validate it.'
+                        : 'Includes all non-deleted records for the selected year, grouped by barangay with formatted headers, birthdays, and print-ready columns. Barangay access is enforced automatically.'}
                     </Text>
                   </Box>
                   <Text color="text.muted" fontSize="sm">
-                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {exportYear || 'Year'}.xlsx</Text>
+                    Filename: <Text as="span" fontWeight="700" color="text.secondary">KK Youth Profile {exportYear || 'Year'}.{exportFormat}</Text>
                   </Text>
                 </VStack>
               </Dialog.Body>
@@ -535,8 +637,14 @@ const YouthRecordListPage = () => {
                 <Button width={{ base: 'full', sm: 'auto' }} variant="outline" onClick={() => setExportDialogOpen(false)} disabled={exporting}>
                   Cancel
                 </Button>
-                <Button width={{ base: 'full', sm: 'auto' }} colorPalette="green" onClick={handleExport} loading={exporting} disabled={!exportYear}>
-                  <LuDownload aria-hidden="true" /> Download Excel
+                <Button
+                  width={{ base: 'full', sm: 'auto' }}
+                  colorPalette="green"
+                  onClick={handleExport}
+                  loading={exporting}
+                  disabled={!exportYear || !exportCategoryId || (exportFormat === 'csv' && isAdmin && !exportBarangayId)}
+                >
+                  <LuDownload aria-hidden="true" /> Download {exportFormat.toUpperCase()}
                 </Button>
               </Dialog.Footer>
               <Dialog.CloseTrigger asChild>

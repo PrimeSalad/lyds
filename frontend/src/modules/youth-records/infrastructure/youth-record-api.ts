@@ -167,8 +167,15 @@ export const youthRecordApi = {
     return await apiClient.request<{ data: AuditLog[] }>(`/youth-records/${id}/history`);
   },
 
-  async exportFilingYear(filingYear: number): Promise<Blob> {
-    const query = new URLSearchParams({ format: 'xlsx', filingYear: filingYear.toString() });
+  async exportFilingYear(
+    filingYear: number,
+    format: 'csv' | 'xlsx' = 'xlsx',
+    filters: { categoryId?: string; barangayId?: string; status?: string } = {},
+  ): Promise<Blob> {
+    const query = new URLSearchParams({ format, filingYear: filingYear.toString() });
+    if (filters.categoryId) query.set('categoryId', filters.categoryId);
+    if (filters.barangayId) query.set('barangayId', filters.barangayId);
+    if (filters.status) query.set('status', filters.status);
     return await apiClient.request<Blob>(`/reports/export?${query.toString()}`);
   },
 

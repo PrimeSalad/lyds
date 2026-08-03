@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   Text,
 } from '@chakra-ui/react';
-import { LuDownload, LuFilePlus2, LuSearch } from 'react-icons/lu';
+import { LuDownload, LuFilePlus2, LuSearch, LuUpload } from 'react-icons/lu';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { type RootState } from '../../../../redux/store';
@@ -194,7 +194,12 @@ const ChildLaborerListPage = () => {
         search: deferredSearch || undefined,
       });
       downloadBlob(blob, `Child Laborers ${filingYear}.${format}`);
-      showToast.success({ title: 'Export ready', description: `The ${filingYear} child laborer list was downloaded.` });
+      showToast.success({
+        title: 'Export ready',
+        description: format === 'csv'
+          ? `The filtered ${filingYear} CSV is ready to validate on the Imports page.`
+          : `The filtered ${filingYear} child laborer workbook was downloaded.`,
+      });
     } catch (error) {
       showToast.error({
         title: 'Export failed',
@@ -342,9 +347,14 @@ const ChildLaborerListPage = () => {
         description="Maintain the protected yearly consolidation, case status, birthdays, education, work, and parent or guardian details."
         actions={(
           <HStack gap={2} wrap="wrap">
-            <Button minH="44px" variant="outline" onClick={() => void handleExport('csv')} loading={exporting} disabled={filingYear === null}>CSV</Button>
+            <Button minH="44px" variant="outline" onClick={() => void handleExport('csv')} loading={exporting} disabled={filingYear === null}>
+              <LuDownload aria-hidden="true" /> Export CSV
+            </Button>
             <Button minH="44px" variant="outline" onClick={() => void handleExport('xlsx')} loading={exporting} disabled={filingYear === null}>
               <LuDownload aria-hidden="true" /> Export Excel
+            </Button>
+            <Button minH="44px" variant="outline" onClick={() => navigate('/imports/new?type=child-laborer')}>
+              <LuUpload aria-hidden="true" /> Import CSV
             </Button>
             <Button minH="44px" colorPalette="green" onClick={() => navigate('/child-laborers/new')}>
               <LuFilePlus2 aria-hidden="true" /> Add Record

@@ -14,7 +14,11 @@ export const commitImport = async (
   if (batch.status !== 'VALIDATED') throw IMPORT_ERRORS.importAlreadyCommitted();
   if (batch.valid_rows < 1) throw IMPORT_ERRORS.noValidRows();
 
-  const result = await importRepository.commitBatchRows(batchId, authContext.profileId);
+  const result = await importRepository.commitBatchRows(
+    batchId,
+    authContext.profileId,
+    batch.record_type,
+  );
 
   try {
     await auditService.log({
@@ -29,6 +33,7 @@ export const commitImport = async (
         invalid_rows: result.invalid_rows,
         duplicate_rows: result.duplicate_rows,
         filing_year: batch.filing_year,
+        record_type: batch.record_type,
       },
     });
   } catch (error) {

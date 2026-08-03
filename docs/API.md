@@ -22,7 +22,7 @@ All groups except process health require a valid bearer token with a verified `a
 | `/auth` | Current authorization context, account settings, and password-change completion | AAL2 signed-in user |
 | `/youth-records` | Profiles, workflow actions, history | Barangay-scoped; admin-only review actions |
 | `/child-laborers` | Yearly child laborer registry, status summaries, archival, and consolidation exports | AAL2 and barangay-scoped; administrators can access all barangays |
-| `/imports` | Template, validation, batches, commit, error files | Barangay-scoped |
+| `/imports` | Youth/Child registry validation, batches, atomic commit, template, and error files | Barangay-scoped |
 | `/reports` | Dashboard, summaries, demographics, barangay reporting, exports | Scoped; cross-barangay view is admin-only |
 | `/announcements` | Visible announcements and management | Reads scoped; writes admin-only |
 | `/categories` | Registry-scoped annual categories and custom fields (`recordType=YOUTH_PROFILE` or `CHILD_LABORER`) | Reads scoped; writes admin-only |
@@ -68,7 +68,7 @@ The Child Laborer form loads maintained `CHILD_LABORER_HIGHEST_GRADE`, `CHILD_LA
 
 Every child laborer write requires a published `CHILD_LABORER` category. The category owns the filing year and can define additional custom fields; the API rejects cross-registry categories, year mismatches, unavailable SK permissions, and missing required custom values.
 
-The export endpoint requires a filing year and produces either CSV or the print-ready official XLSX column layout. User-entered spreadsheet cells are neutralized when they begin with formula control characters. SK accounts are always restricted to their active barangay assignment even if a different `barangayId` is supplied.
+The export endpoint requires a filing year and produces either CSV or the print-ready official XLSX column layout. Child CSV exports follow the active category, year, barangay, status, and search filters. Youth and Child CSV output embeds registry/year metadata and custom values so it can be validated and committed through `/imports` without column remapping. User-entered spreadsheet cells are neutralized when they begin with formula control characters. SK accounts are always restricted to their active barangay assignment even if a different `barangayId` is supplied.
 
 ## Adding or changing an endpoint
 

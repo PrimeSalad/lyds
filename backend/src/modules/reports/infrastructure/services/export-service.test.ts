@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import ExcelJS from 'exceljs';
+import { rowValidator, type ValidationContext } from '../../../imports/infrastructure/services/row-validator';
+import { spreadsheetParser } from '../../../imports/infrastructure/services/spreadsheet-parser';
 import { exportService } from './export-service';
 
 describe('exportService', () => {
@@ -14,11 +16,60 @@ describe('exportService', () => {
       voted_last_election: false,
       attended_kk_assembly: true,
       kk_assembly_count: 2,
-    }]).toString('utf8');
+    }], { filingYear: 2026 }).toString('utf8');
 
-    expect(csv).toContain('"ID","Status","Barangay"');
+    expect(csv).toContain('"Registry","Filing Year","ID","Status","Barangay"');
+    expect(csv).toContain('"YOUTH_PROFILE","2026"');
     expect(csv).toContain('"\'=HYPERLINK(""bad"")"');
     expect(csv).toContain('"Dela, Cruz"');
+  });
+
+  it('round-trips an exported Youth CSV through import validation', async () => {
+    const csv = exportService.generateCsv([{
+      id: 'record-1',
+      status: 'APPROVED',
+      barangay: { name: 'Tabi' },
+      first_name: 'Ana',
+      middle_name: 'M.',
+      last_name: 'Dela Cruz',
+      birth_date: '2000-01-15',
+      sex: { label: 'Female' },
+      civil_status: { label: 'Single' },
+      youth_classification: { label: 'Out of School Youth' },
+      youth_age_group: { label: 'Young Adult' },
+      work_status: { label: 'Student' },
+      educational_attainment: { label: 'College Level' },
+      is_registered_voter: false,
+      voted_last_election: false,
+      attended_kk_assembly: false,
+      kk_assembly_count: 0,
+      custom_values: { referral_code: 'R-1' },
+    }], { filingYear: 2026 });
+    const parsed = await spreadsheetParser.parse(csv, 'text/csv', 'youth-2026.csv', 'YOUTH_PROFILE');
+    const context: ValidationContext = {
+      recordType: 'YOUTH_PROFILE',
+      filingYear: 2026,
+      barangayName: 'Tabi',
+      categoryFields: [{ field_key: 'referral_code', label: 'Referral code', is_required: true, is_active: true }],
+      referenceOptions: [
+        { id: 'age-adult', group_code: 'YOUTH_AGE_GROUP', code: 'YOUNG_ADULT', label: 'Young Adult' },
+        { id: 'sex-female', group_code: 'SEX_ASSIGNED_AT_BIRTH', code: 'FEMALE', label: 'Female' },
+        { id: 'civil-single', group_code: 'CIVIL_STATUS', code: 'SINGLE', label: 'Single' },
+        { id: 'class-osy', group_code: 'YOUTH_CLASSIFICATION', code: 'OUT_OF_SCHOOL', label: 'Out of School Youth' },
+        { id: 'education-college', group_code: 'EDUCATIONAL_ATTAINMENT', code: 'COLLEGE', label: 'College Level' },
+        { id: 'work-student', group_code: 'WORK_STATUS', code: 'STUDENT', label: 'Student' },
+      ],
+    };
+    const result = rowValidator.validate(parsed.rows[0].data, context);
+
+    expect(result.validationErrors).toEqual([]);
+    expect(result.isValid).toBe(true);
+    expect(result.normalizedData).toMatchObject({
+      first_name: 'Ana',
+      last_name: 'Dela Cruz',
+      birth_date: '2000-01-15',
+      custom_values: expect.objectContaining({ referral_code: 'R-1' }),
+    });
   });
 
   it('generates the official filing-year XLSX layout with calculated age and protected text', async () => {

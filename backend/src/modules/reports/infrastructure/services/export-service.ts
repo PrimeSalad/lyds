@@ -2,11 +2,12 @@ import ExcelJS from 'exceljs';
 import { computeAgeForFilingYear } from '../../../youth-records/domain/rules/age-computation';
 
 const csvHeaders = [
+  'Registry', 'Filing Year',
   'ID', 'Status', 'Barangay', 'First Name', 'Middle Name', 'Last Name', 'Suffix',
   'Birth Date', 'Sex', 'Civil Status', 'Youth Classification', 'Age Group',
   'Work Status', 'Educational Attainment', 'Contact Number', 'Email',
   'Purok', 'Registered Voter', 'Voted Last Election',
-  'Attended KK Assembly', 'KK Assembly Count', 'Created At',
+  'Attended KK Assembly', 'KK Assembly Count', 'Created At', 'Custom Values JSON',
 ];
 
 const excelHeaderGroups = [
@@ -57,6 +58,13 @@ const birthDateParts = (birthDate: unknown) => {
   return { month, day: Number(match[3]), year: Number(match[1]) };
 };
 
+const csvBirthDate = (birthDate: unknown) => {
+  const match = typeof birthDate === 'string'
+    ? /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate)
+    : null;
+  return match ? `${match[2]}/${match[3]}/${match[1]}` : sanitize(birthDate);
+};
+
 const exportAge = (row: any, filingYear?: number): number | string => {
   if (!filingYear || typeof row.birth_date !== 'string') return row.age_at_submission ?? '';
   const age = computeAgeForFilingYear(row.birth_date, filingYear);
@@ -93,7 +101,9 @@ const excelRow = (row: any, index: number, filingYear?: number) => {
   ];
 };
 
-const csvRow = (row: any) => [
+const csvRow = (row: any, filingYear?: number) => [
+  'YOUTH_PROFILE',
+  filingYear ?? '',
   sanitize(row.id),
   sanitize(row.status),
   relationValue(row.barangay, 'name'),
@@ -101,7 +111,7 @@ const csvRow = (row: any) => [
   sanitize(row.middle_name),
   sanitize(row.last_name),
   sanitize(row.suffix),
-  sanitize(row.birth_date),
+  csvBirthDate(row.birth_date),
   relationValue(row.sex, 'label'),
   relationValue(row.civil_status, 'label'),
   relationValue(row.youth_classification, 'label'),
@@ -116,6 +126,7 @@ const csvRow = (row: any) => [
   booleanLabel(row.attended_kk_assembly),
   sanitize(row.kk_assembly_count),
   sanitize(row.created_at),
+  JSON.stringify(row.custom_values ?? {}),
 ];
 
 const csvCell = (value: string) => `"${value.replace(/"/g, '""')}"`;
@@ -264,8 +275,8 @@ export const exportService = {
     return Buffer.from(buffer as ArrayBuffer);
   },
 
-  generateCsv(data: any[]): Buffer {
-    const rows = [csvHeaders, ...data.map(csvRow)];
+  generateCsv(data: any[], options: Pick<ExportOptions, 'filingYear'> = {}): Buffer {
+    const rows = [csvHeaders, ...data.map((row) => csvRow(row, options.filingYear))];
     const csv = rows.map((row) => row.map((value) => csvCell(String(value))).join(',')).join('\r\n');
     return Buffer.from(`\uFEFF${csv}`, 'utf8');
   },

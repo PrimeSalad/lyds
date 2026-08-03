@@ -3,8 +3,10 @@ import type { ValidationContext } from './row-validator';
 import { rowValidator } from './row-validator';
 
 const context: ValidationContext = {
+  recordType: 'YOUTH_PROFILE',
   filingYear: 2026,
   barangayName: 'Tabi',
+  categoryFields: [],
   referenceOptions: [
     { id: 'age-child', group_code: 'YOUTH_AGE_GROUP', code: 'CHILD_YOUTH', label: 'Child Youth' },
     { id: 'age-core', group_code: 'YOUTH_AGE_GROUP', code: 'CORE_YOUTH', label: 'Core Youth' },

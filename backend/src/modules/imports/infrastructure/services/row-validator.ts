@@ -3,6 +3,10 @@ import {
   computeAgeGroup,
   isEligibleYouthAge,
 } from '../../../youth-records/domain/rules/age-computation';
+import {
+  validateRegistryMetadata,
+  type RegistryImportContext,
+} from './registry-import-metadata';
 import { normalizeSpreadsheetHeader } from './spreadsheet-parser';
 
 export type ImportReferenceOption = {
@@ -13,10 +17,8 @@ export type ImportReferenceOption = {
   label: string;
 };
 
-export interface ValidationContext {
+export interface ValidationContext extends RegistryImportContext {
   referenceOptions: ImportReferenceOption[];
-  filingYear: number;
-  barangayName: string;
 }
 
 const monthNumbers: Record<string, number> = {
@@ -282,6 +284,7 @@ export const rowValidator = {
     const warnings: string[] = [];
     const normalizedData: Record<string, unknown> = {};
     const lookup = valueLookup(rawRow);
+    const exportedCustomValues = validateRegistryMetadata(lookup, ctx, errors);
 
     const fullName = getValue(lookup, ['NAME', 'FULL NAME', 'COMPLETE NAME']);
     const splitName = fullName ? splitDisplayName(fullName) : null;
@@ -451,6 +454,7 @@ export const rowValidator = {
     const homeAddress = getValue(lookup, ['HOME ADDRESS', 'ADDRESS']);
     const occupation = getValue(lookup, ['OCCUPATION', 'JOB']);
     normalizedData.custom_values = {
+      ...exportedCustomValues,
       ...(homeAddress ? { home_address: homeAddress } : {}),
       ...(occupation ? { occupation } : {}),
       ...(suppliedAgeGroup ? { source_age_group: suppliedAgeGroup } : {}),

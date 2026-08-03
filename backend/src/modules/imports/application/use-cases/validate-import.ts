@@ -4,6 +4,8 @@ import { barangayRepository } from '../../../barangays/infrastructure/repositori
 import { categoryRepository } from '../../../categories/infrastructure/repositories/category-repository';
 import type { ImportBatch, ImportRowResult } from '../../domain/entities/import-batch';
 import { importRepository } from '../../infrastructure/repositories/import-repository';
+import { childLaborerDuplicateChecker } from '../../infrastructure/services/child-laborer-duplicate-checker';
+import { childLaborerRowValidator } from '../../infrastructure/services/child-laborer-row-validator';
 import { duplicateChecker } from '../../infrastructure/services/duplicate-checker';
 import { rowValidator } from '../../infrastructure/services/row-validator';
 import { spreadsheetParser } from '../../infrastructure/services/spreadsheet-parser';
@@ -23,8 +25,8 @@ export const validateImport = async (input: ValidateImportInput): Promise<Import
     categoryRepository.getCategoryById(input.categoryId),
     barangayRepository.findById(input.barangayId),
   ]);
-  if (!category || category.status !== 'PUBLISHED' || category.record_type !== 'YOUTH_PROFILE') {
-    throw API_ERRORS.validation('Select a published youth profile category.');
+  if (!category || category.status !== 'PUBLISHED') {
+    throw API_ERRORS.validation('Select a published Youth Profile or Child Laborer category.');
   }
   if (input.actorRole === 'SK_OFFICIAL' && !['SK_FILLABLE', 'PUBLIC'].includes(category.permission_mode)) {
     throw API_ERRORS.forbidden('This category does not allow SK spreadsheet imports.');
@@ -45,20 +47,31 @@ export const validateImport = async (input: ValidateImportInput): Promise<Import
 
   try {
     const fileBuffer = Buffer.from(input.fileData, 'base64');
-    const parsed = await spreadsheetParser.parse(fileBuffer, input.fileType, input.fileName);
-    const { data: referenceOptions, error: referenceError } = await supabaseAdmin
-      .from('reference_options')
-      .select('id, group_code, category_code, code, label')
-      .eq('is_active', true);
-    if (referenceError) throw referenceError;
+    const parsed = await spreadsheetParser.parse(
+      fileBuffer,
+      input.fileType,
+      input.fileName,
+      category.record_type,
+    );
+    const referenceResult = category.record_type === 'YOUTH_PROFILE'
+      ? await supabaseAdmin
+        .from('reference_options')
+        .select('id, group_code, category_code, code, label')
+        .eq('is_active', true)
+      : { data: [], error: null };
+    if (referenceResult.error) throw referenceResult.error;
 
     const validationContext = {
-      referenceOptions: referenceOptions ?? [],
+      recordType: category.record_type,
+      referenceOptions: referenceResult.data ?? [],
       filingYear: category.filing_year,
       barangayName: barangay.name,
+      categoryFields: category.fields,
     };
     const validatedRows: Omit<ImportRowResult, 'id' | 'created_at'>[] = parsed.rows.map((sourceRow) => {
-      const result = rowValidator.validate(sourceRow.data, validationContext);
+      const result = category.record_type === 'CHILD_LABORER'
+        ? childLaborerRowValidator.validate(sourceRow.data, validationContext)
+        : rowValidator.validate(sourceRow.data, validationContext);
       const existingCustomValues = result.normalizedData.custom_values;
       result.normalizedData.custom_values = {
         ...(existingCustomValues && typeof existingCustomValues === 'object' ? existingCustomValues : {}),
@@ -77,11 +90,17 @@ export const validateImport = async (input: ValidateImportInput): Promise<Import
       };
     });
 
-    const duplicates = await duplicateChecker.checkDuplicates(
-      input.barangayId,
-      input.categoryId,
-      validatedRows,
-    );
+    const duplicates = category.record_type === 'CHILD_LABORER'
+      ? await childLaborerDuplicateChecker.checkDuplicates(
+        input.barangayId,
+        category.filing_year,
+        validatedRows,
+      )
+      : await duplicateChecker.checkDuplicates(
+        input.barangayId,
+        input.categoryId,
+        validatedRows,
+      );
     for (const [index, duplicate] of duplicates.entries()) {
       validatedRows[index].is_valid = false;
       validatedRows[index].is_duplicate = true;

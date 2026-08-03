@@ -205,6 +205,7 @@ const childLaborer = {
 const importBatch = {
   id: 'import-batch-1',
   category_id: category.id,
+  record_type: 'YOUTH_PROFILE',
   barangay_id: barangay.id,
   uploaded_by: 'profile-1',
   file_name: 'kk-youth-agot-2026.xlsx',

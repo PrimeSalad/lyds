@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added import-compatible CSV exports for both Youth and Child Laborer registries, including embedded registry/year metadata, preserved custom values, and Child Laborer atomic batch commits with duplicate protection.
+- Added a registry-aware Imports setup with an explicit Youth/Child destination choice, matching year/category guidance, direct Child Laborer export/import navigation, and registry labels in import history.
 - Added a non-secret Render deployment revision to the public health response for deterministic production rollout verification.
 - Rebuilt the Imports validation review as an audit-friendly desktop table and ordered mobile cards with exact sheet-row recognition, clear ready/correction/duplicate outcomes, separately rendered errors and warnings, a calmer summary strip, and a direct correction-report action.
 - Added registry-scoped Reference Data with a URL-preserved Youth/Child Laborer switcher, production-backed Child Laborer grade/work/occupation lists, resilient list management, and form suggestions that preserve verified free-text details.
@@ -34,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Youth Records can now export either a re-importable CSV or the existing print-ready Excel workbook; Child Laborer CSV downloads retain all active list filters and clearly link back to Imports.
+- Generalized the Imports validation review from Youth-only wording to recognized-person and registry-specific decisions while preserving its responsive audit table and mobile cards.
 - Refined the Imports validation review into a restrained audit surface with compact decision totals, exact source-row alignment, explicit recognized-youth and import-decision columns, field-level error and warning labels, and one continuous mobile results list instead of stacked status cards.
 - Redesigned the Youth Records import setup around a prominent guided-template step, clearer destination/file guidance, a pre-validation summary, and disabled checking until the required setup is complete; the Excel template now mirrors live Youth Record choices with reliable dropdown lists, marked required columns, 1,000 prepared rows, and an instructions/field guide sheet.
 - Removed the redundant blank Category column from the Child Laborer Records table while retaining its registry-scoped year and category filters.

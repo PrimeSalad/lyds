@@ -8,16 +8,16 @@ import type {
 import { toImportBatchPresentation } from './import-batch-presenter';
 
 const BATCH_SELECT = (
-  '*, barangay:barangays!barangay_id(name), category:categories!category_id(name, filing_year), '
+  '*, barangay:barangays!barangay_id(name), category:categories!category_id(name, filing_year, record_type), '
   + 'uploader:profiles!uploaded_by(full_name)'
 );
 
 export const importRepository = {
-  createBatch: async (input: Omit<ImportBatch, 'id' | 'created_at' | 'updated_at'>): Promise<ImportBatch> => {
+  createBatch: async (input: Omit<ImportBatch, 'id' | 'created_at' | 'updated_at' | 'record_type'>): Promise<ImportBatch> => {
     const { data, error } = await supabaseAdmin
       .from('import_batches')
       .insert(input)
-      .select()
+      .select(BATCH_SELECT)
       .single();
     if (error) throw error;
     return toImportBatchPresentation(data);
@@ -86,8 +86,15 @@ export const importRepository = {
     if (error) throw error;
   },
 
-  commitBatchRows: async (batchId: string, actorId: string): Promise<CommitImportResult> => {
-    const { data, error } = await supabaseAdmin.rpc('commit_youth_import_batch', {
+  commitBatchRows: async (
+    batchId: string,
+    actorId: string,
+    recordType: ImportBatch['record_type'],
+  ): Promise<CommitImportResult> => {
+    const functionName = recordType === 'CHILD_LABORER'
+      ? 'commit_child_laborer_import_batch'
+      : 'commit_youth_import_batch';
+    const { data, error } = await supabaseAdmin.rpc(functionName, {
       p_batch_id: batchId,
       p_actor_id: actorId,
     });

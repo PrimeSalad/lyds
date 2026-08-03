@@ -251,7 +251,7 @@ export const childLaborerService = {
       sort: { field: 'barangay_name', direction: 'asc' },
     });
     const buffer = input.format === 'csv'
-      ? childLaborerExportService.csv(records)
+      ? childLaborerExportService.csv(records, input.filingYear)
       : await childLaborerExportService.xlsx(records, input.filingYear);
 
     await auditService.log({

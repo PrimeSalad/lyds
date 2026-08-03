@@ -66,7 +66,7 @@ const outcomeConfig: Record<ValidationOutcome, {
   },
 };
 
-const youthName = (row: ImportRow) => {
+const recognizedRecordName = (row: ImportRow) => {
   const normalized = String(row.normalized_data?.display_name ?? '').trim();
   if (normalized) return normalized;
 
@@ -162,7 +162,7 @@ const ValidationFindings = ({ row }: { row: ImportRow }) => {
         <Flex align="flex-start" gap={2.5}>
           <Box color="orange.800" pt="3px" flexShrink={0}><LuCopy size={16} aria-hidden="true" /></Box>
           <Box>
-            <Text fontSize="sm" fontWeight="600">Existing youth record detected</Text>
+          <Text fontSize="sm" fontWeight="600">Existing registry record detected</Text>
             <Text mt={0.5} color="text.secondary" fontSize="sm" lineHeight="1.45">
               This source row will not create another record.
             </Text>
@@ -245,7 +245,7 @@ export const ImportValidationTable = ({
           <Table.Header>
             <Table.Row bg="surface.muted" borderBottomWidth="1px" borderColor="border.strong">
               <Table.ColumnHeader width="112px" px={4} py={3.5} fontSize="xs" fontWeight="700" letterSpacing="0.03em">Source row</Table.ColumnHeader>
-              <Table.ColumnHeader width="250px" px={4} py={3.5} fontSize="xs" fontWeight="700" letterSpacing="0.03em">Recognized youth</Table.ColumnHeader>
+              <Table.ColumnHeader width="250px" px={4} py={3.5} fontSize="xs" fontWeight="700" letterSpacing="0.03em">Recognized person</Table.ColumnHeader>
               <Table.ColumnHeader width="210px" px={4} py={3.5} fontSize="xs" fontWeight="700" letterSpacing="0.03em">Import decision</Table.ColumnHeader>
               <Table.ColumnHeader px={4} py={3.5} fontSize="xs" fontWeight="700" letterSpacing="0.03em">Validation details</Table.ColumnHeader>
             </Table.Row>
@@ -260,7 +260,7 @@ export const ImportValidationTable = ({
               </Table.Row>
             ) : rows.map((row, index) => {
               const outcome = outcomeFor(row);
-              const recognizedName = youthName(row);
+              const recognizedName = recognizedRecordName(row);
               const nameRecognized = recognizedName !== 'Name not recognized';
               return (
                 <Table.Row key={row.id} bg={index % 2 === 0 ? 'surface' : 'surface.muted'} _hover={{ bg: 'green.50' }}>
@@ -307,7 +307,7 @@ export const ImportValidationTable = ({
           </Box>
         ) : rows.map((row, index) => {
           const outcome = outcomeFor(row);
-          const recognizedName = youthName(row);
+          const recognizedName = recognizedRecordName(row);
           return (
             <Box
               key={row.id}
@@ -326,7 +326,7 @@ export const ImportValidationTable = ({
 
               <Box mt={4}>
                 <Text color="text.muted" fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em">
-                  Recognized youth
+                  Recognized person
                 </Text>
                 <Text mt={1} fontSize="md" fontWeight="700" lineHeight="1.4" overflowWrap="anywhere">{recognizedName}</Text>
                 <Text mt={1} color="text.secondary" fontSize="sm">{outcomeConfig[outcome].decision}</Text>

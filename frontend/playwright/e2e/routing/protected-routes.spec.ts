@@ -111,6 +111,22 @@ test.describe('Protected application routes', () => {
     ))).toBe(false);
   });
 
+  test('import setup switches cleanly to the Child Laborer CSV workflow', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await installApiMocks(page);
+    await page.goto('/imports/new');
+
+    await page.getByRole('button', { name: /Child Laborer Records/ }).click();
+
+    await expect(page).toHaveURL(/type=child-laborer/);
+    await expect(page.getByRole('heading', { name: 'Use an exported Child Laborer CSV' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open Child Laborer Records' })).toBeVisible();
+    await expect(page.getByLabel('Filing-year category')).toHaveValue('child-category-2026');
+    expect(await page.evaluate(() => (
+      document.documentElement.scrollWidth > document.documentElement.clientWidth
+    ))).toBe(false);
+  });
+
   test('SK officials cannot open administrator-only pages', async ({ page }) => {
     await installApiMocks(page, 'SK_OFFICIAL');
     await page.goto('/accounts');

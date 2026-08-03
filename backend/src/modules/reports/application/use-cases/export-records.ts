@@ -23,7 +23,7 @@ export const exportRecords = async ({
 }: ExportRecordsInput): Promise<Buffer> => {
   const data = await reportRepository.getExportData({ barangayId, categoryId, status, filingYear });
   const buffer = format === 'csv'
-    ? exportService.generateCsv(data)
+    ? exportService.generateCsv(data, { filingYear: filingYear ?? undefined })
     : await exportService.generateXlsx(data, { filingYear: filingYear ?? undefined });
   
   await auditService.log({

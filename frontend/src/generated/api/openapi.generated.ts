@@ -613,7 +613,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Export the yearly child laborer consolidation */
+        /**
+         * Export the yearly child laborer consolidation
+         * @description Applies the active year, category, barangay, status, and search scope.
+         *     CSV output is self-describing and can be uploaded to Imports under a
+         *     matching Child Laborer category without remapping its standard fields.
+         */
         get: {
             parameters: {
                 query: {
@@ -1475,11 +1480,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload and validate a youth spreadsheet
-         * @description Detects the spreadsheet header row, normalizes supported KK Youth Profile
-         *     columns, checks ages against December 31 of the selected filing year,
-         *     and marks duplicate names within that barangay and annual category.
-         *     This step does not create youth records.
+         * Upload and validate a registry spreadsheet
+         * @description Uses the selected category to choose Youth Profile or Child Laborer
+         *     parsing and validation. Generated CSV exports are accepted directly,
+         *     while embedded registry and filing-year metadata must match the selected
+         *     category. This step does not create records.
          */
         post: {
             parameters: {
@@ -1536,7 +1541,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download the youth spreadsheet template */
+        /** Download the guided youth spreadsheet template */
         get: {
             parameters: {
                 query?: never;
@@ -1679,7 +1684,7 @@ export interface paths {
         put?: never;
         /**
          * Commit a validated import atomically
-         * @description Creates submitted youth profiles for valid rows and rechecks duplicates under a transaction lock.
+         * @description Creates records in the batch category's registry and rechecks duplicates under a transaction lock.
          */
         post: {
             parameters: {
@@ -2002,8 +2007,10 @@ export interface paths {
          * Export youth records
          * @description Exports all non-deleted youth records in scope. When `filingYear` is
          *     supplied with XLSX format, the workbook uses the official KK Youth
-         *     Profile layout and filename `KK Youth Profile <year>.xlsx`. SK
-         *     officials are always restricted to their assigned barangay.
+         *     Profile layout and filename `KK Youth Profile <year>.xlsx`. CSV output
+         *     is self-describing and can be uploaded directly to Imports under a
+         *     matching Youth Profile category. SK officials are always restricted to
+         *     their assigned barangay.
          */
         get: {
             parameters: {
@@ -2438,7 +2445,10 @@ export interface components {
         /** @enum {string} */
         ImportBatchStatus: "UPLOADING" | "VALIDATING" | "VALIDATED" | "COMMITTING" | "COMMITTED" | "FAILED" | "CANCELLED";
         ValidateImportInput: {
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Published category that determines the registry and filing year for every imported row.
+             */
             categoryId: string;
             /**
              * Format: uuid
@@ -2458,6 +2468,7 @@ export interface components {
             id: string;
             /** Format: uuid */
             category_id: string;
+            record_type: components["schemas"]["CategoryRecordType"];
             /** Format: uuid */
             barangay_id: string;
             /** Format: uuid */

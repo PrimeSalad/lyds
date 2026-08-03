@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import stream from 'stream';
+import type { CategoryRecordType } from '../../../categories/domain/entities/category';
 import { IMPORT_ERRORS } from '../../domain/errors/import-errors';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -7,9 +8,13 @@ const MAX_ROWS = 5000;
 const HEADER_SCAN_LIMIT = 50;
 
 const knownHeaders = new Set([
+  'registry',
+  'filing year',
   'name',
   'first name',
+  'middle name',
   'last name',
+  'surname',
   'birthday',
   'birthday mm dd yy',
   'birth date',
@@ -29,6 +34,17 @@ const knownHeaders = new Set([
   'email address',
   'contact number',
   'contact no',
+  'gender',
+  'date of birth mm dd yy',
+  'attending school yes no',
+  'highest grade completed',
+  'nature of work',
+  'father',
+  'mother',
+  'guardian',
+  'parent guardian occupation',
+  'record status',
+  'remarks',
 ]);
 
 const youthDataHeaders = new Set([
@@ -61,6 +77,28 @@ const youthDataHeaders = new Set([
   'registered voter',
   'voted last election',
   'attended kk assembly',
+]);
+
+const childLaborerDataHeaders = new Set([
+  'name',
+  'full name',
+  'first name',
+  'middle name',
+  'last name',
+  'surname',
+  'birthday',
+  'birth date',
+  'date of birth mm dd yy',
+  'gender',
+  'sex',
+  'attending school yes no',
+  'attending school',
+  'highest grade completed',
+  'nature of work',
+  'father',
+  'mother',
+  'guardian',
+  'parent guardian occupation',
 ]);
 
 export const normalizeSpreadsheetHeader = (value: string) => value
@@ -112,9 +150,12 @@ const isCsv = (fileType: string, fileName: string) => (
   fileType.toLowerCase().includes('csv') || fileName.toLowerCase().endsWith('.csv')
 );
 
-const hasYouthData = (data: Record<string, string>) => Object.entries(data).some(([header, value]) => (
-  value !== '' && youthDataHeaders.has(normalizeSpreadsheetHeader(header))
-));
+const hasRecordData = (data: Record<string, string>, recordType: CategoryRecordType) => {
+  const dataHeaders = recordType === 'CHILD_LABORER' ? childLaborerDataHeaders : youthDataHeaders;
+  return Object.entries(data).some(([header, value]) => (
+    value !== '' && dataHeaders.has(normalizeSpreadsheetHeader(header))
+  ));
+};
 
 export type ParsedSpreadsheetRow = {
   rowNumber: number;
@@ -129,7 +170,12 @@ export type ParsedSpreadsheet = {
 };
 
 export const spreadsheetParser = {
-  parse: async (fileBuffer: Buffer, fileType: string, fileName: string): Promise<ParsedSpreadsheet> => {
+  parse: async (
+    fileBuffer: Buffer,
+    fileType: string,
+    fileName: string,
+    recordType: CategoryRecordType = 'YOUTH_PROFILE',
+  ): Promise<ParsedSpreadsheet> => {
     if (fileBuffer.length > MAX_FILE_SIZE) throw IMPORT_ERRORS.fileTooLarge();
 
     const workbook = new ExcelJS.Workbook();
@@ -162,7 +208,7 @@ export const spreadsheetParser = {
       if (!Object.values(data).some((value) => value !== '')) return;
       // Official templates often pre-number hundreds of unused rows. Structural
       // values such as No./region/barangay alone are not youth records.
-      if (!hasYouthData(data)) return;
+      if (!hasRecordData(data, recordType)) return;
       if (rows.length >= MAX_ROWS) throw IMPORT_ERRORS.tooManyRows();
       rows.push({ rowNumber, data });
     });

@@ -28,12 +28,12 @@ test('presents import validation outcomes and corrections with clear row recogni
 
   const duplicateRow = table.getByRole('row').filter({ hasText: 'Carla Mendoza' });
   await expect(duplicateRow).toContainText('Skipped — already recorded');
-  await expect(duplicateRow).toContainText('Existing youth record detected');
+  await expect(duplicateRow).toContainText('Existing registry record detected');
 
   await page.setViewportSize({ width: 375, height: 812 });
   const mobileResults = page.getByLabel('Spreadsheet validation results').filter({ visible: true });
   await expect(mobileResults).toContainText('Source row');
-  await expect(mobileResults).toContainText('Recognized youth');
+  await expect(mobileResults).toContainText('Recognized person');
   await expect(mobileResults).toContainText('Validation details');
   await expect(mobileResults).toContainText('Brandon Santos');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

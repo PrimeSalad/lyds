@@ -20,6 +20,13 @@ const flatHeaders = [
   'Remarks',
 ];
 
+const csvHeaders = [
+  'Registry',
+  'Filing Year',
+  ...flatHeaders,
+  'Custom Values JSON',
+];
+
 const groupHeaders = [
   'NO.',
   'BARANGAY',
@@ -189,8 +196,16 @@ export const childLaborerExportService = {
     return Buffer.from(await workbook.xlsx.writeBuffer() as ArrayBuffer);
   },
 
-  csv(records: any[]): Buffer {
-    const rows = [flatHeaders, ...records.map(exportRow)];
+  csv(records: any[], filingYear: number): Buffer {
+    const rows = [
+      csvHeaders,
+      ...records.map((record, index) => [
+        'CHILD_LABORER',
+        filingYear,
+        ...exportRow(record, index),
+        JSON.stringify(record.custom_values ?? {}),
+      ]),
+    ];
     const csv = rows.map((row) => row.map((value) => (
       `"${String(value ?? '').replace(/"/g, '""')}"`
     )).join(',')).join('\r\n');

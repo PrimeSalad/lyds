@@ -6,6 +6,9 @@ const relationField = (relation: any, field: string) => Array.isArray(relation)
 
 export const toImportBatchPresentation = (batch: any): ImportBatch => ({
   ...batch,
+  record_type: relationField(batch.category, 'record_type') === 'CHILD_LABORER'
+    ? 'CHILD_LABORER'
+    : 'YOUTH_PROFILE',
   duplicate_rows: batch.duplicate_rows ?? 0,
   barangay_name: relationField(batch.barangay, 'name'),
   category_name: relationField(batch.category, 'name'),

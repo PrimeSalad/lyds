@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: SK Youth Information Management System API
-  version: 1.7.0
+  version: 1.8.0
   description: |
     Contract-first definition for the SK Youth Information Management System.
     Authentication is handled by Supabase Auth. Protected endpoints require an
@@ -381,6 +381,10 @@ paths:
     get:
       tags: [app]
       summary: Export the yearly child laborer consolidation
+      description: |
+        Applies the active year, category, barangay, status, and search scope.
+        CSV output is self-describing and can be uploaded to Imports under a
+        matching Child Laborer category without remapping its standard fields.
       parameters:
         - in: query
           name: categoryId
@@ -868,12 +872,12 @@ paths:
   /api/v1/imports/validate:
     post:
       tags: [app]
-      summary: Upload and validate a youth spreadsheet
+      summary: Upload and validate a registry spreadsheet
       description: |
-        Detects the spreadsheet header row, normalizes supported KK Youth Profile
-        columns, checks ages against December 31 of the selected filing year,
-        and marks duplicate names within that barangay and annual category.
-        This step does not create youth records.
+        Uses the selected category to choose Youth Profile or Child Laborer
+        parsing and validation. Generated CSV exports are accepted directly,
+        while embedded registry and filing-year metadata must match the selected
+        category. This step does not create records.
       requestBody:
         required: true
         content:
@@ -902,7 +906,7 @@ paths:
   /api/v1/imports/template:
     get:
       tags: [app]
-      summary: Download the youth spreadsheet template
+      summary: Download the guided youth spreadsheet template
       responses:
         '200':
           description: XLSX import template
@@ -969,7 +973,7 @@ paths:
     post:
       tags: [app]
       summary: Commit a validated import atomically
-      description: Creates submitted youth profiles for valid rows and rechecks duplicates under a transaction lock.
+      description: Creates records in the batch category's registry and rechecks duplicates under a transaction lock.
       responses:
         '200':
           description: Import committed
@@ -1159,8 +1163,10 @@ paths:
       description: |
         Exports all non-deleted youth records in scope. When `filingYear` is
         supplied with XLSX format, the workbook uses the official KK Youth
-        Profile layout and filename `KK Youth Profile <year>.xlsx`. SK
-        officials are always restricted to their assigned barangay.
+        Profile layout and filename `KK Youth Profile <year>.xlsx`. CSV output
+        is self-describing and can be uploaded directly to Imports under a
+        matching Youth Profile category. SK officials are always restricted to
+        their assigned barangay.
       parameters:
         - in: query
           name: format
@@ -2014,6 +2020,7 @@ components:
         categoryId:
           type: string
           format: uuid
+          description: Published category that determines the registry and filing year for every imported row.
         barangayId:
           type: string
           format: uuid
@@ -2033,6 +2040,7 @@ components:
       required:
         - id
         - category_id
+        - record_type
         - barangay_id
         - uploaded_by
         - file_name
@@ -2050,6 +2058,8 @@ components:
         category_id:
           type: string
           format: uuid
+        record_type:
+          $ref: '#/components/schemas/CategoryRecordType'
         barangay_id:
           type: string
           format: uuid

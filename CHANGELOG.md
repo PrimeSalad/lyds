@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refined the Imports validation review into a restrained audit surface with compact decision totals, exact source-row alignment, explicit recognized-youth and import-decision columns, field-level error and warning labels, and one continuous mobile results list instead of stacked status cards.
 - Redesigned the Youth Records import setup around a prominent guided-template step, clearer destination/file guidance, a pre-validation summary, and disabled checking until the required setup is complete; the Excel template now mirrors live Youth Record choices with reliable dropdown lists, marked required columns, 1,000 prepared rows, and an instructions/field guide sheet.
 - Removed the redundant blank Category column from the Child Laborer Records table while retaining its registry-scoped year and category filters.
 - Separated Youth and Child Laborer category scopes across both record lists and forms: filing-year options now come only from matching registry categories, category options follow the selected available year, mixed registry payloads are rejected defensively, and fabricated year lists were removed.

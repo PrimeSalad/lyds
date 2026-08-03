@@ -616,64 +616,89 @@ const ImportPage = () => {
             </Card.Root>
 
             <Card.Root borderColor="border" borderRadius="lg" boxShadow="panel" overflow="hidden">
-              <Card.Body p={0}>
-                <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={0}>
+              <Card.Body p={{ base: 4, md: 5 }}>
+                <Flex align={{ base: 'stretch', md: 'center' }} justify="space-between" direction={{ base: 'column', md: 'row' }} gap={4}>
+                  <HStack align="flex-start" gap={3}>
+                    <Flex
+                      boxSize="36px"
+                      align="center"
+                      justify="center"
+                      flexShrink={0}
+                      borderRadius="md"
+                      bg={batch.invalid_rows + batch.duplicate_rows > 0 ? 'orange.50' : 'green.50'}
+                      color={batch.invalid_rows + batch.duplicate_rows > 0 ? 'orange.800' : 'green.700'}
+                    >
+                      {batch.invalid_rows + batch.duplicate_rows > 0
+                        ? <LuTriangleAlert size={18} aria-hidden="true" />
+                        : <LuCircleCheck size={18} aria-hidden="true" />}
+                    </Flex>
+                    <Box>
+                      <Heading as="h3" size="sm">Validation summary</Heading>
+                      <Text mt={1} color="text.secondary" fontSize="sm" lineHeight="1.5" aria-live="polite">
+                        <strong>{batch.valid_rows.toLocaleString()}</strong> ready to create ·{' '}
+                        <strong>{(batch.invalid_rows + batch.duplicate_rows).toLocaleString()}</strong> excluded from this import.
+                        Only rows marked ready will be saved.
+                      </Text>
+                    </Box>
+                  </HStack>
+                  {(batch.invalid_rows > 0 || batch.duplicate_rows > 0) && (
+                    <Button
+                      variant="outline"
+                      minH="44px"
+                      flexShrink={0}
+                      onClick={handleDownloadErrors}
+                      loading={downloading}
+                    >
+                      <LuDownload aria-hidden="true" /> Download Correction Report
+                    </Button>
+                  )}
+                </Flex>
+
+                <SimpleGrid
+                  columns={{ base: 2, lg: 4 }}
+                  gap={0}
+                  mt={5}
+                  borderWidth="1px"
+                  borderColor="border"
+                  borderRadius="md"
+                  overflow="hidden"
+                >
                   {[
-                    { label: 'Total checked', value: batch.total_rows, color: 'blue', detail: 'All spreadsheet rows' },
-                    { label: 'Ready to import', value: batch.valid_rows, color: 'green', detail: 'Passed validation' },
-                    { label: 'Needs correction', value: batch.invalid_rows, color: 'red', detail: 'Will be skipped' },
-                    { label: 'Duplicate', value: batch.duplicate_rows, color: 'orange', detail: 'Already recorded' },
-                  ].map((item) => (
+                    { label: 'Rows checked', value: batch.total_rows, color: 'text.primary', detail: 'All source rows' },
+                    { label: 'Ready', value: batch.valid_rows, color: 'green.700', detail: 'Will be created' },
+                    { label: 'Corrections', value: batch.invalid_rows, color: 'red.700', detail: 'Needs source edits' },
+                    { label: 'Duplicates', value: batch.duplicate_rows, color: 'orange.800', detail: 'Already recorded' },
+                  ].map((item, index) => (
                     <Box
                       key={item.label}
-                      p={{ base: 4, md: 5 }}
-                      borderLeftWidth="4px"
-                      borderLeftColor={`${item.color}.400`}
-                      borderBottomWidth={{ base: '1px', lg: 0 }}
-                      borderBottomColor="border"
+                      p={{ base: 3, md: 4 }}
+                      bg="surface.muted"
+                      borderRightWidth={{ base: index % 2 === 0 ? '1px' : 0, lg: index < 3 ? '1px' : 0 }}
+                      borderBottomWidth={{ base: index < 2 ? '1px' : 0, lg: 0 }}
+                      borderColor="border"
                     >
-                      <Text color="text.muted" fontSize="sm" fontWeight="600">{item.label}</Text>
-                      <Text color={`${item.color}.700`} fontSize={{ base: '2xl', md: '3xl' }} fontWeight="700" lineHeight="1.1" mt={1} fontVariantNumeric="tabular-nums">
+                      <Text color="text.muted" fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="0.03em">{item.label}</Text>
+                      <Text color={item.color} fontSize="2xl" fontWeight="700" lineHeight="1.2" mt={1} fontVariantNumeric="tabular-nums">
                         {item.value.toLocaleString()}
                       </Text>
-                      <Text color="text.muted" fontSize="xs" mt={2}>{item.detail}</Text>
+                      <Text color="text.secondary" fontSize="xs" mt={1}>{item.detail}</Text>
                     </Box>
                   ))}
                 </SimpleGrid>
               </Card.Body>
             </Card.Root>
 
-            {(batch.invalid_rows > 0 || batch.duplicate_rows > 0) && (
-              <Card.Root borderColor="orange.200" borderRadius="lg" bg="orange.50">
-                <Card.Body p={{ base: 4, md: 5 }}>
-                  <Flex align={{ base: 'stretch', md: 'center' }} justify="space-between" direction={{ base: 'column', md: 'row' }} gap={4}>
-                    <HStack align="flex-start" gap={3}>
-                      <Box color="orange.700" pt={1} flexShrink={0}><LuTriangleAlert aria-hidden="true" /></Box>
-                      <Box>
-                        <Heading as="h3" size="sm">{(batch.invalid_rows + batch.duplicate_rows).toLocaleString()} rows will be skipped</Heading>
-                        <Text mt={1} color="orange.900" fontSize="sm">The review below explains each result. Download the correction report to work directly from the original sheet row numbers.</Text>
-                      </Box>
-                    </HStack>
-                    <Button variant="outline" borderColor="orange.300" minH="44px" flexShrink={0} onClick={handleDownloadErrors} loading={downloading}>
-                      <LuDownload aria-hidden="true" /> Download Correction Report
-                    </Button>
-                  </Flex>
-                </Card.Body>
-              </Card.Root>
-            )}
-
             <Box>
-              <Flex justify="space-between" align={{ base: 'flex-start', lg: 'flex-end' }} direction={{ base: 'column', lg: 'row' }} gap={3} mb={3}>
+              <Flex justify="space-between" align={{ base: 'flex-start', md: 'center' }} direction={{ base: 'column', md: 'row' }} gap={3} mb={3}>
                 <Box maxW="680px">
-                  <Heading size="sm">Spreadsheet validation review</Heading>
-                  <Text color="text.muted" fontSize="sm" mt={1}>Find the exact sheet row, confirm the recognized youth name, then read corrections and warnings separately.</Text>
+                  <Heading size="sm">Validation results</Heading>
+                  <Text color="text.muted" fontSize="sm" mt={1} lineHeight="1.5">
+                    Every result stays tied to its exact source row, recognized youth, import decision, and field-level finding.
+                  </Text>
                 </Box>
-                <HStack gap={2} wrap="wrap" aria-label="Validation outcome legend">
-                  <Badge colorPalette="green" variant="subtle">Ready</Badge>
-                  <Badge colorPalette="red" variant="subtle">Needs correction</Badge>
-                  <Badge colorPalette="orange" variant="subtle">Duplicate</Badge>
-                  <Text color="text.muted" fontSize="sm" ml={{ lg: 2 }}>{rowMeta.totalItems.toLocaleString()} rows</Text>
-                </HStack>
+                <Badge variant="outline" color="text.secondary" px={2.5} py={1.5} borderRadius="md">
+                  {rowMeta.totalItems.toLocaleString()} source rows
+                </Badge>
               </Flex>
               <ImportValidationTable
                 rows={rows}

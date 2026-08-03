@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed 2025 OSY record search so names copied directly from the official surname-first Excel workbook resolve to their imported given-name-first records.
 - Fixed Child Laborer category loading by avoiding a youth-only soft-delete filter on the child laborer records table, restoring the published 2026 category and its live record count.
 
 ### Added

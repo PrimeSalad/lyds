@@ -35,6 +35,8 @@ The router files under `backend/src/routes/` and `backend/src/modules/*/interfac
 
 The public `GET /health` response includes `deploymentCommit` when Render supplies its runtime Git revision. This non-secret marker makes production rollout verification deterministic without exposing environment configuration.
 
+Youth-shaped registry name search accepts both the displayed given-name-first form and the surname-first comma form used in official OSY workbooks. Whitespace is normalized before the case-insensitive match.
+
 ## Request and response conventions
 
 - JSON response bodies wrap successful resources in `data`; paginated lists also include `meta`.

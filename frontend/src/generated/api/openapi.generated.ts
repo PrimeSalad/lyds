@@ -413,6 +413,10 @@ export interface paths {
                     filingYear?: number;
                     barangayId?: string;
                     status?: "DRAFT" | "SUBMITTED" | "RETURNED" | "APPROVED" | "ARCHIVED";
+                    /**
+                     * @description Case-insensitive name search. Surname-first names with commas, as
+                     *     used by official OSY workbooks, are normalized before matching.
+                     */
                     search?: string;
                     page?: number;
                     pageSize?: number;

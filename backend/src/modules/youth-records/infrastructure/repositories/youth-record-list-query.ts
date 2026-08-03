@@ -19,6 +19,15 @@ export type YouthRecordOrderClause = {
   ascending: boolean;
 };
 
+export const normalizeYouthRecordSearch = (search: string) => {
+  const compact = search.replace(/\s+/g, ' ').trim();
+  if (!compact.includes(',')) return compact;
+
+  const [surname, ...givenNameParts] = compact.split(',');
+  const givenNames = givenNameParts.join(' ').replace(/\s+/g, ' ').trim();
+  return [givenNames, surname.trim()].filter(Boolean).join(' ');
+};
+
 export const getYouthRecordOrderClauses = (sort?: YouthRecordSort): YouthRecordOrderClause[] => {
   if (!sort) return [{ column: 'created_at', ascending: false }];
 

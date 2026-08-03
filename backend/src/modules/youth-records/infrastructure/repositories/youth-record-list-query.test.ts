@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getYouthRecordOrderClauses,
+  normalizeYouthRecordSearch,
   YOUTH_RECORD_LIST_SELECT,
 } from './youth-record-list-query';
 
@@ -30,5 +31,13 @@ describe('youth record list query', () => {
       { column: 'display_name', ascending: false },
       { column: 'id', ascending: true },
     ]);
+  });
+
+  it('matches the surname-first comma format used by the 2025 OSY workbook', () => {
+    expect(normalizeYouthRecordSearch('DELA CRUZ, ANA M.')).toBe('ANA M. DELA CRUZ');
+  });
+
+  it('collapses spreadsheet spacing without changing ordinary name order', () => {
+    expect(normalizeYouthRecordSearch('  ANA   M.   DELA CRUZ  ')).toBe('ANA M. DELA CRUZ');
   });
 });

@@ -4,6 +4,7 @@ import { YouthRecordErrors } from '../../domain/errors/youth-record-errors';
 import { toYouthRecordPresentation } from './youth-record-presenter';
 import {
   getYouthRecordOrderClauses,
+  normalizeYouthRecordSearch,
   YOUTH_RECORD_LIST_SELECT,
 } from './youth-record-list-query';
 
@@ -55,7 +56,7 @@ export const youthRecordRepository = {
       query = query.eq('status', filters.status);
     }
     if (filters.search) {
-      query = query.ilike('display_name', `%${filters.search}%`);
+      query = query.ilike('display_name', `%${normalizeYouthRecordSearch(filters.search)}%`);
     }
     let categoryQuery = supabaseAdmin
       .from('categories')

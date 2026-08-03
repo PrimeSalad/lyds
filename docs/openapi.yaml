@@ -241,6 +241,9 @@ paths:
             enum: [DRAFT, SUBMITTED, RETURNED, APPROVED, ARCHIVED]
         - in: query
           name: search
+          description: |
+            Case-insensitive name search. Surname-first names with commas, as
+            used by official OSY workbooks, are normalized before matching.
           schema:
             type: string
             maxLength: 100

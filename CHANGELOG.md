@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `npm run import:kk -- <workbook.xlsx> [--year=YYYY] [--apply]` for idempotent barangay KK profiling workbook imports, and migrated Barangay Canat's 141 youth profiles into KK Youth Profile 2026.
 - Added an automatic annual OSY category schedule, including an empty published 2026 category, with no prior-year record copying.
 - Added direct Import CSV actions and explicit CSV/Excel export labeling to both Youth and OSY record pages.
 - Added Out-of-School Youth as a third first-class registry with its own sidebar destination, annual categories, imports, CSV/XLSX exports, records workspace, and URL-preserved dashboard view.
